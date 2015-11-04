@@ -38,7 +38,7 @@
    </property>
    <widget class="QMenu" name="menu_File">
     <property name="title">
-     <string>&amp;File</string>
+     <string>&amp;Файл</string>
     </property>
    </widget>
    <widget class="QMenu" name="menuSources">
@@ -48,7 +48,7 @@
    </widget>
    <widget class="QMenu" name="menuFilters">
     <property name="title">
-     <string>&amp;Filters</string>
+     <string>&amp;Фильтры</string>
     </property>
    </widget>
    <widget class="QMenu" name="menu_Edit">
@@ -63,17 +63,17 @@
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
-     <string>&amp;Tools</string>
+     <string>&amp;Инструменты</string>
     </property>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
-     <string>&amp;Help</string>
+     <string>&amp;Справка</string>
     </property>
    </widget>
    <widget class="QMenu" name="menu_Macros">
     <property name="title">
-     <string>&amp;Macros</string>
+     <string>&amp;Макросы</string>
     </property>
    </widget>
    <addaction name="menu_File"/>
@@ -91,7 +91,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Pipeline Browser</string>
+    <string>Обозреватель трубы</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -116,7 +116,7 @@
   </widget>
   <widget class="QDockWidget" name="animationViewDock">
    <property name="windowTitle">
-    <string>Animation View</string>
+    <string>Панель анимации</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>8</number>
@@ -187,7 +187,7 @@
   </widget>
   <widget class="QDockWidget" name="informationDock">
    <property name="windowTitle">
-    <string>Information</string>
+    <string>Информация</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
