@@ -94,6 +94,19 @@ namespace pqComparativeVisPanelNS
       {
       return pq_proxy->getSMName();
       }
+
+    // proxy could be a helper proxy of some other proxy
+    QString helper_key;
+    pq_proxy = pqProxy::findProxyWithHelper(proxy, helper_key);
+    if (pq_proxy)
+      {
+      vtkSMProperty* prop = pq_proxy->getProxy()->GetProperty(helper_key.toLatin1().data());
+      if (prop)
+        {
+        return QString("%1 - %2").arg(pq_proxy->getSMName()).arg(prop->GetXMLLabel());
+        }
+      return pq_proxy->getSMName();
+      }
     return "<unrecognized-proxy>";
     }
 
@@ -200,8 +213,13 @@ pqComparativeVisPanel::pqComparativeVisPanel(QWidget* p):Superclass(p)
 
   this->Internal = new pqInternal();
   this->Internal->setupUi(this);
+#if QT_VERSION >= 0x050000
+  this->Internal->activeParameters->horizontalHeader()->setSectionResizeMode(
+    QHeaderView::ResizeToContents);
+#else
   this->Internal->activeParameters->horizontalHeader()->setResizeMode(
     QHeaderView::ResizeToContents);
+#endif
 
   QObject::connect(
     &pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
@@ -353,11 +371,15 @@ void pqComparativeVisPanel::updateParametersList()
 void pqComparativeVisPanel::addParameter()
 {
   // Need to create new cue for this property.
-  vtkSMProxy* curProxy = this->Internal->proxyCombo->getCurrentProxy();
+  // vtkSMProxy* curProxy = this->Internal->proxyCombo->getCurrentProxy();
+  vtkSMProxy* realProxy = this->Internal->propertyCombo->getCurrentProxy();
+  // Note: curProxy may not be same as realProxy!  This happens for cases when
+  // we're animating a "helper" proxy e.g. "Slice Type - Origin" for the
+  // Slice filter.
   QString pname = this->Internal->propertyCombo->getCurrentPropertyName();
   int pindex = this->Internal->propertyCombo->getCurrentIndex();
 
-  int row = this->findRow(curProxy, pname, pindex);
+  int row = this->findRow(realProxy, pname, pindex);
   if (row != -1)
     {
     // already exists, select it.
@@ -367,11 +389,11 @@ void pqComparativeVisPanel::addParameter()
     return;
     }
 
-  if (curProxy)
+  if (realProxy)
     {
     BEGIN_UNDO_SET(QString("Add parameter %1 : %2").arg(
-        pqComparativeVisPanelNS::getName(curProxy)).arg(
-        pqComparativeVisPanelNS::getName(curProxy, pname.toAscii().data(), pindex)));
+        pqComparativeVisPanelNS::getName(realProxy)).arg(
+        pqComparativeVisPanelNS::getName(realProxy, pname.toLatin1().data(), pindex)));
     }
   else
     {
@@ -379,8 +401,8 @@ void pqComparativeVisPanel::addParameter()
     }
 
   // Add new cue.
-  vtkSMProxy* cueProxy = pqComparativeVisPanelNS::newCue(curProxy,
-    pname.toAscii().data(), pindex);
+  vtkSMProxy* cueProxy = pqComparativeVisPanelNS::newCue(realProxy,
+    pname.toLatin1().data(), pindex);
   vtkSMPropertyHelper(this->view()->getProxy(), "Cues").Add(cueProxy);
   cueProxy->Delete();
   this->view()->getProxy()->UpdateVTKObjects();

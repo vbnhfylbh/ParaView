@@ -6,9 +6,7 @@
 
 Copyright 2012 SciberQuest Inc.
 */
-
 //#define CUDAConvolutionDriverDEBUG
-
 #include "CUDAConvolutionDriver.h"
 
 #include "SQVTKTemplateMacroWarningSupression.h"
@@ -84,6 +82,10 @@ int CUDAConvolutionDriver::SetDeviceId(int deviceId)
   this->MaxWarpsPerBlock=props.maxThreadsPerBlock/props.warpSize;
   #else
   (void)deviceId;
+
+  // avoid "-Wunused-private-field"
+  (void)this->WarpSize;
+  (void)this->BlockGridMax;
   #endif
 
   return 0;

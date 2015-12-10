@@ -20,8 +20,9 @@
 #include "vtkPVXMLElement.h"
 #include "vtkSMMessage.h"
 #include "vtkSMSession.h"
+#include "vtkTimerLog.h"
 
-#include <vtksys/ios/sstream>
+#include <sstream>
 
 vtkStandardNewMacro(vtkSMProxyDefinitionManager);
 //----------------------------------------------------------------------------
@@ -85,6 +86,7 @@ void vtkSMProxyDefinitionManager::SynchronizeDefinitions()
     return;
     }
 
+  vtkTimerLog::MarkStartEvent("Process Proxy definitions");
   vtkSMMessage message;
   this->SetLocation(vtkPVSession::SERVERS);
   if (this->PullState(&message) == false)
@@ -96,6 +98,7 @@ void vtkSMProxyDefinitionManager::SynchronizeDefinitions()
 
   this->SetLocation(vtkPVSession::CLIENT_AND_SERVERS);
   this->ProxyDefinitionManager->Push(&message);
+  vtkTimerLog::MarkEndEvent("Process Proxy definitions");
 }
 //----------------------------------------------------------------------------
 void vtkSMProxyDefinitionManager::LoadState( const vtkSMMessage* msg,
@@ -121,7 +124,7 @@ void vtkSMProxyDefinitionManager::AddCustomProxyDefinition(
       }
     if (this->GetSession() && top && group && name)
       {
-      vtksys_ios::ostringstream str_stream;
+      std::ostringstream str_stream;
       top->PrintXML(str_stream, vtkIndent());
       vtkClientServerStream stream;
       stream << vtkClientServerStream::Invoke
@@ -183,7 +186,7 @@ void vtkSMProxyDefinitionManager::LoadCustomProxyDefinitions(vtkPVXMLElement* ro
 
     if (this->GetSession() && root)
       {
-      vtksys_ios::ostringstream str_stream;
+      std::ostringstream str_stream;
       root->PrintXML(str_stream, vtkIndent());
       vtkClientServerStream stream;
       stream << vtkClientServerStream::Invoke
@@ -230,7 +233,7 @@ bool vtkSMProxyDefinitionManager::LoadConfigurationXML(vtkPVXMLElement* root)
 
     if (this->GetSession() && root)
       {
-      vtksys_ios::ostringstream str_stream;
+      std::ostringstream str_stream;
       root->PrintXML(str_stream, vtkIndent());
       vtkClientServerStream stream;
       stream << vtkClientServerStream::Invoke

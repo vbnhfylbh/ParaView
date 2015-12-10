@@ -41,10 +41,10 @@ set(Module_SRCS
   pqApplicationCore.h
   pqAutoStartInterface.cxx
   pqAutoStartInterface.h
-  pqChartRepresentation.cxx
-  pqChartRepresentation.h
-  pqChartSeriesSettingsModel.cxx
-  pqChartSeriesSettingsModel.h
+  pqBoxChartView.cxx
+  pqBoxChartView.h
+  pqCheckBoxDelegate.h
+  pqCheckBoxDelegate.cxx
   pqCollaborationEventPlayer.cxx
   pqCollaborationEventPlayer.h
   pqCollaborationManager.cxx
@@ -93,12 +93,6 @@ set(Module_SRCS
   pqFormBuilder.h
   pqGraphLayoutStrategyInterface.cxx
   pqGraphLayoutStrategyInterface.h
-  pqHelperProxyRegisterUndoElement.cxx
-  pqHelperProxyRegisterUndoElement.h
-  pqHelperProxyStateLoader.cxx
-  pqHelperProxyStateLoader.h
-  pqHistogramTableModel.cxx
-  pqHistogramTableModel.h
   pqImageUtil.cxx
   pqImageUtil.h
   pqInterfaceTracker.cxx
@@ -107,14 +101,10 @@ set(Module_SRCS
   pqLinksModel.h
   pqLinkViewWidget.cxx
   pqLinkViewWidget.h
-  pqLookupTableManager.cxx
-  pqLookupTableManager.h
   pqMultiSliceAxisWidget.cxx
   pqMultiSliceAxisWidget.h
   pqMultiSliceView.cxx
   pqMultiSliceView.h
-  pqNameCount.cxx
-  pqNameCount.h
   pqNonEditableStyledItemDelegate.cxx
   pqNonEditableStyledItemDelegate.h
   pqObjectBuilder.cxx
@@ -127,6 +117,8 @@ set(Module_SRCS
   pqOutputWindowAdapter.h
   pqOutputWindow.cxx
   pqOutputWindow.h
+  pqOutputWindowModel.cxx
+  pqOutputWindowModel.h
   pqParallelCoordinatesChartView.cxx
   pqParallelCoordinatesChartView.h
   pqPipelineFilter.cxx
@@ -137,8 +129,6 @@ set(Module_SRCS
   pqPipelineSource.h
   pqPlotMatrixView.cxx
   pqPlotMatrixView.h
-  pqPlotSettingsModel.cxx
-  pqPlotSettingsModel.h
   pqPluginManager.cxx
   pqPluginManager.h
   pqProgressManager.cxx
@@ -169,14 +159,8 @@ set(Module_SRCS
   pqRenderView.h
   pqRepresentation.cxx
   pqRepresentation.h
-  pqRubberBandHelper.cxx
-  pqRubberBandHelper.h
   pqScalarBarRepresentation.cxx
   pqScalarBarRepresentation.h
-  pqScalarBarVisibilityAdaptor.cxx
-  pqScalarBarVisibilityAdaptor.h
-  pqScalarOpacityFunction.cxx
-  pqScalarOpacityFunction.h
   pqScalarsToColors.cxx
   pqScalarsToColors.h
   pqServer.cxx
@@ -211,10 +195,6 @@ set(Module_SRCS
   pqSpreadSheetViewWidget.h
   pqStandardServerManagerModelInterface.cxx
   pqStandardServerManagerModelInterface.h
-  pqStandardViewModules.cxx
-  pqStandardViewModules.h
-  pqTextRepresentation.cxx
-  pqTextRepresentation.h
   pqTimeKeeper.cxx
   pqTimeKeeper.h
   pqTreeLayoutStrategyInterface.cxx
@@ -222,19 +202,21 @@ set(Module_SRCS
   pqUndoStack.cxx
   pqUndoStack.h
   pqView.cxx
-  pqViewExporterManager.cxx
-  pqViewExporterManager.h
   pqView.h
-  pqViewModuleInterface.cxx
-  pqViewModuleInterface.h
   pqXMLEventObserver.cxx
   pqXMLEventObserver.h
   pqXMLEventSource.cxx
   pqXMLEventSource.h
   pqXMLUtil.cxx
   pqXMLUtil.h
+  pqXYBagChartView.cxx
+  pqXYBagChartView.h
   pqXYBarChartView.cxx
   pqXYBarChartView.h
+  pqXYFunctionalBagChartView.cxx
+  pqXYFunctionalBagChartView.h
+  pqXYHistogramChartView.cxx
+  pqXYHistogramChartView.h
   pqXYChartView.cxx
   pqXYChartView.h
   vtkPVGUIPluginInterface.cxx
@@ -246,8 +228,8 @@ set (Module_MOC_HDRS
   pqAnimationCue.h
   pqAnimationScene.h
   pqApplicationCore.h
-  pqChartRepresentation.h
-  pqChartSeriesSettingsModel.h
+  pqBoxChartView.h
+  pqCheckBoxDelegate.h
   pqCollaborationEventPlayer.h
   pqCollaborationManager.h
   pqComparativeContextView.h
@@ -259,20 +241,19 @@ set (Module_MOC_HDRS
   pqCoreUtilities.h
   pqDataRepresentation.h
   pqDisplayPolicy.h
+  pqFileDialogEventPlayer.h
   pqFileDialogEventTranslator.h
   pqFileDialogFavoriteModel.h
   pqFileDialogFilter.h
   pqFileDialog.h
   pqFileDialogModel.h
   pqFileDialogRecentDirsModel.h
+  pqFlatTreeViewEventPlayer.h
   pqFlatTreeViewEventTranslator.h
   pqFormBuilder.h
-  pqHelperProxyStateLoader.h
-  pqHistogramTableModel.h
   pqInterfaceTracker.h
   pqLinksModel.h
   pqLinkViewWidget.h
-  pqLookupTableManager.h
   pqMultiSliceAxisWidget.h
   pqMultiSliceView.h
   pqNonEditableStyledItemDelegate.h
@@ -280,28 +261,26 @@ set (Module_MOC_HDRS
   pqOutputPort.h
   pqOutputWindowAdapter.h
   pqOutputWindow.h
+  pqOutputWindowModel.h
   pqParallelCoordinatesChartView.h
   pqPipelineFilter.h
   pqPipelineRepresentation.h
   pqPipelineSource.h
   pqPlotMatrixView.h
-  pqPlotSettingsModel.h
   pqPluginManager.h
   pqProgressManager.h
   pqPropertyLinksConnection.h
   pqPropertyLinks.h
   pqPropertyManager.h
   pqProxy.h
+  pqQVTKWidgetEventPlayer.h
   pqQVTKWidgetEventTranslator.h
   pqQVTKWidget.h
   pqRecentlyUsedResourcesList.h
   pqRenderViewBase.h
   pqRenderView.h
   pqRepresentation.h
-  pqRubberBandHelper.h
   pqScalarBarRepresentation.h
-  pqScalarBarVisibilityAdaptor.h
-  pqScalarOpacityFunction.h
   pqScalarsToColors.h
 #  pqScatterPlotRepresentation.h
   pqServerConfigurationCollection.h
@@ -315,15 +294,15 @@ set (Module_MOC_HDRS
   pqSpreadSheetViewSelectionModel.h
   pqSpreadSheetViewWidget.h
   pqStandardServerManagerModelInterface.h
-  pqStandardViewModules.h
-  pqTextRepresentation.h
   pqTimeKeeper.h
   pqUndoStack.h
-  pqViewExporterManager.h
   pqView.h
   pqXMLEventObserver.h
   pqXMLEventSource.h
+  pqXYBagChartView.h
   pqXYBarChartView.h
+  pqXYFunctionalBagChartView.h
+  pqXYHistogramChartView.h
   pqXYChartView.h
 )
 
@@ -336,7 +315,7 @@ set (Module_RESOURCE_FILES
   "${CMAKE_CURRENT_SOURCE_DIR}/Resources/pqCore.qrc"
 )
 
-if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_ENABLE_MATPLOTLIB)
+if (PARAVIEW_ENABLE_PYTHON)
   list (APPEND Module_SRCS
     pqPythonView.cxx
     pqPythonView.h
@@ -348,21 +327,36 @@ endif()
 
 
 #-------------------------------------------------------------------------
-# import Qt4 build settings
-SET (QT_USE_QTUITOOLS 1)
-SET (QT_USE_QTXML 1)  # uitools depends on xml
-find_package(Qt4 REQUIRED QUIET)
-include(${QT_USE_FILE})
-# Setting this variable ensures that any module depending on pqWidgets
-# automatically inherits the Qt include dirs.
-set (${vtk-module}_INCLUDE_DIRS
-  ${QT_INCLUDES})
+if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+  # Setting this variable ensures that any module depending on pqWidgets
+  # automatically inherits the Qt include dirs.
+  set (${vtk-module}_INCLUDE_DIRS
+    ${Qt5Widgets_INCLUDE_DIRS}
+    ${Qt5UiTools_INCLUDE_DIRS}
+    ${Qt5Xml_INCLUDE_DIRS})
+else ()
+  # import Qt4 build settings
+  set (QT_USE_QTUITOOLS 1)
+  set (QT_USE_QTXML 1) # uitools depends on xml
+  find_package (Qt4 REQUIRED QUIET)
+  include (${QT_USE_FILE})
+  # Setting this variable ensures that any module depending on pqWidgets
+  # automatically inherits the Qt include dirs.
+  set (${vtk-module}_INCLUDE_DIRS
+    ${QT_INCLUDES})
+endif()
 #-------------------------------------------------------------------------
 set(${vtk-module}_NO_HeaderTest 1)
 
-qt4_wrap_cpp(__Module_MOC_SRCS ${Module_MOC_HDRS})
-qt4_wrap_ui(__Module_UI_SRCS ${Module_UI_FILES})
-qt4_add_resources(__Module_RESOURCE_SRCS ${Module_RESOURCE_FILES})
+if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+  qt5_wrap_cpp(__Module_MOC_SRCS ${Module_MOC_HDRS})
+  qt5_wrap_ui(__Module_UI_SRCS ${Module_UI_FILES})
+  qt5_add_resources(__Module_RESOURCE_SRCS ${Module_RESOURCE_FILES})
+else ()
+  qt4_wrap_cpp(__Module_MOC_SRCS ${Module_MOC_HDRS})
+  qt4_wrap_ui(__Module_UI_SRCS ${Module_UI_FILES})
+  qt4_add_resources(__Module_RESOURCE_SRCS ${Module_RESOURCE_FILES})
+endif ()
 
 SOURCE_GROUP("Resources" FILES
   ${Module_UI_FILES}
@@ -403,9 +397,9 @@ target_link_libraries(${vtk-module} LINK_PUBLIC ${QT_LIBRARIES})
 #    "${CMAKE_CURRENT_SOURCE_DIR}"
 #    "${PV_INSTALL_INCLUDE_DIR}/Qt/Core/Resources/Icons"
 #    "${resPath}/*.ico;${resPath}/*.png;${resPath}/*.svg;${resPath}/*.xpm;${resPath}/*.rc")
-#ENDIF (NOT PV_INSTALL_NO_DEVELOPMENT)
+#ENDIF ()
 #
 #IF(BUILD_TESTING)
 #  ADD_SUBDIRECTORY(Testing)
-#ENDIF(BUILD_TESTING)
+#ENDIF()
 

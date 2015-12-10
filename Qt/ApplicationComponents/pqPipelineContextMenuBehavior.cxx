@@ -34,49 +34,64 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
 #include "pqEditColorMapReaction.h"
-#include "pqPipelineRepresentation.h"
 #include "pqMultiBlockInspectorPanel.h"
+#include "pqPipelineRepresentation.h"
+#include "pqPVApplicationCore.h"
 #include "pqRenderView.h"
 #include "pqScalarsToColors.h"
+#include "pqSelectionManager.h"
 #include "pqServerManagerModel.h"
 #include "pqSetName.h"
 #include "pqSMAdaptor.h"
 #include "pqUndoStack.h"
-#include "pqSelectionManager.h"
-#include "pqPVApplicationCore.h"
-#include "vtkSMProxy.h"
-#include "vtkPVDataInformation.h"
+#include "vtkDataObject.h"
+#include "vtkNew.h"
 #include "vtkPVCompositeDataInformation.h"
+#include "vtkPVDataInformation.h"
+#include "vtkPVGeneralSettings.h"
+#include "vtkSMArrayListDomain.h"
+#include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMTransferFunctionManager.h"
+#include "vtkSMViewProxy.h"
 
 #include <QAction>
 #include <QApplication>
 #include <QColorDialog>
 #include <QMenu>
 #include <QMouseEvent>
-#include <QRegExp>
+#include <QPair>
 #include <QWidget>
 
 namespace
 {
-  const QStringList colorFieldData(const QString& field, int component)
+  // converts array association/name pair to QVariant.
+  QVariant convert(const QPair<int, QString>& array)
     {
-    QStringList result;
-    result << field << QString::number(component);
-    return result;
+    if (!array.second.isEmpty())
+      {
+      QStringList val;
+      val << QString::number(array.first)
+          << array.second;
+      return val;
+      }
+    return QVariant();
     }
 
-  bool extractColorFieldData(const QVariant& variant, QString& field, int& component)
+  // converts QVariant to array association/name pair.
+  QPair <int, QString> convert(const QVariant& val)
     {
-    QStringList list = variant.toStringList();
-    if (list.size() == 2)
+    QPair<int, QString> result;
+    if (val.canConvert<QStringList>())
       {
-      field = list[0];
-      component = list[1].toInt();
-      return true;
+      QStringList list = val.toStringList();
+      Q_ASSERT(list.size() == 2);
+      result.first = list[0].toInt();
+      result.second = list[1];
       }
-    return false;
+    return result;
     }
 
   pqMultiBlockInspectorPanel* getMultiBlockInspectorPanel()
@@ -120,7 +135,7 @@ void pqPipelineContextMenuBehavior::onViewAdded(pqView* view)
   if (view && view->getProxy()->IsA("vtkSMRenderViewProxy"))
     {
     // add a link view menu
-    view->getWidget()->installEventFilter(this);
+    view->widget()->installEventFilter(this);
     }
 }
 
@@ -343,92 +358,79 @@ void pqPipelineContextMenuBehavior::buildColorFieldsMenu(
   QIcon pointDataIcon(":/pqWidgets/Icons/pqPointData16.png");
   QIcon solidColorIcon(":/pqWidgets/Icons/pqSolidColor16.png");
 
-  QList<QString> available_fields = pipelineRepr->getColorFields();
-  QRegExp regExpCell(" \\(cell\\)\\w*$");
-  QRegExp regExpPoint(" \\(point\\)\\w*$");
-  foreach (QString field, available_fields)
+  menu->addAction(solidColorIcon, "Solid Color")->setData(
+    convert(QPair<int, QString>()));
+  vtkSMProperty* prop = pipelineRepr->getProxy()->GetProperty("ColorArrayName");
+  vtkSMArrayListDomain* domain = prop?
+    vtkSMArrayListDomain::SafeDownCast(prop->FindDomain("vtkSMArrayListDomain")) : NULL;
+  if (!domain)
     {
-    if (field == pqPipelineRepresentation::solidColor())
-      {
-      menu->addAction(solidColorIcon, field)->setData(
-        colorFieldData(field, -1));
-      continue;
-      }
+    return;
+    }
 
-    int num_components = pipelineRepr->getColorFieldNumberOfComponents(field);
-    QString arrayname = field;
-    bool cell_data = false;
-    if (regExpCell.indexIn(field) != -1)
-      {
-      cell_data = true;
-      arrayname.replace(regExpCell, "");
-      }
-    else if (regExpPoint.indexIn(field) != -1)
-      {
-      arrayname.replace(regExpCell, "");
-      }
+  // We are only showing array names here without worrying about components since that
+  // keeps the menu simple and code even simpler :).
+  for (unsigned int cc=0, max = domain->GetNumberOfStrings(); cc < max; cc++)
+    {
+    int association = domain->GetFieldAssociation(cc);
+    int icon_association = domain->GetDomainAssociation(cc);
+    QString name = domain->GetString(cc);
 
-    if (num_components == 1)
-      {
-      QAction* c_action = menu->addAction(cell_data? cellDataIcon: pointDataIcon,
-        arrayname);
-      c_action << pqSetName(field);
-      c_action->setData(colorFieldData(field, -1));
-      }
-    else if (num_components > 1)
-      {
-      QMenu* component_menu = menu->addMenu(cell_data?
-        cellDataIcon: pointDataIcon, arrayname) << pqSetName(field);
-      QObject::connect(menu, SIGNAL(triggered(QAction*)),
-        this, SLOT(colorMenuTriggered(QAction*)), Qt::QueuedConnection);
-      QAction* c_action = component_menu->addAction("Magnitude");
-      c_action->setData(colorFieldData(field, -1));
-      c_action << pqSetName("-1");
-      for (int cc=0; cc < num_components; cc++)
-        {
-        QString component_name =
-          pipelineRepr->getColorFieldComponentName(field, cc);
-        c_action = component_menu->addAction(component_name.isEmpty()?
-          QString::number(cc): component_name);
-        c_action << pqSetName(component_name);
-        c_action->setData(colorFieldData(field, cc));
-        }
-      }
+    QIcon& icon = (icon_association == vtkDataObject::CELL)?
+      cellDataIcon : pointDataIcon;
+
+    QVariant data = convert(QPair<int, QString>(association, name));
+    menu->addAction(icon, name)->setData(data);
     }
 }
 
 //-----------------------------------------------------------------------------
 void pqPipelineContextMenuBehavior::colorMenuTriggered(QAction* action)
 {
-  QString field;
-  int component;
-  if (!extractColorFieldData(action->data(), field, component))
+  QPair<int, QString> array = convert(action->data());
+  if (this->PickedRepresentation)
     {
-    return;
-    }
+    BEGIN_UNDO_SET("Change coloring");
+    vtkSMViewProxy* view = pqActiveObjects::instance().activeView()->getViewProxy();
+    vtkSMProxy* reprProxy = this->PickedRepresentation->getProxy();
 
-  pqPipelineRepresentation* repr = qobject_cast<pqPipelineRepresentation*>(
-    this->PickedRepresentation);
-  if (repr)
-    {
-    BEGIN_UNDO_SET("Color Changed");
-    repr->setColorField(field);
-    pqScalarsToColors* lut = repr->getLookupTable();
-    if (lut)
+    vtkSMProxy* oldLutProxy = vtkSMPropertyHelper(reprProxy, "LookupTable", true).GetAsProxy();
+
+    vtkSMPVRepresentationProxy::SetScalarColoring(
+      reprProxy, array.second.toLatin1().data(), array.first);
+
+    vtkNew<vtkSMTransferFunctionManager> tmgr;
+
+    // Hide unused scalar bars, if applicable.
+    vtkPVGeneralSettings* gsettings = vtkPVGeneralSettings::GetInstance();
+    switch (gsettings->GetScalarBarMode())
       {
-      if (component == -1)
-        {
-        lut->setVectorMode(pqScalarsToColors::MAGNITUDE, -1);
-        }
-      else
-        {
-        lut->setVectorMode(pqScalarsToColors::COMPONENT, component);
-        lut->updateScalarBarTitles(
-          repr->getColorFieldComponentName(field, component));
-        }
-      repr->resetLookupTableScalarRange();
+    case vtkPVGeneralSettings::AUTOMATICALLY_HIDE_SCALAR_BARS:
+    case vtkPVGeneralSettings::AUTOMATICALLY_SHOW_AND_HIDE_SCALAR_BARS:
+      tmgr->HideScalarBarIfNotNeeded(oldLutProxy, view);
+      break;
       }
-    repr->renderViewEventually();
+
+    if (!array.second.isEmpty())
+      {
+      // we could now respect some application setting to determine if the LUT is
+      // to be reset.
+      vtkSMPVRepresentationProxy::RescaleTransferFunctionToDataRange(reprProxy, true);
+
+      /// BUG #0011858. Users often do silly things!
+      bool reprVisibility =
+        vtkSMPropertyHelper(reprProxy, "Visibility", /*quiet*/true).GetAsInt() == 1;
+
+      // now show used scalar bars if applicable.
+      if (reprVisibility &&
+        gsettings->GetScalarBarMode() ==
+        vtkPVGeneralSettings::AUTOMATICALLY_SHOW_AND_HIDE_SCALAR_BARS)
+        {
+        vtkSMPVRepresentationProxy::SetScalarBarVisibility(reprProxy, view, true);
+        }
+      }
+
+    this->PickedRepresentation->renderViewEventually();
     END_UNDO_SET();
     }
 }

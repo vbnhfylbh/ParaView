@@ -89,7 +89,7 @@ public:
         {
         this->XRange[0] = bounds[0];
         this->XRange[1] = bounds[1];
-        this->DataValid = ((this->XRange[1] - this->XRange[0]) >= 1e-10);
+        this->DataValid = ((this->XRange[1] - this->XRange[0]) >= 1e-22);
         this->RecalculateBounds();
         }
       }
@@ -293,7 +293,6 @@ void pqTransferFunctionWidget::initialize(
     this->Internals->TransferFunctionItem = item.GetPointer();
     if (pwf_editable && stc_editable)
       {
-      abort();
       // NOTE: this hasn't been tested yet.
       vtkNew<vtkCompositeControlPointsItem> cpItem;
       cpItem->SetPointsFunction(vtkCompositeControlPointsItem::ColorAndOpacityPointsFunction);

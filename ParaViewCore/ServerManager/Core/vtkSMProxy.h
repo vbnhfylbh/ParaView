@@ -310,13 +310,45 @@ public:
   // actual objects.
   virtual void MarkAllPropertiesAsModified();
 
+  // Description:
+  // Use this method to set all properties on this proxy to their default
+  // values. This iterates over all properties on this proxy, thus if this proxy
+  // had subproxies, this method will iterate over only the exposed properties
+  // and call vtkSMProperty::ResetToXMLDefaults().
+  virtual void ResetPropertiesToXMLDefaults();
+
+  // Description:
+  // Use this method to set all properties on this proxy to their default
+  // domains. This iterates over all properties on this proxy, thus if this proxy
+  // had subproxies, this method will iterate over only the exposed properties
+  // and call vtkSMProperty::ResetToDomainDefaults().
+  virtual void ResetPropertiesToDomainDefaults();
+
+  enum ResetPropertiesMode
+    {
+    DEFAULT = 0,
+    ONLY_XML = 1,
+    ONLY_DOMAIN = 2
+    };
+
+  // Description:
+  // Use this method to set all properties on this proxy to their default domain 
+  // or values. This iterates over all properties on this proxy, thus if this 
+  // proxy had subproxies, this method will iterate over only the exposed 
+  // properties and call correct reset methods.
+  // The parameter allows to choose between resetting ONLY_XML, ONLY_DOMAIN or DEFAULT, 
+  // ie. reset to domain if available, if not reset to xml.
+  // default value is DEFAULT.
+  virtual void ResetPropertiesToDefault(ResetPropertiesMode mode = DEFAULT);
+
 //BTX
   // Description:
   // Flags used for the proxyPropertyCopyFlag argument to the Copy method.
   enum
     {
     COPY_PROXY_PROPERTY_VALUES_BY_REFERENCE=0,
-    COPY_PROXY_PROPERTY_VALUES_BY_CLONING
+
+    COPY_PROXY_PROPERTY_VALUES_BY_CLONING // < No longer supported!!!
     };
 //ETX
 
@@ -330,7 +362,8 @@ public:
   // proxyPropertyCopyFlag specifies how the values for vtkSMProxyProperty
   // and its subclasses are copied over: by reference or by 
   // cloning (ie. creating new instances of the value proxies and 
-  // synchronizing their values).
+  // synchronizing their values). This is no longer relevant since we don't
+  // support COPY_PROXY_PROPERTY_VALUES_BY_CLONING anymore.
   void Copy(vtkSMProxy* src);
   void Copy(vtkSMProxy* src, const char* exceptionClass);
   virtual void Copy(vtkSMProxy* src, const char* exceptionClass, 
@@ -420,7 +453,18 @@ public:
   // Description:
   // A proxy instance can be a sub-proxy for some other proxy. In that case,
   // this method returns true.
-  bool GetIsSubProxy() { return (this->ParentProxyCount > 0); }
+  bool GetIsSubProxy();
+
+  // Description:
+  // If this instance is a sub-proxy, this method will return the proxy of which
+  // this instance is an immediate sub-proxy.
+  vtkSMProxy* GetParentProxy();
+
+  // Description:
+  // Call GetParentProxy() recursively till a proxy that is not a subproxy of
+  // any other proxy is found. May return this instance, if this is not a
+  // subproxy of any other proxy.
+  vtkSMProxy* GetTrueParentProxy();
 
   // Description:
   // Allow to switch off any push of state change to the server for that
@@ -655,10 +699,15 @@ protected:
   bool NeedsUpdate;
   
   // Description:
-  // Creates a new proxy and initializes it by calling ReadXMLAttributes()
+  // Creates a new property and initializes it by calling ReadXMLAttributes()
   // with the right XML element.
   vtkSMProperty* NewProperty(const char* name);
   vtkSMProperty* NewProperty(const char* name, vtkPVXMLElement* propElement);
+
+  // Description:
+  // Links properties such that when inputProperty's checked or unchecked values
+  // are changed, the outputProperty's corresponding values are also changed.
+  void LinkProperty(vtkSMProperty* inputProperty, vtkSMProperty* outputProperty);
 
   // Description:
   // Parses the XML to create a new property group. This can handle
@@ -742,6 +791,7 @@ protected:
   // Flag used to break consumer loops.
   int InMarkModified;
 
+  vtkWeakPointer<vtkSMProxy> ParentProxy;
 protected:
   vtkSMProxyInternals* Internals;
   vtkSMProxyObserver* SubProxyObserver;
@@ -752,46 +802,44 @@ private:
   vtkSMProperty* SetupExposedProperty(vtkPVXMLElement* propertyElement,
                                       const char* subproxy_name);
 
-  // Used to keep track of proxies to which this proxy is a subproxy.
-  int ParentProxyCount;
 //ETX
 };
 
 //BTX
 
-// This defines a manipulator for the vtkClientServerStream that can be used on
-// the to indicate to the interpreter that the placeholder is to be replaced by
-// the vtkSIProxy instance for the given vtkSMProxy instance.
-// e.g.
-// <code>
-// vtkClientServerStream stream;
-// stream << vtkClientServerStream::Invoke
-//        << SIPROXY(proxyA)
-//        << "MethodName"
-//        << vtkClientServerStream::End;
-// </code>
-// Will result in calling the vtkSIProxy::MethodName() when the stream in
-// interpreted.
+/// This defines a stream manipulator for the vtkClientServerStream that can be used
+/// to indicate to the interpreter that the placeholder is to be replaced by
+/// the vtkSIProxy instance for the given vtkSMProxy instance.
+/// e.g.
+/// \code
+/// vtkClientServerStream stream;
+/// stream << vtkClientServerStream::Invoke
+///        << SIPROXY(proxyA)
+///        << "MethodName"
+///        << vtkClientServerStream::End;
+/// \endcode
+/// Will result in calling the vtkSIProxy::MethodName() when the stream in
+/// interpreted.
 class VTKPVSERVERMANAGERCORE_EXPORT SIPROXY : public SIOBJECT
 {
 public:
   SIPROXY(vtkSMProxy* proxy) : SIOBJECT (proxy) { }
 };
 
-// This defines a manipulator for the vtkClientServerStream that can be used on
-// the to indicate to the interpreter that the placeholder is to be replaced by
-// the vtkObject instance for the given vtkSMProxy instance.
-// e.g.
-// <code>
-// vtkClientServerStream stream;
-// stream << vtkClientServerStream::Invoke
-//        << VTKOBJECT(proxyA)
-//        << "MethodName"
-//        << vtkClientServerStream::End;
-// </code>
-// Will result in calling the vtkClassName::MethodName() when the stream in
-// interpreted where vtkClassName is the type for the VTKObject which the proxyA
-// represents.
+/// This defines a stream manipulator for the vtkClientServerStream that can be used
+/// to indicate to the interpreter that the placeholder is to be replaced by
+/// the vtkObject instance for the given vtkSMProxy instance.
+/// e.g.
+/// \code
+/// vtkClientServerStream stream;
+/// stream << vtkClientServerStream::Invoke
+///        << VTKOBJECT(proxyA)
+///        << "MethodName"
+///        << vtkClientServerStream::End;
+/// \endcode
+/// Will result in calling the vtkClassName::MethodName() when the stream in
+/// interpreted where vtkClassName is the type for the VTKObject which the proxyA
+/// represents.
 class VTKPVSERVERMANAGERCORE_EXPORT VTKOBJECT
 {
   vtkSMProxy* Reference;

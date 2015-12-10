@@ -62,7 +62,7 @@
 // Filters
 #include "vtkOBBTree.h"
 #include "vtkAppendPolyData.h"
-#include "vtkMarchingCubesCases.h"
+#include "vtkMarchingCubesTriangleCases.h"
 #include "vtkCleanPolyData.h"
 #include "vtkClipPolyData.h"
 #include "vtkContourFilter.h"
@@ -70,13 +70,13 @@
 #include "vtkTriangleFilter.h"
 #include "vtkAppendPolyData.h"
 // STL
-#include "vtksys/ios/fstream"
-using vtksys_ios::ofstream;
-#include "vtksys/ios/sstream"
-using vtksys_ios::ostringstream;
-#include "vector"
+#include <fstream>
+using std::ofstream;
+#include <sstream>
+using std::ostringstream;
+#include <vector>
 using std::vector;
-#include "string"
+#include <string>
 using std::string;
 #include "algorithm"
 // ansi c
@@ -222,6 +222,28 @@ vtkUniformGrid* GetReferenceGrid(vtkNonOverlappingAMR *amrds)
 
   // This process has no grids
   return NULL;
+}
+
+// Construct a list of the selected array names
+int GetEnabledArrayNames(
+        vtkDataArraySelection *das,
+        vector<string> &names)
+{
+  int nEnabled=das->GetNumberOfArraysEnabled();
+  names.resize(nEnabled);
+  int nArraysTotal=das->GetNumberOfArrays();
+  for (int i=0,j=0; i<nArraysTotal; ++i)
+    {
+    // skip disabled arrays
+    if ( !das->GetArraySetting(i) )
+      {
+      continue;
+      }
+    // save names of enabled arrays, inc name count
+    names[j]=das->GetArrayName(i);
+    ++j;
+    }
+  return nEnabled;
 }
 };
 //============================================================================
@@ -2720,16 +2742,16 @@ int vtkMaterialInterfaceFilter::ComputeOriginAndRootSpacingOld(
         dMsg[12+ii] = globalBounds[ii];
         dMsg[15+ii] = globalBounds[ii+3];
         }
-      controller->Send(iMsg, 9, 0, 8973432);
-      controller->Send(dMsg, 15, 0, 8973432);
+      controller->Send(iMsg, 9, 0, 973432);
+      controller->Send(dMsg, 18, 0, 973432);
       }
     else
       {
       // Collect results from all processes.
       for (int id = 1; id < numProcs; ++id)
         {
-        controller->Receive(iMsg, 9, id, 8973432);
-        controller->Receive(dMsg, 18, id, 8973432);
+        controller->Receive(iMsg, 9, id, 973432);
+        controller->Receive(dMsg, 18, id, 973432);
         numCells = iMsg[2];
         cellDims[0] = iMsg[6];
         cellDims[1] = iMsg[7];
@@ -2831,12 +2853,12 @@ int vtkMaterialInterfaceFilter::ComputeOriginAndRootSpacingOld(
       }
     for (int ii = 1; ii < numProcs; ++ii)
       {
-      controller->Send(dMsg, 9, ii, 8973439);
+      controller->Send(dMsg, 9, ii, 973439);
       }
     }
   else
     {
-    controller->Receive(dMsg, 9, 0, 8973439);
+    controller->Receive(dMsg, 9, 0, 973439);
     for (int ii = 0; ii < 3; ++ii)
       {
       this->GlobalOrigin[ii] = dMsg[ii];
@@ -9930,7 +9952,7 @@ int vtkMaterialInterfaceFilter::WriteStatisticsOutputToTextFile()
     vtkErrorMacro("Could not open " << fileName.str() << ".");
     return 0;
     }
-  fout.setf(vtksys_ios::ios::scientific, vtksys_ios::ios::floatfield);
+  fout.setf(std::ios::scientific, std::ios::floatfield);
   fout.precision(6);
 
   // Write the csv file in block order. The format will be:

@@ -1,7 +1,7 @@
 /*=========================================================================
 
    Program: ParaView
-   Module:    pqHelpWindow.h
+   Module:  pqHelpWindow.h
 
    Copyright (c) 2005,2006 Sandia Corporation, Kitware Inc.
    All rights reserved.
@@ -29,17 +29,16 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqHelpWindow_h 
-#define __pqHelpWindow_h
+#ifndef pqHelpWindow_h
+#define pqHelpWindow_h
 
 #include <QMainWindow>
-#include <QPointer>
 #include "pqWidgetsModule.h"
+#include <QScopedPointer>
 
 class QHelpEngine;
-class QHelpEngineCore;
 class QUrl;
-class QWebView;
+class pqBrowser;
 
 /// pqHelpWindow provides a assistant-like window  for showing help provided by
 /// a QHelpEngine.
@@ -71,13 +70,10 @@ protected slots:
 
 protected:
   QHelpEngine* HelpEngine;
-  QWebView* Browser;
 
 private:
-  Q_DISABLE_COPY(pqHelpWindow)
-
-  class pqNetworkAccessManager;
-  friend class pqNetworkAccessManager;
+  Q_DISABLE_COPY(pqHelpWindow);
+  const QScopedPointer<pqBrowser> Browser;
 };
 
 #endif

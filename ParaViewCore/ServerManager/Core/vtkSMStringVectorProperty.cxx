@@ -23,7 +23,7 @@
 #include "vtkStringList.h"
 #include "vtkSMStateLocator.h"
 
-#include <vtksys/ios/sstream>
+#include <sstream>
 
 vtkStandardNewMacro(vtkSMStringVectorProperty);
 
@@ -262,6 +262,12 @@ unsigned int vtkSMStringVectorProperty::GetElementIndex(
     }
   exists = 0;
   return 0;
+}
+
+//---------------------------------------------------------------------------
+void vtkSMStringVectorProperty::ResetToXMLDefaults()
+{
+  this->Internals->ResetToXMLDefaults();
 }
 
 //---------------------------------------------------------------------------

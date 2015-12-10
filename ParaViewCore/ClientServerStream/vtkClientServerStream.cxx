@@ -26,7 +26,7 @@
 
 #include <string>
 #include <vector>
-#include <vtksys/ios/sstream>
+#include <sstream>
 
 //----------------------------------------------------------------------------
 // Portability of typename keyword.
@@ -1123,7 +1123,14 @@ int vtkClientServerStream::GetArgument(int message, int argument,
   return 0;
 }
 
+//----------------------------------------------------------------------------
 int vtkClientServerStream::GetArgument(int message, int argument, vtkStdString* value) const
+{
+  return this->GetArgument(message, argument, static_cast<std::string*>(value));
+}
+
+//----------------------------------------------------------------------------
+int vtkClientServerStream::GetArgument(int message, int argument, std::string *value) const
 {
   char* tmp = NULL;
   if (this->GetArgument(message, argument, &tmp) && tmp)
@@ -2327,7 +2334,7 @@ void vtkClientServerStream::PrintArgumentInternal(ostream& os, int message,
 //----------------------------------------------------------------------------
 const char* vtkClientServerStream::StreamToString() const
 {
-  vtksys_ios::ostringstream ostr;
+  std::ostringstream ostr;
   this->StreamToString(ostr);
   this->Internal->String = ostr.str();
   return this->Internal->String.c_str();

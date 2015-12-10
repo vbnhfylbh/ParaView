@@ -25,6 +25,12 @@
 #include "vtkSMProxy.h"
 #include "vtkPVServerManagerRenderingModule.h" // needed for export macro
 
+namespace Json
+{
+  class Value;
+}
+
+class vtkPVArrayInformation;
 class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMTransferFunctionProxy : public vtkSMProxy
 {
 public:
@@ -51,6 +57,18 @@ public:
     {
     return vtkSMTransferFunctionProxy::RescaleTransferFunction(
       proxy, range[0], range[1], extend);
+    }
+
+  // Description:
+  // Locates all representations that are currently using this transfer function
+  // and then rescales the transfer function scalar range to exactly match the
+  // combined valid scalar ranges obtained from them all.
+  virtual bool RescaleTransferFunctionToDataRange(bool extend=false);
+  static bool RescaleTransferFunctionToDataRange(vtkSMProxy* proxy, bool extend=false)
+    {
+    vtkSMTransferFunctionProxy* self =
+      vtkSMTransferFunctionProxy::SafeDownCast(proxy);
+    return self? self->RescaleTransferFunctionToDataRange(extend) : false;
     }
 
   // Description:
@@ -89,6 +107,35 @@ public:
     {
     return vtkSMTransferFunctionProxy::MapControlPointsToLogSpace(proxy, true);
     }
+
+  // Description:
+  // Apply a preset. If \c rescale is true (default), then apply loading the
+  // preset, the transfer function range will be preserved (if originally
+  // valid). If not valid, or \c rescale is false, then the range provided by
+  // the preset is used. When using indexed color maps, the \c rescale implies
+  // loading of annotations since the "range" for indexed color maps is
+  // described by the annotations.
+  virtual bool ApplyPreset(const Json::Value& value, bool rescale=true);
+  static bool ApplyPreset(vtkSMProxy* proxy, const Json::Value& value, bool rescale=true)
+    {
+    vtkSMTransferFunctionProxy* self =
+      vtkSMTransferFunctionProxy::SafeDownCast(proxy);
+    return self? self->ApplyPreset(value, rescale) : false;
+    }
+
+  virtual bool ApplyPreset(const char* presetname, bool rescale=true);
+  static bool ApplyPreset(vtkSMProxy* proxy, const char* presetname, bool rescale=true)
+    {
+    vtkSMTransferFunctionProxy* self =
+      vtkSMTransferFunctionProxy::SafeDownCast(proxy);
+    return self? self->ApplyPreset(presetname, rescale) : false;
+    }
+
+  // Description:
+  // Saves the transfer function state as a preset. This is simply a subset of the
+  // state of the transfer function proxy.
+  virtual Json::Value GetStateAsPreset();
+  static Json::Value GetStateAsPreset(vtkSMProxy* proxy);
 
   // Description:
   // Load a ColorMap XML. This will update a transfer function using the
@@ -133,6 +180,22 @@ public:
     }
 
   // Description:
+  // Return true if the representation corresponding to the transfer function
+  // for the view is showing a Scalar-Bar (Color Legend).  Otherwise return
+  // false.
+  virtual bool IsScalarBarVisible(vtkSMProxy* view);
+
+  // Description:
+  // Safely call IsScalarBarVisible(..) after casting the proxy to the
+  // appropriate type.
+  static bool IsScalarBarVisible(vtkSMProxy* proxy, vtkSMProxy* view)
+    {
+    vtkSMTransferFunctionProxy* self =
+      vtkSMTransferFunctionProxy::SafeDownCast(proxy);
+    return self? self->IsScalarBarVisible(view) : false;
+    }
+
+  // Description:
   // Find and return the Scalar-Bar (Color Legend) representation corresponding
   // to the transfer function for the view, if any. This returns the proxy if
   // one exists, it won't create a new one.
@@ -147,6 +210,87 @@ public:
     vtkSMTransferFunctionProxy* self =
       vtkSMTransferFunctionProxy::SafeDownCast(proxy);
     return self? self->FindScalarBarRepresentation(view) : NULL;
+    }
+
+  // Description:
+  // Update component titles for all scalar bars connected to this transfer
+  // function proxy. The arrayInfo is used to determine component names, if
+  // possible.
+  virtual bool UpdateScalarBarsComponentTitle(vtkPVArrayInformation* arrayInfo);
+  static bool UpdateScalarBarsComponentTitle(vtkSMProxy* proxy,
+    vtkPVArrayInformation* arrayInfo)
+    {
+    vtkSMTransferFunctionProxy* self =
+      vtkSMTransferFunctionProxy::SafeDownCast(proxy);
+    return self? self->UpdateScalarBarsComponentTitle(arrayInfo) : false;
+    }
+
+  // Description:
+  // Helper method used by RescaleTransferFunctionToDataRange() to compute range
+  // from all visible representations using the transfer function.
+  // Returns true if a valid range was determined.
+  virtual bool ComputeDataRange(double range[2]);
+  static bool ComputeDataRange(vtkSMProxy* proxy, double range[2])
+    {
+    vtkSMTransferFunctionProxy* self =
+      vtkSMTransferFunctionProxy::SafeDownCast(proxy);
+    return self? self->ComputeDataRange(range) : false;
+    }
+
+  // Description:
+
+  // Helper method to compute the active annotated values in visible
+  // representations that use the transfer function.
+  virtual bool ComputeAvailableAnnotations(bool extend=false);
+  static bool ComputeAvailableAnnotations(vtkSMProxy* proxy, bool extend=false)
+  {
+    vtkSMTransferFunctionProxy* self =
+      vtkSMTransferFunctionProxy::SafeDownCast(proxy);
+    return self ? self->ComputeAvailableAnnotations(extend) : false;
+  }
+
+  // Description:
+  // Helper method to reset a transfer function proxy to its XML defaults. By
+  // passing in preserve_range, you can make this method preserve the current
+  // transfer function range.
+  virtual void ResetPropertiesToXMLDefaults(bool preserve_range);
+  static void ResetPropertiesToXMLDefaults(vtkSMProxy* proxy, bool preserve_range=false)
+    {
+    vtkSMTransferFunctionProxy* self =
+      vtkSMTransferFunctionProxy::SafeDownCast(proxy);
+    if (self)
+      {
+      self->ResetPropertiesToXMLDefaults(preserve_range);
+      }
+    }
+  using Superclass::ResetPropertiesToXMLDefaults;
+
+  // Description:
+  // Method to convert legacy color map preset XML to JSON. Use this to convert
+  // a single ColorMap xml. To convert a collection of color maps, use
+  // ConvertMultipleLegacyColorMapXMLToJSON().
+  static Json::Value ConvertLegacyColorMapXMLToJSON(vtkPVXMLElement* xml);
+  static Json::Value ConvertLegacyColorMapXMLToJSON(const char* xmlcontents);
+
+  // Description:
+  // Method to convert legacy "ColorMaps" preset XML to JSON. This converts all
+  // colormaps in the XML.
+  static Json::Value ConvertMultipleLegacyColorMapXMLToJSON(vtkPVXMLElement* xml);
+  static Json::Value ConvertMultipleLegacyColorMapXMLToJSON(const char* xmlcontents);
+
+  // Description:
+  // Converts legacy xml file to json.
+  static bool ConvertLegacyColorMapsToJSON(const char* inxmlfile, const char* outjsonfile);
+
+  // Description:
+  // Returns current transfer function data range. Returns false is a valid
+  // range could not be determined.
+  virtual bool GetRange(double range[2]);
+  static bool GetRange(vtkSMProxy* proxy, double range[2])
+    {
+    vtkSMTransferFunctionProxy* self =
+      vtkSMTransferFunctionProxy::SafeDownCast(proxy);
+    return self? self->GetRange(range) : false;
     }
 
 //BTX

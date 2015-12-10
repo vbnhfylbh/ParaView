@@ -41,20 +41,22 @@
 
 #include "vtkSMPropertyHelper.h"
 
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkSMDoubleVectorProperty.h"
+#include "vtkSMEnumerationDomain.h"
 #include "vtkSMIdTypeVectorProperty.h"
 #include "vtkSMInputProperty.h"
 #include "vtkSMIntVectorProperty.h"
 #include "vtkSMProxy.h"
 #include "vtkSMStringVectorProperty.h"
 #include "vtkStringList.h"
-#include "vtkSMEnumerationDomain.h"
 
-#include <vtksys/ios/sstream>
+#include <sstream>
 
-#include <assert.h>
 #include <algorithm>
+#include <cassert>
+#include <cstdlib>
 
 #define vtkSMPropertyHelperWarningMacro(blah)\
   if (this->Quiet == false) \
@@ -86,6 +88,11 @@ inline int vtkSMPropertyHelper::GetProperty(unsigned int index) const
     case IDTYPE:
       return this->UseUnchecked ? this->IdTypeVectorProperty->GetUncheckedElement(index) :
                                   this->IdTypeVectorProperty->GetElement(index);
+    case STRING:
+      return this->UseUnchecked?
+        std::atoi(this->StringVectorProperty->GetUncheckedElement(index)) :
+        std::atoi(this->StringVectorProperty->GetElement(index));
+
     default:
       return 0;
     }
@@ -106,6 +113,12 @@ inline double vtkSMPropertyHelper::GetProperty(unsigned int index) const
     case IDTYPE:
       return this->UseUnchecked ? this->IdTypeVectorProperty->GetUncheckedElement(index) :
                                   this->IdTypeVectorProperty->GetElement(index);
+
+    case STRING:
+      return this->UseUnchecked?
+        std::atof(this->StringVectorProperty->GetUncheckedElement(index)) :
+        std::atof(this->StringVectorProperty->GetElement(index));
+
     default:
       return 0;
     }
@@ -271,6 +284,20 @@ inline void vtkSMPropertyHelper::SetProperty(unsigned int index, int value)
       else
         {
         this->IdTypeVectorProperty->SetElement(index, value);
+        }
+      break;
+    case STRING:
+        {
+        std::ostringstream str;
+        str << value;
+        if (this->UseUnchecked)
+          {
+          this->StringVectorProperty->SetUncheckedElement(index, str.str().c_str());
+          }
+        else
+          {
+          this->StringVectorProperty->SetElement(index, str.str().c_str());
+          }
         }
       break;
     default:
@@ -854,7 +881,7 @@ unsigned int vtkSMPropertyHelper::GetOutputPort(unsigned int index/*=0*/)
 //----------------------------------------------------------------------------
 void vtkSMPropertyHelper::SetStatus(const char* key, int value)
 {
-  vtksys_ios::ostringstream str;
+  std::ostringstream str;
   str << value;
   this->SetStatus(key, str.str().c_str());
 }
@@ -862,10 +889,10 @@ void vtkSMPropertyHelper::SetStatus(const char* key, int value)
 //----------------------------------------------------------------------------
 int vtkSMPropertyHelper::GetStatus(const char* key, int default_value/*=0*/)
 {
-  vtksys_ios::ostringstream str;
+  std::ostringstream str;
   str << default_value;
   const char* value = vtkSMPropertyHelper::GetStatus(key, str.str().c_str());
-  return atoi(value);
+  return std::atoi(value);
 }
 
 //----------------------------------------------------------------------------
@@ -911,7 +938,7 @@ void vtkSMPropertyHelper::SetStatus(const char* key, double *values,
       {
       for (int kk=0; kk < num_values; kk++)
         {
-        vtksys_ios::ostringstream str;
+        std::ostringstream str;
         str << values[kk];
         list->SetString(cc+kk+1, str.str().c_str());
         }
@@ -924,7 +951,7 @@ void vtkSMPropertyHelper::SetStatus(const char* key, double *values,
     list->AddString(key);
     for (int kk=0; kk < num_values; kk++)
       {
-      vtksys_ios::ostringstream str;
+      std::ostringstream str;
       str << values[kk];
       list->AddString(str.str().c_str());
       }
@@ -1109,3 +1136,84 @@ const char* vtkSMPropertyHelper::GetStatus(const char* key, const char* default_
   return default_value;
 }
 
+//----------------------------------------------------------------------------
+void vtkSMPropertyHelper::SetInputArrayToProcess(int fieldAssociation, const char* arrayName)
+{
+  if (this->Type != vtkSMPropertyHelper::STRING)
+    {
+    vtkSMPropertyHelperWarningMacro("Property for 'InputArrayToProcess' can only be vtkSMStringVectorProperty.");
+    return;
+    }
+
+  vtkSMStringVectorProperty* svp =
+    vtkSMStringVectorProperty::SafeDownCast(this->Property);
+
+  if (svp->GetNumberOfElements() != 2 &&
+    svp->GetNumberOfElements() != 5)
+    {
+    vtkSMPropertyHelperWarningMacro("We only support 2 or 5 element properties.");
+    return;
+    }
+
+  std::ostringstream str;
+  str << fieldAssociation;
+
+  vtkNew<vtkStringList> vals;
+  svp->GetElements(vals.GetPointer());
+  if (svp->GetNumberOfElements() == 2)
+    {
+    vals->SetString(0, str.str().c_str());
+    vals->SetString(1, (arrayName? arrayName : ""));
+    }
+  else
+    {
+    vals->SetString(3, str.str().c_str());
+    vals->SetString(4, (arrayName? arrayName : ""));
+    }
+  svp->SetElements(vals.GetPointer());
+}
+
+//----------------------------------------------------------------------------
+int vtkSMPropertyHelper::GetInputArrayAssociation()
+{
+  if (this->Type != vtkSMPropertyHelper::STRING)
+    {
+    vtkSMPropertyHelperWarningMacro("Property for 'InputArrayToProcess' can only be vtkSMStringVectorProperty.");
+    return -1;
+    }
+
+  vtkSMStringVectorProperty* svp =
+    vtkSMStringVectorProperty::SafeDownCast(this->Property);
+
+  if (svp->GetNumberOfElements() != 2 &&
+    svp->GetNumberOfElements() != 5)
+    {
+    vtkSMPropertyHelperWarningMacro("We only support 2 or 5 element properties.");
+    return -1;
+    }
+
+  return svp->GetNumberOfElements() == 2?
+    std::atoi(svp->GetElement(0)) : std::atoi(svp->GetElement(3));
+}
+
+//----------------------------------------------------------------------------
+const char* vtkSMPropertyHelper::GetInputArrayNameToProcess()
+{
+  if (this->Type != vtkSMPropertyHelper::STRING)
+    {
+    vtkSMPropertyHelperWarningMacro("Property for 'InputArrayToProcess' can only be vtkSMStringVectorProperty.");
+    return NULL;
+    }
+
+  vtkSMStringVectorProperty* svp =
+    vtkSMStringVectorProperty::SafeDownCast(this->Property);
+
+  if (svp->GetNumberOfElements() != 2 &&
+    svp->GetNumberOfElements() != 5)
+    {
+    vtkSMPropertyHelperWarningMacro("We only support 2 or 5 element properties.");
+    return NULL;
+    }
+
+  return svp->GetNumberOfElements() == 2? svp->GetElement(1) : svp->GetElement(4);
+}

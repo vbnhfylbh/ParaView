@@ -25,44 +25,49 @@ set(SM_XMLS_Graphics
 set(PLUGIN_NAME PointSprite_Plugin)
 
 IF(PARAVIEW_BUILD_QT_GUI)
-    include_directories(${QT_INCLUDES})
 
-    set(UI_FORMS
-      Resources/pqPointSpriteControls.ui
-      Resources/pqPointSpriteDisplayPanelDecorator.ui
-      Resources/pqTransferFunctionDialog.ui
-      Resources/pqTransferFunctionEditor.ui
+  set(UI_FORMS
+    Resources/pqPointSpriteControls.ui
+    Resources/pqTransferFunctionDialog.ui
+    Resources/pqTransferFunctionEditor.ui
+  )
+
+  set(PLUGIN_MOC_SRCS
+      pqDisplayArrayWidget.h
+      pqDoubleEdit.h
+      pqPointSpriteControls.h
+      pqPointSpriteTextureComboBox.h
+      pqTransferFunctionDialog.h
+      pqTransferFunctionEditor.h
+      )
+  if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    include(ParaViewQt5)
+    include_directories(${Qt5Core_INCLUDE_DIRS})
+    qt5_wrap_ui(UI_SRCS
+      ${UI_FORMS}
     )
 
+    qt5_wrap_cpp(MOC_SRCS
+      ${PLUGIN_MOC_SRCS})
+  else ()
+    include(${QT_USE_FILE})
+    include_directories(${QT_INCLUDES})
     qt4_wrap_ui(UI_SRCS
       ${UI_FORMS}
     )
 
     qt4_wrap_cpp(MOC_SRCS
-      pqDoubleEdit.h
-      pqPointSpriteControls.h
-      pqPointSpriteDisplayPanelDecorator.h
-      pqPointSpriteTextureComboBox.h
-      pqTransferFunctionDialog.h
-      pqTransferFunctionEditor.h
-      )
+      ${PLUGIN_MOC_SRCS})
+  endif ()
 
     set(Plugin_SRCS
+      pqDisplayArrayWidget.cxx
       pqDoubleEdit.cxx
       pqPointSpriteControls.cxx
-      pqPointSpriteDisplayPanelDecorator.cxx
       pqPointSpriteTextureComboBox.cxx
       pqTransferFunctionDialog.cxx
       pqTransferFunctionEditor.cxx
       )
-
-    # for legacy panels (in Object Inspector).
-    add_paraview_display_panel_decorator(
-      IFACES
-      IFACE_SRCS
-      CLASS_NAME pqPointSpriteDisplayPanelDecorator
-      PANEL_TYPES pqDisplayProxyEditor)
-
 
     # for the new Properties Panel
     add_paraview_property_group_widget(
@@ -88,7 +93,7 @@ IF(PARAVIEW_BUILD_QT_GUI)
         ${iface_sources_2})
     target_link_libraries(${PLUGIN_NAME} LINK_PUBLIC vtkQvis)
 
-ELSE(PARAVIEW_BUILD_QT_GUI)
+ELSE()
     add_paraview_plugin(${PLUGIN_NAME} "1.0"
         SERVER_MANAGER_SOURCES
             ${SM_SOURCES}
@@ -96,5 +101,5 @@ ELSE(PARAVIEW_BUILD_QT_GUI)
             ${SM_XMLS_Rendering}
             ${SM_XMLS_Graphics}
     )
-ENDIF(PARAVIEW_BUILD_QT_GUI)
+ENDIF()
 target_link_libraries(${PLUGIN_NAME} LINK_PUBLIC vtkPointSpriteGraphics vtkPointSpriteRendering)

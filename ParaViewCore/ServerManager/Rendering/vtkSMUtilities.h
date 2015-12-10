@@ -68,10 +68,17 @@ public:
                                 double radius, int resolution);
 
   // Description:
-  // Convenience method used to merge a smaller image (\c src) into a 
+  // Convenience method used to merge a smaller image (\c src) into a
   // larger one (\c dest). The location of the smaller image in the larger image
   // are determined by their extents.
-  static void Merge(vtkImageData* dest, vtkImageData* src);
+  static void Merge(vtkImageData* dest, vtkImageData* src,
+    int borderWidth=0, const unsigned char* borderColorRGB=NULL);
+
+  // Description:
+  // Fill the specified extents in the image with the given color.
+  // If the image is a 4 component image, then this method fills the 4th
+  // component with 0xff.
+  static void FillImage(vtkImageData* image, const int extent[6], const unsigned char rgb[3]);
 
 //BTX
 protected:

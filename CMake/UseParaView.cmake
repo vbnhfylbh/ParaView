@@ -31,10 +31,14 @@ endforeach()
 set_property(DIRECTORY PROPERTY COMPILE_DEFINITIONS ${new_compile_definition})
 
 if (PARAVIEW_ENABLE_QT_SUPPORT)
-  set(QT_QMAKE_EXECUTABLE ${PARAVIEW_QT_QMAKE_EXECUTABLE})
-  find_package(Qt4)
-  if (QT4_FOUND)
-    include("${QT_USE_FILE}")
+  if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    include(ParaViewQt5)
+  else ()
+    set(QT_QMAKE_EXECUTABLE ${PARAVIEW_QT_QMAKE_EXECUTABLE})
+    find_package(Qt4)
+    if (QT4_FOUND)
+      include("${QT_USE_FILE}")
+    endif()
   endif()
 endif()
 
@@ -42,5 +46,11 @@ endif()
 include (ParaViewMacros)
 include (ParaViewPlugins)
 include (ParaViewBranding)
+
+# Workaround for MPICH bug that produces error messages:
+# "SEEK_SET is #defined but must not be for the C++ binding of MPI.
+if (PARAVIEW_USE_MPI)
+  add_definitions("-DMPICH_IGNORE_CXX_SEEK")
+endif()
 
 # FIXME: there was additional stuff about coprocessing and visit bridge here.

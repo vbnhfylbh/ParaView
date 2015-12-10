@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QSortFilterProxyModel>
 
 // ParaView includes.
-#include "pqActiveView.h"
+#include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
 #include "pqDataInformationModel.h"
 #include "pqNonEditableStyledItemDelegate.h"
@@ -107,7 +107,11 @@ pqDataInformationWidget::pqDataInformationWidget(QWidget* _parent /*=0*/)
 
   this->View->verticalHeader()->hide();
   this->View->installEventFilter(this);
+#if QT_VERSION >= 0x050000
+  this->View->horizontalHeader()->setSectionsMovable(true);
+#else
   this->View->horizontalHeader()->setMovable(true);
+#endif
   this->View->horizontalHeader()->setHighlightSections(false);
   this->View->horizontalHeader()->setStretchLastSection(true);
   //this->View->horizontalHeader()->setSortIndicatorShown(true);
@@ -127,9 +131,9 @@ pqDataInformationWidget::pqDataInformationWidget(QWidget* _parent /*=0*/)
     this->Model, SLOT(addSource(pqPipelineSource*)));
   QObject::connect(smModel, SIGNAL(sourceRemoved(pqPipelineSource*)),
     this->Model, SLOT(removeSource(pqPipelineSource*)));
-  QObject::connect(&pqActiveView::instance(), SIGNAL(changed(pqView*)),
+  QObject::connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
     this->Model, SLOT(setActiveView(pqView*)));
-  this->Model->setActiveView(pqActiveView::instance().current());
+  this->Model->setActiveView(pqActiveObjects::instance().activeView());
 
   // Clicking on the header should sort the column.
   QObject::connect(this->View->horizontalHeader(), SIGNAL(sectionClicked(int)),

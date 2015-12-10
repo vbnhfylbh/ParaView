@@ -29,11 +29,6 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
-
-/// \file pqSettings.h
-///
-/// \date 1/19/2006
-
 #ifndef _pqSettings_h
 #define _pqSettings_h
 
@@ -44,17 +39,19 @@ class QDialog;
 class QMainWindow;
 class QDockWidget;
 
-class PQCORE_EXPORT pqSettings :
-  public QSettings
+/// pqSettings extends QSettings to add support for following:
+/// \li saving/restoring window/dialog geometry.
+class PQCORE_EXPORT pqSettings : public QSettings
 {
   Q_OBJECT
-
+  typedef QSettings Superclass;
 public:
-  pqSettings(const QString& organization, const QString& application, QObject* p);
+  pqSettings(const QString& organization, const QString& application, QObject* p=NULL);
+  pqSettings(const QString& fileName, Format format, QObject* parent=NULL);
 
   /// use this constructor to use a file. If temporary is true, then the file
   /// will be deleted when the pqSettings object is destroyed.
-  pqSettings(const QString& filename, bool temporary, QObject* parent);
+  pqSettings(const QString& filename, bool temporary, QObject* parent=NULL);
 
   void saveState(const QMainWindow& window, const QString& key);
   void saveState(const QDialog& dialog, const QString& key);
@@ -62,14 +59,16 @@ public:
   void restoreState(const QString& key, QMainWindow& window);
   void restoreState(const QString& key, QDialog& dialog);
 
-  void sanityCheckDock(QDockWidget* dock_widget);
   /// Calling this method will cause the modified signal to be emited.
   void alertSettingsModified();
 
+private:
+  /// ensure that when window state is being loaded, if dock windows are
+  /// beyond the viewport, we correct them.
+  void sanityCheckDock(QDockWidget* dock_widget);
 signals:
   void modified();
 
 };
 
 #endif
-

@@ -26,33 +26,39 @@
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkPVView.h"
 #include "vtkBoundingBox.h" // needed for iVar
+#include "vtkNew.h" // needed for iVar
+#include "vtkSmartPointer.h" // needed for iVar
+
 
 class vtkAlgorithmOutput;
 class vtkCamera;
-class vtkCameraManipulator;
+class vtkCuller;
 class vtkExtentTranslator;
+class vtkPVGridAxes3DActor;
 class vtkInformationDoubleKey;
 class vtkInformationDoubleVectorKey;
 class vtkInformationIntegerKey;
+class vtkInteractorStyleDrawPolygon;
 class vtkInteractorStyleRubberBand3D;
 class vtkInteractorStyleRubberBandZoom;
-class vtkInteractorStyleDrawPolygon;
 class vtkLight;
 class vtkLightKit;
 class vtkMatrix4x4;
-class vtkProp;
 class vtkPVAxesWidget;
 class vtkPVCenterAxesActor;
 class vtkPVDataDeliveryManager;
 class vtkPVDataRepresentation;
-class vtkPVGenericRenderWindowInteractor;
 class vtkPVHardwareSelector;
 class vtkPVInteractorStyle;
 class vtkPVSynchronizedRenderer;
-class vtkRenderer;
+class vtkProp;
 class vtkRenderViewBase;
 class vtkRenderWindow;
+class vtkRenderWindowInteractor;
+class vtkRenderer;
+class vtkTextRepresentation;
 class vtkTexture;
+class vtkTimerLog;
 
 class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVRenderView : public vtkPVView
 {
@@ -89,12 +95,32 @@ public:
   // @CallOnAllProcessess
   virtual void Initialize(unsigned int id);
 
+
+  // Description:
+  // Overridden to call InvalidateCachedSelection() whenever the render window
+  // parameters change.
+  virtual void SetSize(int, int);
+  virtual void SetPosition(int, int);
+
   // Description:
   // Gets the non-composited renderer for this view. This is typically used for
   // labels, 2D annotations etc.
   // @CallOnAllProcessess
   vtkGetObjectMacro(NonCompositedRenderer, vtkRenderer);
-  vtkRenderer* GetRenderer();
+
+  // Description:
+  // Defines various renderer types.
+  enum
+    {
+    DEFAULT_RENDERER = 0,
+    NON_COMPOSITED_RENDERER = 1,
+    };
+
+  // Description:
+  // Returns the renderer given an int identifying its type.
+  // \li DEFAULT_RENDERER: returns the 3D renderer.
+  // \li NON_COMPOSITED_RENDERER: returns the NonCompositedRenderer.
+  virtual vtkRenderer* GetRenderer(int rendererType=DEFAULT_RENDERER);
 
   // Description:
   // Get/Set the active camera. The active camera is set on both the composited
@@ -108,7 +134,13 @@ public:
 
   // Description:
   // Returns the interactor. .
-  vtkGetObjectMacro(Interactor, vtkPVGenericRenderWindowInteractor);
+  vtkRenderWindowInteractor* GetInteractor();
+
+  // Description:
+  // Set the interactor. Client applications must set the interactor to enable
+  // interactivity. Note this method will also change the interactor styles set
+  // on the interactor.
+  virtual void SetupInteractor(vtkRenderWindowInteractor*);
 
   // Description:
   // Returns the interactor style.
@@ -278,9 +310,9 @@ public:
   // Description:
   // Set or get whether capture should be done as
   // StillRender or InteractiveRender when capturing screenshots.
-  vtkSetMacro(UseInteractiveRenderingForSceenshots, bool);
-  vtkBooleanMacro(UseInteractiveRenderingForSceenshots, bool);
-  vtkGetMacro(UseInteractiveRenderingForSceenshots, bool);
+  vtkSetMacro(UseInteractiveRenderingForScreenshots, bool);
+  vtkBooleanMacro(UseInteractiveRenderingForScreenshots, bool);
+  vtkGetMacro(UseInteractiveRenderingForScreenshots, bool);
 
   // Description:
   // Set or get whether offscreen rendering should be used during
@@ -323,8 +355,10 @@ public:
 
   // Description:
   // Convenience methods used by representations to pass represented data.
+  // If trueSize is non-zero, then that's the size used in making decisions
+  // about LOD/remote rendering etc and not the actual size of the dataset.
   static void SetPiece(vtkInformation* info,
-    vtkPVDataRepresentation* repr, vtkDataObject* data);
+    vtkPVDataRepresentation* repr, vtkDataObject* data, unsigned long trueSize=0);
   static vtkAlgorithmOutput* GetPieceProducer(vtkInformation* info,
     vtkPVDataRepresentation* repr);
   static void SetPieceLOD(vtkInformation* info,
@@ -370,6 +404,21 @@ public:
     const int whole_extents[6], const double origin[3], const double spacing[3]);
 
   // Description:
+  // Some representation only work when remote rendering or local rendering. Use
+  // this method in REQUEST_UPDATE() pass to tell the view if the representation
+  // requires a particular mode. Note, only use this to "require" a remote or
+  // local render. \c value == true indicates that the representation requires
+  // distributed rendering, \c value == false indicates the representation can
+  // only render property on the client or root node.
+  static void SetRequiresDistributedRendering(
+    vtkInformation* info, vtkPVDataRepresentation* repr, bool value, bool for_lod=false);
+  static void SetRequiresDistributedRenderingLOD(
+    vtkInformation* info, vtkPVDataRepresentation* repr, bool value)
+    {
+    vtkPVRenderView::SetRequiresDistributedRendering(info, repr, value, true);
+    }
+
+  // Description:
   // Representations that support hardware (render-buffer based) selection,
   // should register the prop that they use for selection rendering. They can do
   // that in the vtkPVDataRepresentation::AddToView() implementation.
@@ -384,6 +433,14 @@ public:
   bool GetLightSwitch();
   vtkBooleanMacro(LightSwitch, bool);
 
+  // Description:
+  // Enable/disable showing of annotation for developers.
+  void SetShowAnnotation(bool val);
+
+  // Description:
+  // Set the vtkPVGridAxes3DActor to use for the view.
+  virtual void SetGridAxes3DActor(vtkPVGridAxes3DActor*);
+
   //*****************************************************************
   // Forwarded to orientation axes widget.
   virtual void SetOrientationAxesInteractivity(bool);
@@ -396,9 +453,9 @@ public:
   virtual void SetCenterAxesVisibility(bool);
 
   //*****************************************************************
-  // Forward to vtkPVGenericRenderWindowInteractor.
-  void SetCenterOfRotation(double x, double y, double z);
-  void SetNonInteractiveRenderDelay(double seconds);
+  // Forward to vtkPVInteractorStyle instances.
+  virtual void SetCenterOfRotation(double x, double y, double z);
+  virtual void SetRotationFactor(double factor);
 
   //*****************************************************************
   // Forward to vtkLightKit.
@@ -440,17 +497,17 @@ public:
   // Forward to vtkRenderWindow.
   void SetStereoCapableWindow(int val);
   void SetStereoRender(int val);
-  void SetStereoType(int val);
+  vtkSetMacro(StereoType, int);
+  vtkSetMacro(ServerStereoType, int);
   void SetMultiSamples(int val);
   void SetAlphaBitPlanes(int val);
   void SetStencilCapable(int val);
 
   //*****************************************************************
   // Forwarded to vtkPVInteractorStyle if present on local processes.
-  virtual void Add2DManipulator(vtkCameraManipulator* val);
-  virtual void RemoveAll2DManipulators();
-  virtual void Add3DManipulator(vtkCameraManipulator* val);
-  virtual void RemoveAll3DManipulators();
+  virtual void SetCamera2DManipulators(const int manipulators[9]);
+  virtual void SetCamera3DManipulators(const int manipulators[9]);
+  void SetCameraManipulators(vtkPVInteractorStyle* style, const int manipulators[9]);
 
   // Description:
   // Overridden to synchronize information among processes whenever data
@@ -556,24 +613,30 @@ protected:
   virtual void RemoveRepresentationInternal(vtkDataRepresentation* rep);
 
   // Description:
-  // These methods are used to setup the view for capturing screen shots.
-  // In batch mode, since the server-side has just 1 render window, we need to
-  // make sure that the right interactor is activated, otherwise, we end up
-  // capturing images from the wrong view.
-  virtual void PrepareForScreenshot();
-
-  // Description:
   // Actual render method.
   virtual void Render(bool interactive, bool skip_rendering);
 
   // Description:
+  // Called  just before the local process renders. This is only called on the
+  // nodes where the rendering is going to happen.
+  virtual void AboutToRenderOnLocalProcess(bool interactive)
+    {(void) interactive;}
+
+  // Description:
   // Returns true if distributed rendering should be used based on the geometry
-  // size.
-  bool ShouldUseDistributedRendering(double geometry_size);
+  // size. \c using_lod will be true if this method is called to determine
+  // distributed rendering status for renders using lower LOD i.e when called in
+  // UpdateLOD().
+  bool ShouldUseDistributedRendering(double geometry_size, bool using_lod);
 
   // Description:
   // Returns true if LOD rendering should be used based on the geometry size.
   bool ShouldUseLODRendering(double geometry);
+
+  // Description:
+  // Returns true if the local process is invovled in rendering composited
+  // geometry i.e. geometry rendered in view that is composited together.
+  bool IsProcessRenderingGeometriesForCompositing(bool using_distributed_rendering);
 
   // Description:
   // Synchronizes bounds information on all nodes.
@@ -587,7 +650,7 @@ protected:
   // Description:
   // UpdateCenterAxes().
   // Updates CenterAxes's scale and position.
-  void UpdateCenterAxes();
+  virtual void UpdateCenterAxes();
 
   // Description
   // Returns true if the local process is doing to do actual render or
@@ -603,6 +666,11 @@ protected:
   // Synchronizes remote-rendering related parameters for collaborative
   // rendering in multi-clients mode.
   void SynchronizeForCollaboration();
+
+  // Description:
+  // Method to build annotation text to annotate the view with runtime
+  // information.
+  virtual void BuildAnnotationText(ostream& str);
 
   // Description:
   // SynchronizationCounter is used in multi-clients mode to ensure that the
@@ -627,7 +695,7 @@ protected:
   vtkRenderViewBase* RenderView;
   vtkRenderer* NonCompositedRenderer;
   vtkPVSynchronizedRenderer* SynchronizedRenderers;
-  vtkPVGenericRenderWindowInteractor* Interactor;
+  vtkSmartPointer<vtkRenderWindowInteractor> Interactor;
   vtkInteractorStyleRubberBand3D* RubberBandStyle;
   vtkInteractorStyleRubberBandZoom* RubberBandZoom;
   vtkInteractorStyleDrawPolygon* PolygonStyle;
@@ -635,10 +703,12 @@ protected:
   vtkPVAxesWidget* OrientationWidget;
   vtkPVHardwareSelector* Selector;
   vtkSelection* LastSelection;
+  vtkSmartPointer<vtkPVGridAxes3DActor> GridAxes3DActor;
 
   int StillRenderImageReductionFactor;
   int InteractiveRenderImageReductionFactor;
   int InteractionMode;
+  bool ShowAnnotation;
 
   // 2D and 3D interactor style
   vtkPVInteractorStyle* TwoDInteractorStyle;
@@ -658,7 +728,7 @@ protected:
 
   bool UseOffscreenRendering;
   bool UseOffscreenRenderingForScreenshots;
-  bool UseInteractiveRenderingForSceenshots;
+  bool UseInteractiveRenderingForScreenshots;
   bool NeedsOrderedCompositing;
   bool RenderEmptyImages;
 
@@ -695,10 +765,27 @@ private:
   // open the DISPLAY etc.
   bool RemoteRenderingAvailable;
 
+  // Flags used to maintain rendering modes requested by representations.
+  bool DistributedRenderingRequired;
+  bool NonDistributedRenderingRequired;
+  bool DistributedRenderingRequiredLOD;
+  bool NonDistributedRenderingRequiredLOD;
+
   int PreviousParallelProjectionStatus;
 
   class vtkInternals;
   vtkInternals* Internals;
+
+  vtkNew<vtkTextRepresentation> Annotation;
+  void UpdateAnnotationText();
+
+  bool OrientationWidgetVisibility;
+
+  int StereoType;
+  int ServerStereoType;
+  void UpdateStereoProperties();
+  vtkSmartPointer<vtkCuller> Culler;
+  vtkNew<vtkTimerLog> Timer;
 //ETX
 };
 

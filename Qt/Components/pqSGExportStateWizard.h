@@ -56,10 +56,14 @@ public:
 
 protected slots:
   void updateAddRemoveButton();
+  void onShowAllSources(bool);
   void onAdd();
   void onRemove();
   void incrementView();
   void decrementView();
+  void toggleCinema(bool);
+  void incrementTrack();
+  void decrementTrack();
 
 protected:
   virtual bool getCommandString(QString& command) = 0;
@@ -72,6 +76,7 @@ private:
   Q_DISABLE_COPY(pqSGExportStateWizard)
 
   int CurrentView;
+  int CurrentTrack;
   friend class pqSGExportStateWizardPage2;
   friend class pqSGExportStateWizardPage3;
 };

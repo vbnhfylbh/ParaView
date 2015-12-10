@@ -45,6 +45,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqCameraToolbar.h"
 #include "pqCameraUndoRedoReaction.h"
 #include "pqCatalystConnectReaction.h"
+#include "pqCatalystContinueReaction.h"
+#include "pqCatalystPauseSimulationReaction.h"
+#include "pqCatalystRemoveBreakpointReaction.h"
+#include "pqCatalystSetBreakpointReaction.h"
 #include "pqCategoryToolbarsBehavior.h"
 #include "pqChangePipelineInputReaction.h"
 #include "pqColorToolbar.h"
@@ -57,6 +61,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqHelpReaction.h"
 #include "pqIgnoreSourceTimeReaction.h"
 #include "pqLoadDataReaction.h"
+#include "pqLoadRestoreWindowLayoutReaction.h"
 #include "pqLoadStateReaction.h"
 #include "pqMainControlsToolbar.h"
 #include "pqManageCustomFiltersReaction.h"
@@ -81,7 +86,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqUndoRedoReaction.h"
 #include "pqVCRToolbar.h"
 #include "pqViewMenuManager.h"
-#include "pqViewSettingsReaction.h"
 
 #ifdef PARAVIEW_ENABLE_PYTHON
 #include "pqMacroReaction.h"
@@ -123,6 +127,9 @@ void pqParaViewMenuBuilders::buildFileMenu(QMenu& menu)
 
   new pqExportReaction(ui.actionExport);
   new pqSaveDataReaction(ui.actionFileSaveData);
+
+  new pqLoadRestoreWindowLayoutReaction(true, ui.actionFileLoadWindowLayout);
+  new pqLoadRestoreWindowLayoutReaction(false, ui.actionFileSaveWindowLayout);
 }
 
 //-----------------------------------------------------------------------------
@@ -145,7 +152,6 @@ void pqParaViewMenuBuilders::buildEditMenu(QMenu& menu)
   new pqCopyReaction(ui.actionCopy);
   new pqCopyReaction(ui.actionPaste, true);
   new pqApplicationSettingsReaction(ui.actionEditSettings);
-  new pqViewSettingsReaction(ui.actionEditViewSettings);
   new pqDataQueryReaction(ui.actionQuery);
 }
 
@@ -171,8 +177,15 @@ void pqParaViewMenuBuilders::buildFiltersMenu(QMenu& menu,
   pqProxyGroupMenuManager* mgr = new pqProxyGroupMenuManager(&menu, "ParaViewFilters");
   mgr->addProxyDefinitionUpdateListener("filters");
   mgr->setRecentlyUsedMenuSize(10);
-  new pqFiltersMenuReaction(mgr);
-  pqPVApplicationCore::instance()->registerForQuicklaunch(mgr->widgetActionsHolder());
+  pqFiltersMenuReaction *menuReaction = new pqFiltersMenuReaction(mgr);
+  pqPVApplicationCore *appCore = pqPVApplicationCore::instance();
+  appCore->registerForQuicklaunch(mgr->widgetActionsHolder());
+
+  // Connect the filters menu about to show and the quick-launch dialog about to show
+  // to update the enabled/disabled state of the menu items via the
+  // pqFiltersMenuReaction
+  QObject::connect(&menu, SIGNAL(aboutToShow()),menuReaction,SLOT(updateEnableState()));
+  QObject::connect(appCore,SIGNAL(aboutToShowQuickLaunch()),menuReaction,SLOT(updateEnableState()));
 
   if (mainWindow)
     {
@@ -194,17 +207,9 @@ void pqParaViewMenuBuilders::buildToolsMenu(QMenu& menu)
   new pqManageLinksReaction(menu.addAction("Manage Links...") <<
     pqSetName("actionToolsManageLinks"));
   //<addaction name="actionToolsAddCameraLink" />
-#ifdef BUILD_SHARED_LIBS
   // Add support for importing plugins only if ParaView was built shared.
   new pqManagePluginsReaction(menu.addAction("Manage Plugins...") <<
     pqSetName("actionManage_Plugins"));
-#else
-  QAction* action2 = menu.addAction("Manage Plugins...");
-  action2->setEnabled(false);
-  action2->setToolTip(
-    "Use BUILD_SHARED:ON while compiling to enable plugin support.");
-  action2->setStatusTip(action2->toolTip());
-#endif
 
 
   menu.addSeparator(); // --------------------------------------------------
@@ -231,12 +236,6 @@ void pqParaViewMenuBuilders::buildToolsMenu(QMenu& menu)
     pqApplicationCore::instance(),
     SLOT(showOutputWindow()));
 
-
-  menu.addSeparator(); // --------------------------------------------------
-
-  new pqCatalystConnectReaction(menu.addAction("Connect To Catalyst")
-    << pqSetName("actionConnectCatalyst"));
-
   menu.addSeparator(); // --------------------------------------------------
 
   new pqPythonShellReaction(menu.addAction("Python Shell")
@@ -244,11 +243,8 @@ void pqParaViewMenuBuilders::buildToolsMenu(QMenu& menu)
 
 #ifdef PARAVIEW_ENABLE_PYTHON
   menu.addSeparator(); // --------------------------------------------------
-
-  new pqTraceReaction( menu.addAction("Start Trace")
-                       << pqSetName("actionToolsStartTrace"), true);
-  new pqTraceReaction(menu.addAction("Stop Trace")
-                      << pqSetName("actionToolsStartTrace"), false);
+  new pqTraceReaction(menu.addAction("Start Trace") << pqSetName("actionToolsStartStopTrace"),
+    "Start Trace", "Stop Trace");
 #endif
 }
 
@@ -376,4 +372,25 @@ void pqParaViewMenuBuilders::buildToolbars(QMainWindow& mainWindow)
     mainWindow.addToolBar(Qt::TopToolBarArea, macrosToolbar);
     }
 #endif
+}
+
+//-----------------------------------------------------------------------------
+void pqParaViewMenuBuilders::buildCatalystMenu(QMenu& menu)
+{
+  new pqCatalystConnectReaction(menu.addAction("Connect...")
+                                << pqSetName("actionCatalystConnect"));
+  new pqCatalystPauseSimulationReaction(
+    menu.addAction("Pause Simulation")
+    << pqSetName("actionCatalystPauseSimulation"));
+
+  new pqCatalystContinueReaction(
+    menu.addAction("Continue") << pqSetName("actionCatalystContinue"));
+
+  new pqCatalystSetBreakpointReaction(
+    menu.addAction("Set Breakpoint") <<
+    pqSetName("actionCatalystSetBreakpoint"));
+
+  new pqCatalystRemoveBreakpointReaction(
+    menu.addAction("Remove Breakpoint") <<
+    pqSetName("actionCatalystRemoveBreakpoint"));
 }

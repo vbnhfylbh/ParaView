@@ -32,15 +32,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqCameraDialog.h"
 #include "ui_pqCameraDialog.h"
 
-// ParaView Server Manager includes.
+// VTK / ParaView Server Manager includes.
 #include "vtkSmartPointer.h"
 #include "vtkCamera.h"
+#include "vtkMath.h"
 #include "vtkProcessModule.h"
 #include "vtkSMProxy.h"
 #include "vtkSMRenderViewProxy.h"
 #include "vtkSMProperty.h"
 #include "vtkSMCameraConfigurationReader.h"
 #include "vtkSMCameraConfigurationWriter.h"
+#include "vtkTransform.h"
 
 #include "vtkPVXMLElement.h"
 #include "vtkPVXMLParser.h"
@@ -60,13 +62,61 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // STL
 #include <string>
-#include <vtksys/ios/sstream>
+#include <sstream>
 
 #define pqErrorMacro(estr)\
   qDebug()\
       << "Error in:" << endl\
       << __FILE__ << ", line " << __LINE__ << endl\
       << "" estr << endl;
+
+namespace
+{
+void RotateElevation(vtkCamera* camera, double angle)
+{
+  vtkNew<vtkTransform> transform;
+
+  double scale = vtkMath::Norm(camera->GetPosition());
+  if (scale <= 0.0)
+    {
+    scale = vtkMath::Norm(camera->GetFocalPoint());
+    if (scale <= 0.0)
+      {
+      scale = 1.0;
+      }
+    }
+  double* temp = camera->GetFocalPoint();
+  camera->SetFocalPoint(temp[0]/scale, temp[1]/scale, temp[2]/scale);
+  temp = camera->GetPosition();
+  camera->SetPosition(temp[0]/scale, temp[1]/scale, temp[2]/scale);
+
+  double v2[3];
+  // translate to center
+  // we rotate around 0,0,0 rather than the center of rotation
+  transform->Identity();
+
+
+  // elevation
+  camera->OrthogonalizeViewUp();
+  double *viewUp = camera->GetViewUp();
+  vtkMath::Cross(camera->GetDirectionOfProjection(), viewUp, v2);
+  transform->RotateWXYZ(- angle, v2[0], v2[1], v2[2]);
+
+  // translate back
+  // we are already at 0,0,0
+
+  camera->ApplyTransform(transform.GetPointer());
+  camera->OrthogonalizeViewUp();
+
+  // For rescale back.
+  temp = camera->GetFocalPoint();
+  camera->SetFocalPoint(temp[0]*scale, temp[1]*scale, temp[2]*scale);
+  temp = camera->GetPosition();
+  camera->SetPosition(temp[0]*scale, temp[1]*scale, temp[2]*scale);
+}
+};
+
+
 
 //=============================================================================
 class pqCameraDialogInternal : public Ui::pqCameraDialog
@@ -85,7 +135,7 @@ public:
 
 //-----------------------------------------------------------------------------
 pqCameraDialog::pqCameraDialog(QWidget* _p/*=null*/,
-  Qt::WFlags f/*=0*/): pqDialog(_p, f)
+  Qt::WindowFlags f/*=0*/): pqDialog(_p, f)
 {
   this->Internal = new pqCameraDialogInternal;
   this->Internal->setupUi(this);
@@ -260,6 +310,10 @@ void pqCameraDialog::setupGUI()
       proxy, proxy->GetProperty("CenterOfRotation"), 2);
 
     this->Internal->CameraLinks.addPropertyLink(
+      this->Internal->rotationFactor, "value", SIGNAL(valueChanged(double)),
+      proxy, proxy->GetProperty("RotationFactor"), 0);
+
+    this->Internal->CameraLinks.addPropertyLink(
       this->Internal->viewAngle, "value", SIGNAL(valueChanged(double)),
       proxy, proxy->GetProperty("CameraViewAngle"), 0);
 
@@ -347,7 +401,7 @@ void pqCameraDialog::adjustCamera(
       }
     else if(enType == pqCameraDialog::Elevation)
       {
-      camera->Elevation(angle);
+      RotateElevation(camera, angle);
       }
     else if(enType == pqCameraDialog::Azimuth)
       {
@@ -418,7 +472,7 @@ void pqCameraDialog::configureCustomViews()
   settings->endGroup();
 
   // grab the current camera configuration.
-  vtksys_ios::ostringstream os;
+  std::ostringstream os;
 
   vtkSMCameraConfigurationWriter *writer=vtkSMCameraConfigurationWriter::New();
   writer->SetRenderViewProxy(ui->RenderModule->getRenderViewProxy());
@@ -474,7 +528,7 @@ void pqCameraDialog::applyCustomView(int buttonId)
     {
     vtkSmartPointer<vtkPVXMLParser> parser=vtkSmartPointer<vtkPVXMLParser>::New();
     parser->InitializeParser();
-    parser->ParseChunk(config.toAscii().data(),static_cast<unsigned int>(config.size()));
+    parser->ParseChunk(config.toLatin1().data(),static_cast<unsigned int>(config.size()));
     parser->CleanupParser();
 
     vtkPVXMLElement *xmlStream=parser->GetRootElement();

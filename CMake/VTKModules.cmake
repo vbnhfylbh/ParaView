@@ -6,7 +6,6 @@
 set(_vtk_mpi_modules
   vtkParallelMPI
   vtkFiltersParallelImaging
-  vtkRenderingParallelLIC
   vtkIOMPIImage
   vtkFiltersParallelMPI
   # Note: Not in ParaViewXXX.xml but required by a test.
@@ -19,6 +18,9 @@ set(_vtk_mpi_modules
 
   vtkFiltersParallelFlowPaths
   #  vtkStreamTracer (Parallel)
+
+  vtkIOMPIParallel
+  # vtkMPIMultiBlockPLOT3DReader.
   )
 
 # Add CosmoTools VTK extensions if enabled.
@@ -30,17 +32,20 @@ if (UNIX AND PARAVIEW_ENABLE_COSMOTOOLS)
     )
 endif()
 
+if( PARAVIEW_ENABLE_CGNS )
+  list(APPEND _vtk_mpi_modules  vtkPVVTKExtensionsCGNSReader)
+endif()
+
+
 set(_vtk_modules
   # VTK modules which ParaView has a explicity compile
   # time dependency on
   vtkRenderingVolume
   vtkRenderingLabel
   vtkRenderingFreeType
-  vtkRenderingFreeTypeOpenGL
-  vtkRenderingVolumeOpenGL
-  vtkRenderingOpenGL
+  vtkRenderingVolume${VTK_RENDERING_BACKEND}
+  vtkRendering${VTK_RENDERING_BACKEND}
   vtkRenderingLOD
-  vtkRenderingLIC
   vtkRenderingContext2D
   vtkRenderingAnnotation
   vtkInteractionStyle
@@ -60,7 +65,6 @@ set(_vtk_modules
   vtkIOGeometry
   vtklibxml2
   vtkViewsContext2D
-  vtkIOExport
   vtkIOInfovis
   vtkFiltersAMR
   vtkChartsCore
@@ -338,7 +342,15 @@ set(_vtk_modules
 
   vtkPVServerManagerDefault
   # Needed by plugins
+
+  vtkPVAnimation
+  # Needed for animation support.
   )
+
+if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL")
+  list(APPEND _vtk_modules vtkRenderingLIC vtkIOExport)
+  list(APPEND _vtk_mpi_modules vtkRenderingParallelLIC)
+endif()
 
 if (PARAVIEW_USE_MPI)
   list (APPEND _vtk_modules ${_vtk_mpi_modules})
@@ -348,8 +360,19 @@ if (PARAVIEW_USE_VISITBRIDGE)
   list (APPEND _vtk_modules vtkIOVisItBridge)
 endif()
 
-if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_ENABLE_MATPLOTLIB)
+if (PARAVIEW_ENABLE_MATPLOTLIB)
   list (APPEND _vtk_modules vtkRenderingMatplotlib)
+endif()
+
+if (PARAVIEW_ENABLE_XDMF3)
+  list (APPEND _vtk_modules vtkIOXdmf3)
+endif ()
+
+if (PARAVIEW_ENABLE_PYTHON)
+  list (APPEND _vtk_modules vtkFiltersPython)
+  if (PARAVIEW_USE_MPI)
+    list(APPEND _vtk_modules vtkParallelMPI4Py)
+  endif()
 endif()
 
 # Any module can import this file and add DEPENDS or COMPILE_DEPENDS on this

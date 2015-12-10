@@ -40,6 +40,7 @@
 #include "vtkPVDataInformationHelper.h"
 #include "vtkPVCompositeDataInformation.h"
 #include "vtkPVDataSetAttributesInformation.h"
+#include "vtkPVInformationKeys.h"
 #include "vtkRectilinearGrid.h"
 #include "vtkSelection.h"
 #include "vtkStructuredGrid.h"
@@ -48,9 +49,10 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkMultiProcessStream.h"
 
-#include <vector>
+#include <algorithm>
 #include <map>
 #include <string>
+#include <vector>
 
 vtkStandardNewMacro(vtkPVDataInformation);
 
@@ -81,6 +83,7 @@ vtkPVDataInformation::vtkPVDataInformation()
 
   this->DataClassName = 0;
   this->CompositeDataClassName = 0;
+  this->CompositeDataSetName = 0;
   this->NumberOfDataSets = 0;
   this->TimeSpan[0] = VTK_DOUBLE_MAX;
   this->TimeSpan[1] = -VTK_DOUBLE_MAX;
@@ -90,6 +93,16 @@ vtkPVDataInformation::vtkPVDataInformation()
 
   this->PortNumber = -1;
   this->SortArrays = true;
+
+  // Update field association information on the all the
+  // vtkPVDataSetAttributesInformation instances.
+  for (int cc=0; cc < vtkDataObject::NUMBER_OF_ASSOCIATIONS; cc++)
+    {
+    if (vtkPVDataSetAttributesInformation* dsa = this->GetAttributeInformation(cc))
+      {
+      dsa->SetFieldAssociation(cc);
+      }
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -113,6 +126,7 @@ vtkPVDataInformation::~vtkPVDataInformation()
   this->PointArrayInformation = NULL;
   this->SetDataClassName(0);
   this->SetCompositeDataClassName(0);
+  this->SetCompositeDataSetName(0);
   this->SetTimeLabel(NULL);
 }
 
@@ -176,7 +190,9 @@ void vtkPVDataInformation::PrintSelf(ostream& os, vtkIndent indent)
      << (this->DataClassName?this->DataClassName:"(none)") << endl;
   os << indent << "CompositeDataClassName: "
      << (this->CompositeDataClassName?this->CompositeDataClassName:"(none)") << endl;
-
+  os << indent << "CompositeDataSetName: "
+     << (this->CompositeDataSetName?this->CompositeDataSetName:"(none)") << endl;
+      
   os << indent << "TimeSpan: "
      << this->TimeSpan[0] << ", " << this->TimeSpan[1]
      << endl;
@@ -240,6 +256,7 @@ void vtkPVDataInformation::Initialize()
   this->PointArrayInformation->Initialize();
   this->SetDataClassName(0);
   this->SetCompositeDataClassName(0);
+  this->SetCompositeDataSetName(0);
   this->TimeSpan[0] = VTK_DOUBLE_MAX;
   this->TimeSpan[1] = -VTK_DOUBLE_MAX;
   this->HasTime = 0;
@@ -259,6 +276,7 @@ void vtkPVDataInformation::DeepCopy(vtkPVDataInformation *dataInfo,
   this->CompositeDataSetType = dataInfo->GetCompositeDataSetType();
   this->SetDataClassName(dataInfo->GetDataClassName());
   this->SetCompositeDataClassName(dataInfo->GetCompositeDataClassName());
+  this->SetCompositeDataSetName(dataInfo->GetCompositeDataSetName());
 
   this->NumberOfDataSets = dataInfo->NumberOfDataSets;
 
@@ -389,8 +407,8 @@ void vtkPVDataInformation::CopyCommonMetaData(vtkDataObject* data, vtkInformatio
     }
 
   this->SetTimeLabel(
-        (pinfo && pinfo->Has(vtkStreamingDemandDrivenPipeline::TIME_LABEL_ANNOTATION()))
-        ? pinfo->Get(vtkStreamingDemandDrivenPipeline::TIME_LABEL_ANNOTATION())
+        (pinfo && pinfo->Has(vtkPVInformationKeys::TIME_LABEL_ANNOTATION()))
+        ? pinfo->Get(vtkPVInformationKeys::TIME_LABEL_ANNOTATION())
         : NULL);
 
   vtkInformation *dinfo = data->GetInformation();
@@ -732,7 +750,7 @@ void vtkPVDataInformation::AddInformation(
   vtkPVInformation* pvi, int addingParts)
 {
   vtkPVDataInformation *info;
-  int             i,j;
+  int             i;
   int*            ext;
 
   info = vtkPVDataInformation::SafeDownCast(pvi);
@@ -745,6 +763,7 @@ void vtkPVDataInformation::AddInformation(
   if (!addingParts)
     {
     this->SetCompositeDataClassName(info->GetCompositeDataClassName());
+    this->SetCompositeDataSetName(info->GetCompositeDataSetName());
     this->CompositeDataSetType = info->CompositeDataSetType;
     this->CompositeDataInformation->AddInformation(
       info->CompositeDataInformation);
@@ -855,17 +874,30 @@ void vtkPVDataInformation::AddInformation(
 
   // Extents are only a little harder.
   ext = info->GetExtent();
-  for (i = 0; i < 3; ++i)
+  if ((ext[0] > ext[1]) || (ext[2] > ext[3]) || (ext[4] > ext[5]))
     {
-    j = i*2;
-    if (ext[j] < this->Extent[j])
+    // ext is invalid. ignore it.
+    }
+  else if ( (this->Extent[0] > this->Extent[1]) ||
+            (this->Extent[2] > this->Extent[3]) ||
+            (this->Extent[4] > this->Extent[5]) )
+    {
+    std::copy(ext, ext + 6, this->Extent);
+    }
+  else
+    {
+    for (i = 0; i < 3; ++i)
       {
-      this->Extent[j] = ext[j];
-      }
-    ++j;
-    if (ext[j] > this->Extent[j])
-      {
-      this->Extent[j] = ext[j];
+      int j = i*2;
+      if (ext[j] < this->Extent[j])
+        {
+        this->Extent[j] = ext[j];
+        }
+      ++j;
+      if (ext[j] > this->Extent[j])
+        {
+        this->Extent[j] = ext[j];
+        }
       }
     }
 
@@ -1041,7 +1073,15 @@ int vtkPVDataInformation::DataSetTypeIsA(const char* type)
       return 1;
       }
     }
-
+  if (strcmp(type, "vtkImageData") == 0)
+    {
+    if (this->DataSetType == VTK_IMAGE_DATA ||
+      this->DataSetType == VTK_UNIFORM_GRID ||
+      this->DataSetType == VTK_STRUCTURED_POINTS)
+      {
+      return 1;
+      }
+    }
   return 0;
 }
 
@@ -1140,6 +1180,7 @@ void vtkPVDataInformation::CopyToStream(vtkClientServerStream* css)
 
   *css << this->CompositeDataClassName;
   *css << this->CompositeDataSetType;
+  *css << this->CompositeDataSetName;
 
   dcss.Reset();
 
@@ -1366,6 +1407,14 @@ void vtkPVDataInformation::CopyFromStream(const vtkClientServerStream* css)
     vtkErrorMacro("Error parsing data set type.");
     return;
     }
+
+  const char* compositedatasetname = 0;
+  if(!CSS_GET_NEXT_ARGUMENT(css, 0, &compositedatasetname))
+    {
+    vtkErrorMacro("Error parsing composite dataset name of data.");
+    return;
+    }
+  this->SetCompositeDataSetName(compositedatasetname);
 
   // Composite data information.
   if(!css->GetArgumentLength(0, CSS_GET_CUR_INDEX(), &length))

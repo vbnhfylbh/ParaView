@@ -38,16 +38,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkIntArray.h"
 #include "vtkProcessModule.h"
 #include "vtkPVDataInformation.h"
-#include "vtkPVGenericRenderWindowInteractor.h"
-#include "vtkPVInteractorStyle.h"
 #include "vtkPVRenderView.h"
-#include "vtkPVTrackballRoll.h"
-#include "vtkPVTrackballRotate.h"
-#include "vtkPVTrackballZoom.h"
 #include "vtkSelection.h"
 #include "vtkSelectionNode.h"
 #include "vtkSmartPointer.h"
-#include "vtkSMGlobalPropertiesManager.h"
 #include "vtkSMInteractionUndoStackBuilder.h"
 #include "vtkSMIntVectorProperty.h"
 #include "vtkSMPropertyHelper.h"
@@ -57,9 +51,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMRepresentationProxy.h"
 #include "vtkSMSelectionHelper.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMTrace.h"
 #include "vtkSMUndoStack.h"
 #include "vtkStructuredData.h"
-#include "vtkTrackballPan.h"
 
 // Qt includes.
 #include <QFileInfo>
@@ -70,7 +64,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QMouseEvent>
 #include <QMenu>
 #include <QSet>
-#include <QPrinter>
 #include <QPainter>
 #include <QGridLayout>
 
@@ -83,32 +76,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqPipelineSource.h"
 #include "pqServer.h"
 #include "pqServerManagerModel.h"
-#include "pqSettings.h"
 #include "pqSMAdaptor.h"
 #include "pqUndoStack.h"
-
-pqRenderView::ManipulatorType pqRenderView::DefaultManipulatorTypes[] =
-{
-  { 1, 0, 0, "Rotate", "Camera3DManipulators"},
-  { 2, 0, 0, "Pan",    "Camera3DManipulators"},
-  { 3, 0, 0, "Zoom",   "Camera3DManipulators"},
-  { 1, 1, 0, "Roll",   "Camera3DManipulators"},
-  { 2, 1, 0, "Rotate", "Camera3DManipulators"},
-  { 3, 1, 0, "Pan",    "Camera3DManipulators"},
-  { 1, 0, 1, "Zoom",   "Camera3DManipulators"},
-  { 2, 0, 1, "Rotate", "Camera3DManipulators"},
-  { 3, 0, 1, "Zoom",   "Camera3DManipulators"},
-  // ------------- 3D / 2D -------------
-  { 1, 0, 0, "Pan",  "Camera2DManipulators"},
-  { 2, 0, 0, "Roll",  "Camera2DManipulators"},
-  { 3, 0, 0, "Zoom", "Camera2DManipulators"},
-  { 1, 1, 0, "Zoom", "Camera2DManipulators"},
-  { 2, 1, 0, "Zoom", "Camera2DManipulators"},
-  { 3, 1, 0, "Zoom", "Camera2DManipulators"},
-  { 1, 0, 1, "Roll", "Camera2DManipulators"},
-  { 2, 0, 1, "Pan", "Camera2DManipulators"},
-  { 3, 0, 1, "Rotate" , "Camera2DManipulators"},
-};
 
 namespace {
 
@@ -130,18 +99,15 @@ pqDataRepresentation* findRepresentationFromProxy(vtkSMRepresentationProxy *prox
 class pqRenderView::pqInternal
 {
 public:
-  QMap<QString, QString> SettingsGroupToManipulatorName;
   vtkSmartPointer<vtkSMUndoStack> InteractionUndoStack;
   vtkSmartPointer<vtkSMInteractionUndoStackBuilder> UndoStackBuilder;
   QList<pqRenderView* > LinkedUndoStacks;
   bool UpdatingStack;
   int CurrentInteractionMode;
 
-  bool InitializedWidgets;
   pqInternal()
     {
     this->CurrentInteractionMode = -1;
-    this->InitializedWidgets = false;
     this->UpdatingStack = false;
     this->InteractionUndoStack = vtkSmartPointer<vtkSMUndoStack>::New();
     // FIXME this->InteractionUndoStack->SetClientOnly(true);
@@ -149,12 +115,6 @@ public:
       vtkSmartPointer<vtkSMInteractionUndoStackBuilder>::New();
     this->UndoStackBuilder->SetUndoStack(
       this->InteractionUndoStack);
-
-    // Fill the mapping table
-    this->SettingsGroupToManipulatorName["renderModule/InteractorStyle"] =
-        "Camera3DManipulators";
-    this->SettingsGroupToManipulatorName["renderModule2D/InteractorStyle"] =
-        "Camera2DManipulators";
     }
 
   ~pqInternal()
@@ -221,76 +181,28 @@ vtkSMRenderViewProxy* pqRenderView::getRenderViewProxy() const
 }
 
 //-----------------------------------------------------------------------------
-QWidget* pqRenderView::createWidget() 
+void pqRenderView::initialize()
+{
+  this->Superclass::initialize();
+
+  // initialize the interaction undo-redo stack.
+  vtkSMRenderViewProxy* viewProxy = this->getRenderViewProxy();
+  this->Internal->UndoStackBuilder->SetRenderView(viewProxy);
+}
+
+//-----------------------------------------------------------------------------
+QWidget* pqRenderView::createWidget()
 {
   QWidget* vtkwidget = this->Superclass::createWidget();
+  if (QVTKWidget* qvtkwidget = qobject_cast<QVTKWidget*>(vtkwidget))
+    {
+    vtkSMRenderViewProxy* renModule = this->getRenderViewProxy();
+    qvtkwidget->SetRenderWindow(renModule->GetRenderWindow());
+    // This is needed to ensure that the interactor is initialized with
+    // ParaView specific interactor styles etc.
+    renModule->SetupInteractor(qvtkwidget->GetInteractor());
+    }
   return vtkwidget;
-}
-
-//-----------------------------------------------------------------------------
-// This method is called for all pqRenderView objects irrespective
-// of whether it is created from state/undo-redo/python or by the GUI. Hence
-// don't change any render module properties here.
-void pqRenderView::initializeWidgets()
-{
-  if (this->Internal->InitializedWidgets)
-    {
-    return;
-    }
-
-  this->Internal->InitializedWidgets = true;
-
-  vtkSMRenderViewProxy* renModule = this->getRenderViewProxy();
-
-  QVTKWidget* vtkwidget = qobject_cast<QVTKWidget*>(this->getWidget());
-  if (vtkwidget)
-    {
-    vtkwidget->SetRenderWindow(renModule->GetRenderWindow());
-    }
-
-  // Set up some global property links by default.
-  vtkSMGlobalPropertiesManager* globalPropertiesManager =
-    pqApplicationCore::instance()->getGlobalPropertiesManager();
-  this->getConnector()->Connect(
-    globalPropertiesManager->GetProperty("TextAnnotationColor"),
-    vtkCommand::ModifiedEvent, this, SLOT(textAnnotationColorChanged()));
-  this->textAnnotationColorChanged();
-
-  // ensure that center axis visibility etc. is updated as per user's
-  // preferences.
-  this->restoreAnnotationSettings();
-
-  this->Internal->UndoStackBuilder->SetRenderView(renModule);
-}
-
-//-----------------------------------------------------------------------------
-// Sets default values for the underlying proxy.  This is during the 
-// initialization stage of the pqProxy for proxies created by the GUI itself 
-// i.e. for proxies loaded through state or created by python client or 
-// undo/redo, this method won't be called. 
-void pqRenderView::setDefaultPropertyValues()
-{
-  vtkSMProxy* proxy = this->getProxy();
-  if (!pqApplicationCore::instance()->getOptions()->GetDisableLightKit())
-    {
-    pqSMAdaptor::setElementProperty(proxy->GetProperty("UseLight"), 1);
-    pqSMAdaptor::setElementProperty(proxy->GetProperty("LightSwitch"), 0);
-    }
-  this->Superclass::setDefaultPropertyValues();
-  this->clearUndoStack();
-}
-
-//-----------------------------------------------------------------------------
-void pqRenderView::restoreDefaultLightSettings()
-{
-  this->Superclass::restoreDefaultLightSettings();
-  if (!pqApplicationCore::instance()->getOptions()->GetDisableLightKit())
-    {
-    vtkSMProxy* proxy = this->getProxy();
-    pqSMAdaptor::setElementProperty(proxy->GetProperty("UseLight"), 1);
-    pqSMAdaptor::setElementProperty(proxy->GetProperty("LightSwitch"), 0);
-    proxy->UpdateVTKObjects();
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -306,7 +218,7 @@ void pqRenderView::onResetCameraEvent()
 void pqRenderView::resetCamera()
 {
   this->fakeInteraction(true);
-  this->getRenderViewProxy()->InvokeCommand("ResetCamera");
+  this->getRenderViewProxy()->ResetCamera();
   this->fakeInteraction(false);
   this->render();
 }
@@ -322,25 +234,6 @@ void pqRenderView::resetCenterOfRotation()
       viewproxy->GetProperty("CameraFocalPointInfo"));
   this->setCenterOfRotation(
     values[0].toDouble(), values[1].toDouble(), values[2].toDouble());
-}
-
-//-----------------------------------------------------------------------------
-vtkImageData* pqRenderView::captureImage(int magnification)
-{
-  if (this->getWidget()->isVisible())
-    {
-    return this->getRenderViewProxy()->CaptureWindow(magnification);
-    }
-
-  // Don't return any image when the view is not visible.
-  return NULL;
-}
-
-//-----------------------------------------------------------------------------
-const int* pqRenderView::defaultBackgroundColor() const
-{
-  static int defaultBackground[3] = { 84, 89, 109 };
-  return defaultBackground;
 }
 
 //-----------------------------------------------------------------------------
@@ -459,56 +352,11 @@ bool pqRenderView::getCenterAxesVisibility() const
 }
 
 //-----------------------------------------------------------------------------
-void pqRenderView::restoreAnnotationSettings()
-{
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  QString sgroup = this->viewSettingsGroup();
-  settings->beginGroup(sgroup);
-  // Center Axes settings.
-  settings->beginGroup("CenterAxes");
-  if (settings->contains("ResetCenterWithCamera"))
-    {
-    this->ResetCenterWithCamera =
-      settings->value("ResetCenterWithCamera").toBool();
-    }
-  settings->endGroup();
-  settings->endGroup();
-}
-
-//-----------------------------------------------------------------------------
-void pqRenderView::restoreSettings(bool only_global)
-{
-  this->Superclass::restoreSettings(only_global);
-  if (!only_global)
-    {
-    this->restoreAnnotationSettings();
-    }
-}
-
-//-----------------------------------------------------------------------------
-void pqRenderView::saveSettings()
-{
-  this->Superclass::saveSettings();
-
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  QString sgroup = this->viewSettingsGroup();
-  settings->beginGroup(sgroup);
-
-  // Center Axes settings.
-  settings->beginGroup("CenterAxes");
-  settings->setValue("ResetCenterWithCamera",
-    this->ResetCenterWithCamera);
-  settings->endGroup();
-
-  settings->endGroup();
-}
-
-//-----------------------------------------------------------------------------
 void pqRenderView::linkToOtherView()
 {
   pqLinkViewWidget* linkWidget = new pqLinkViewWidget(this);
   linkWidget->setAttribute(Qt::WA_DeleteOnClose);
-  QPoint pos = this->getWidget()->mapToGlobal(QPoint(2,2));
+  QPoint pos = this->widget()->mapToGlobal(QPoint(2,2));
   linkWidget->move(pos);
   linkWidget->show();
 }
@@ -672,10 +520,10 @@ void pqRenderView::resetViewDirection(
 }
 
 //-----------------------------------------------------------------------------
-void pqRenderView::selectOnSurface(int rect[4], bool expand)
+void pqRenderView::selectOnSurface(int rect[4], pqSelectionOperator selOp)
 {
   QList<pqOutputPort*> opPorts;
-  this->selectOnSurfaceInternal(rect, opPorts, false, expand, false);
+  this->selectOnSurfaceInternal(rect, opPorts, false, selOp, false);
   this->emitSelectionSignal(opPorts);
 }
 
@@ -735,7 +583,7 @@ void pqRenderView::collectSelectionPorts(
   vtkCollection* selectedRepresentations,
   vtkCollection* selectionSources,
   QList<pqOutputPort*>& output_ports,
-  bool expand,
+  pqSelectionOperator selOp,
   bool select_blocks)
 {
   if (!selectedRepresentations ||
@@ -785,9 +633,15 @@ void pqRenderView::collectSelectionPorts(
       selectionSource.TakeReference(newSelSource);
       }
 
-    if (expand)
+    if (selOp == PV_SELECTION_MERGE)
       {
       vtkSMSelectionHelper::MergeSelection(selectionSource,
+        opPort->getSelectionInput(),
+        selectedSource, opPort->getPortNumber());
+      }
+    else if (selOp == PV_SELECTION_SUBTRACT)
+      {
+      vtkSMSelectionHelper::SubtractSelection(selectionSource,
         opPort->getSelectionInput(),
         selectedSource, opPort->getPortNumber());
       }
@@ -800,7 +654,7 @@ void pqRenderView::collectSelectionPorts(
 void pqRenderView::selectOnSurfaceInternal(
   int rect[4], QList<pqOutputPort*>& pqOutputPorts,
   bool select_points,
-  bool expand,
+  pqSelectionOperator selOp,
   bool select_blocks)
 {
   BEGIN_UNDO_EXCLUDE();
@@ -834,34 +688,34 @@ void pqRenderView::selectOnSurfaceInternal(
 
   END_UNDO_EXCLUDE();
   this->collectSelectionPorts(selectedRepresentations,
-    selectionSources, pqOutputPorts, expand, select_blocks);
+    selectionSources, pqOutputPorts, selOp, select_blocks);
 }
 
 //-----------------------------------------------------------------------------
-void pqRenderView::selectPointsOnSurface(int rect[4], bool expand)
+void pqRenderView::selectPointsOnSurface(int rect[4], pqSelectionOperator selOp)
 {
   QList<pqOutputPort*> output_ports;
-  this->selectOnSurfaceInternal(rect, output_ports, true, expand, false);
+  this->selectOnSurfaceInternal(rect, output_ports, true, selOp, false);
   // Fire selection event to let the world know that this view selected
   // something.
   this->emitSelectionSignal(output_ports);
 }
 
 //-----------------------------------------------------------------------------
-void pqRenderView::selectPolygonPoints(vtkIntArray* polygon, bool expand)
+void pqRenderView::selectPolygonPoints(vtkIntArray* polygon, pqSelectionOperator selOp)
 {
   QList<pqOutputPort*> output_ports;
-  this->selectPolygonInternal(polygon, output_ports, true, expand, false);
+  this->selectPolygonInternal(polygon, output_ports, true, selOp, false);
   // Fire selection event to let the world know that this view selected
   // something.
   this->emitSelectionSignal(output_ports);
 }
 
 //-----------------------------------------------------------------------------
-void pqRenderView::selectPolygonCells(vtkIntArray* polygon, bool expand)
+void pqRenderView::selectPolygonCells(vtkIntArray* polygon, pqSelectionOperator selOp)
 {
   QList<pqOutputPort*> output_ports;
-  this->selectPolygonInternal(polygon, output_ports, false, expand, false);
+  this->selectPolygonInternal(polygon, output_ports, false, selOp, false);
   // Fire selection event to let the world know that this view selected
   // something.
   this->emitSelectionSignal(output_ports);
@@ -870,7 +724,7 @@ void pqRenderView::selectPolygonCells(vtkIntArray* polygon, bool expand)
 //-----------------------------------------------------------------------------
 void pqRenderView::selectPolygonInternal(vtkIntArray* polygon,
   QList<pqOutputPort*>& pqOutputPorts,  bool select_points,
-  bool expand, bool select_blocks)
+  pqSelectionOperator selOp, bool select_blocks)
 {
   vtkSMRenderViewProxy* renderModuleP = this->getRenderViewProxy();
   vtkSmartPointer<vtkCollection> selectedRepresentations =
@@ -902,7 +756,7 @@ void pqRenderView::selectPolygonInternal(vtkIntArray* polygon,
 
   END_UNDO_EXCLUDE();
   this->collectSelectionPorts(selectedRepresentations,
-    selectionSources, pqOutputPorts, expand, select_blocks);
+    selectionSources, pqOutputPorts, selOp, select_blocks);
 }
 
 //-----------------------------------------------------------------------------
@@ -928,7 +782,7 @@ void pqRenderView::selectFrustum(int rect[4])
   END_UNDO_EXCLUDE();
 
   this->collectSelectionPorts(selectedRepresentations,
-    selectionSources, output_ports, false, false);
+    selectionSources, output_ports, PV_SELECTION_NEW, false);
 
   // Fire selection event to let the world know that this view selected
   // something.
@@ -958,7 +812,7 @@ void pqRenderView::selectFrustumPoints(int rect[4])
   END_UNDO_EXCLUDE();
 
   this->collectSelectionPorts(selectedRepresentations,
-    selectionSources, output_ports, false, false);
+    selectionSources, output_ports, PV_SELECTION_NEW, false);
 
   // Fire selection event to let the world know that this view selected
   // something.
@@ -966,39 +820,15 @@ void pqRenderView::selectFrustumPoints(int rect[4])
 }
 
 //-----------------------------------------------------------------------------
-void pqRenderView::selectBlock(int rectangle[4], bool expand)
+void pqRenderView::selectBlock(int rectangle[4], pqSelectionOperator selOp)
 {
   bool block = this->blockSignals(true);
   QList<pqOutputPort*> opPorts;
-  this->selectOnSurfaceInternal(rectangle, opPorts, false, expand, true);
+  this->selectOnSurfaceInternal(rectangle, opPorts, false, selOp, true);
   this->blockSignals(block);
   this->emitSelectionSignal(opPorts);
 }
 
-//-----------------------------------------------------------------------------
-void pqRenderView::textAnnotationColorChanged()
-{
-  // Set up some global property links by default.
-  vtkSMGlobalPropertiesManager* globalPropertiesManager =
-    pqApplicationCore::instance()->getGlobalPropertiesManager();
-  double value[3];
-  vtkSMPropertyHelper(globalPropertiesManager, "TextAnnotationColor").Get(
-    value, 3);
-  vtkSMPropertyHelper(this->getProxy(), "OrientationAxesLabelColor", true).Set(
-    value, 3);
-  this->getProxy()->UpdateProperty("OrientationAxesLabelColor");
-}
-//-----------------------------------------------------------------------------
-pqRenderViewBase::ManipulatorType* pqRenderView::getManipulatorTypes(int &numberOfManipulatorType)
-{
-  numberOfManipulatorType = 18; // 9 + 9
-  return pqRenderView::DefaultManipulatorTypes;
-}
-//-----------------------------------------------------------------------------
-QMap<QString, QString> pqRenderView::interactorStyleSettingsGroupToCameraManipulatorName() const
-{
-  return this->Internal->SettingsGroupToManipulatorName;
-}
 //-----------------------------------------------------------------------------
 void pqRenderView::updateInteractionMode(pqOutputPort* opPort)
 {
@@ -1029,6 +859,10 @@ void pqRenderView::updateInteractionMode(pqOutputPort* opPort)
       }
     }
 
+  // FIXME: move this logic to server-manager.
+  SM_SCOPED_TRACE(PropertiesModified)
+    .arg(this->getProxy())
+    .arg("comment", "changing interaction mode based on data extents");
   if(is2DDataSet)
     {
     // Update camera position
@@ -1062,5 +896,5 @@ void pqRenderView::onInteractionModeChange()
 //-----------------------------------------------------------------------------
 void pqRenderView::setCursor(const QCursor &c)
 {
-  this->getWidget()->setCursor(c);
+  this->widget()->setCursor(c);
 }

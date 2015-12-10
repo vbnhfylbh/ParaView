@@ -38,10 +38,12 @@ foreach(file ${KIT_GLSL_SRCS})
     ARGS ${res} ${src} ${file}
     )
   set(KIT_EXTRA_SRCS ${KIT_EXTRA_SRCS} ${res})
-endforeach(file)
+endforeach()
 
 # -----------------------------------------------------------------------------
 # Create the library
 # -----------------------------------------------------------------------------
 set (${vtk-module}_HDRS ${KIT_EXTRA_SRCS})
 vtk_module_library(${vtk-module} ${KIT_SRCS})
+include(vtkOpenGL)
+vtk_opengl_link(${vtk-module})

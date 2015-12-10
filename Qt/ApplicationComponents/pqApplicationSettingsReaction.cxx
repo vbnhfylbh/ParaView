@@ -31,11 +31,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ========================================================================*/
 #include "pqApplicationSettingsReaction.h"
 
-#include "pqApplicationOptionsDialog.h"
+#include "pqSettingsDialog.h"
 #include "pqCoreUtilities.h"
 
 
-QPointer<pqApplicationOptionsDialog> pqApplicationSettingsReaction::Dialog;
+QPointer<pqSettingsDialog> pqApplicationSettingsReaction::Dialog;
 
 //-----------------------------------------------------------------------------
 pqApplicationSettingsReaction::pqApplicationSettingsReaction(QAction* parentObject)
@@ -50,16 +50,16 @@ pqApplicationSettingsReaction::~pqApplicationSettingsReaction()
 }
 
 //-----------------------------------------------------------------------------
-void pqApplicationSettingsReaction::showApplicationSettingsDialog()
+void pqApplicationSettingsReaction::showApplicationSettingsDialog(const QString& tabName)
 {
   if (!pqApplicationSettingsReaction::Dialog)
     {
-    pqApplicationSettingsReaction::Dialog = new pqApplicationOptionsDialog(
+    pqApplicationSettingsReaction::Dialog = new pqSettingsDialog(
       pqCoreUtilities::mainWidget());
     pqApplicationSettingsReaction::Dialog->setObjectName("ApplicationSettings");
-    pqApplicationSettingsReaction::Dialog->setAttribute(Qt::WA_QuitOnClose, false);
+    pqApplicationSettingsReaction::Dialog->setAttribute(Qt::WA_DeleteOnClose, true);
     }
   pqApplicationSettingsReaction::Dialog->show();
   pqApplicationSettingsReaction::Dialog->raise();
+  pqApplicationSettingsReaction::Dialog->showTab(tabName);
 }
-

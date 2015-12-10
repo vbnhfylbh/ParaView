@@ -47,11 +47,6 @@ A simple example::
 #==============================================================================
 import paraview, re, os, os.path, new, sys, atexit, vtk
 
-if not paraview.compatibility.major:
-    paraview.compatibility.major = 3
-if not paraview.compatibility.minor:
-    paraview.compatibility.minor = 5
-
 from vtkPVServerImplementationCorePython import *
 from vtkPVClientServerCoreCorePython import *
 from vtkPVServerManagerCorePython import *
@@ -68,6 +63,10 @@ try:
   from vtkPVServerManagerApplicationPython import *
 except:
   paraview.print_error("Error: Cannot import vtkPVServerManagerApplicationPython")
+try:
+  from vtkPVAnimationPython import *
+except:
+  paraview.print_error("Error: Cannot import vtkPVAnimationPython")
 from vtkPVCommonPython import *
 
 def _wrap_property(proxy, smproperty):
@@ -81,6 +80,9 @@ def _wrap_property(proxy, smproperty):
         al = smproperty.GetDomain("array_list")
         if  al and al.IsA("vtkSMArraySelectionDomain") and \
             smproperty.GetRepeatable():
+            property = ArrayListProperty(proxy, smproperty)
+        elif  al and al.IsA("vtkSMChartSeriesSelectionDomain") and \
+            smproperty.GetRepeatable() and al.GetDefaultMode() == 1:
             property = ArrayListProperty(proxy, smproperty)
         elif al and al.IsA("vtkSMArrayListDomain") and smproperty.GetNumberOfElements() == 5:
             property = ArraySelectionProperty(proxy, smproperty)
@@ -98,8 +100,6 @@ def _wrap_property(proxy, smproperty):
             iter.UnRegister(None)
             if isFileName:
                 property = FileNameProperty(proxy, smproperty)
-            elif _make_name_valid(smproperty.GetXMLLabel()) == 'ColorArrayName':
-                property = ColorArrayProperty(proxy, smproperty)
             else:
                 property = VectorProperty(proxy, smproperty)
     elif smproperty.IsA("vtkSMVectorProperty"):
@@ -117,6 +117,45 @@ def _wrap_property(proxy, smproperty):
     else:
         property = Property(proxy, smproperty)
     return property
+
+class ParaViewPipelineController(object):
+    """ParaViewPipelineController wraps vtkSMParaViewPipelineController class
+    to manage conversion of arguments passed around from Pyhton Proxy objects to
+    vtkSMProxy instances are vice-versa."""
+    def __init__(self):
+        """Constructor. Creates a new instance of
+        vtkSMParaViewPipelineController."""
+        self.SMController = vtkSMParaViewPipelineController()
+
+    def __ConvertArgumentsAndCall(self, *args):
+        newArgs = []
+        for arg in args:
+            # convert Proxy and ProxyManager to vtkSMProxy and
+            # vtkSMSessionProxyManager instances.
+            # FIXME: should handle session as well?
+            if issubclass(type(arg), Proxy) or isinstance(arg, Proxy):
+                newArgs.append(arg.SMProxy)
+            elif issubclass(type(arg), ProxyManager) or isinstance(arg, ProxyManager):
+                newArgs.append(arg.SMProxyManager)
+            else:
+                newArgs.append(arg)
+        func = getattr(self.SMController, self.__LastAttrName)
+        retVal = func(*newArgs)
+        if isinstance(retVal, vtkSMProxy):
+            # if this is a vtkObject and is a "vtkSMProxy", return a Proxy().
+            return _getPyProxy(retVal)
+        else:
+            return retVal
+
+    def __getattr__(self, name):
+        """Returns attribute from the ParaViewPipelineController."""
+        try:
+            pmAttr = getattr(self.SMController, name)
+            self.__LastAttrName = name
+            return self.__ConvertArgumentsAndCall
+        except:
+            pass
+        return getattr(self.SMController, name)
 
 class Proxy(object):
     """Proxy for a server side object. A proxy manages the lifetime of
@@ -244,6 +283,18 @@ class Proxy(object):
             setter = getattr(self.__class__, name)
             setter = setter.__set__
         except AttributeError:
+            if name == "ColorAttributeType" and self.SMProxy.GetProperty("ColorArrayName"):
+                if paraview.compatibility.GetVersion() <= 4.1:
+                    # set ColorAttributeType on ColorArrayName property instead.
+                    caProp = self.GetProperty("ColorArrayName")
+
+                    self.GetProperty("ColorArrayName").SetData((value, caProp[1]))
+                    return
+                else:
+                    # if ColorAttributeType is being used, print debug information.
+                    paraview.print_debug_info(\
+                        "'ColorAttributeType' is obsolete. Simply use 'ColorArrayName' instead.  Refer to ParaView Python API changes documentation online.")
+                    # we let the exception be raised as well, hence don't return here.
             if not hasattr(self, name):
                 raise AttributeError("Attribute %s does not exist. " % name +
                   " This class does not allow addition of new attributes to avoid " +
@@ -313,7 +364,10 @@ class Proxy(object):
         itself for vectors."""
         p = self.GetProperty(name)
         if isinstance(p, VectorProperty):
-            if p.GetNumberOfElements() == 1 and not p.GetRepeatable():
+            if paraview.compatibility.GetVersion() <= 4.1 and name == "ColorArrayName":
+              # Return ColorArrayName as just the array name for backwards compatibility.
+              return p[1]
+            elif p.GetNumberOfElements() == 1 and not p.GetRepeatable():
                 if p.SMProperty.IsA("vtkSMStringVectorProperty") or not p.GetArgumentIsArray():
                     return p[0]
         elif isinstance(p, InputProperty):
@@ -373,9 +427,9 @@ class Proxy(object):
                 newArgs.append(arg)
         func = getattr(self.SMProxy, self.__LastAttrName)
         retVal = func(*newArgs)
-        if type(retVal) is type(self.SMProxy) and retVal.IsA("vtkSMProxy"):
+        if isinstance(retVal, vtkSMProxy):
             return _getPyProxy(retVal)
-        elif type(retVal) is type(self.SMProxy) and retVal.IsA("vtkSMProperty"):
+        elif isinstance(retVal, vtkSMProperty):
             return _wrap_property(self, retVal)
         else:
             return retVal
@@ -404,6 +458,16 @@ class Proxy(object):
             return self.__GetActiveCamera
         if name == "SaveDefinition" and hasattr(self.SMProxy, "SaveDefinition"):
             return self.__SaveDefinition
+        if name == "ColorAttributeType" and self.SMProxy.GetProperty("ColorArrayName"):
+            if paraview.compatibility.GetVersion() <= 4.1:
+                if self.GetProperty("ColorArrayName")[0] == "CELLS":
+                    return "CELL_DATA"
+                else:
+                    return "POINT_DATA"
+            else:
+                # if ColorAttributeType is being used, warn.
+                paraview.print_debug_info(\
+                    "'ColorAttributeType' is obsolete. Simply use 'ColorArrayName' instead.  Refer to ParaView Python API changes documentation online.")
         # If not a property, see if SMProxy has the method
         try:
             proxyAttr = getattr(self.SMProxy, name)
@@ -722,13 +786,24 @@ class VectorProperty(Property):
             values = (values,)
         if not self.GetRepeatable() and len(values) != self.GetNumberOfElements():
             raise RuntimeError("This property requires %d values." % self.GetNumberOfElements())
+
+        convertedValues = map(self.ConvertValue, values)
+
         if self.GetRepeatable():
-            # Clean up first
-            self.SMProperty.SetNumberOfElements(0)
-        idx = 0
-        for val in values:
-            self.SMProperty.SetElement(idx, self.ConvertValue(val))
+          # Clean up first
+          self.SMProperty.SetNumberOfElements(len(convertedValues))
+
+        try:
+          # SetElements() isn't available for all VectorProperty values.
+          # Try to use it so that the proxies are updated only once.
+          # Otherwise, call SetElement() for each element.
+          self.SMProperty.SetElements(convertedValues)
+        except TypeError as e:
+          idx = 0
+          for val in convertedValues:
+            self.SMProperty.SetElement(idx, val)
             idx += 1
+
         self._UpdateProperty()
 
     def Clear(self):
@@ -794,73 +869,6 @@ class DoubleMapProperty(Property):
         self.SMProperty.ClearElements()
         self._UpdateProperty()
 
-class ColorArrayProperty(VectorProperty):
-    """This subclass of VectorProperty handles setting of the array to
-    color by. It handles attribute type as well as well array name."""
-
-    def GetAvailable(self):
-        """Returns the list of available arrays as (attribute type, array name
-        tuples."""
-        arrays = []
-        for a in self.Proxy.Input.PointData:
-            arrays.append(('POINT_DATA', a.GetName()))
-        for a in self.Proxy.Input.CellData:
-            arrays.append(('CELL_DATA', a.GetName()))
-        return arrays
-
-    def SetData(self, value):
-        """Overwritten to enable setting attribute type (the ColorAttributeType
-        property and the array name. The argument should be the array name
-        (in which case the first appropriate attribute type is picked) or
-        a tuple of attribute type and array name."""
-        if isinstance(value, tuple) and len(value) == 2:
-            att = value[0]
-            arr = value[1]
-        elif isinstance(value, str):
-            att = None
-            arr = value
-        else:
-            raise ValueError("Expected a tuple of 2 values or a string.")
-
-        if not arr:
-            self.SMProperty.SetElement(0, '')
-            self._UpdateProperty()
-            return
-
-        # if the attribute type was not specified, then we need to determine the
-        # attribute type. Thus co-processing scripts and scripts where
-        # data may not be up-to-date should always specify the attribute type to
-        # overcome this check (BUG #13933).
-        if att == None:
-            for a in self.Available:
-                if a[1] == arr:
-                    att = a[0]
-                    break
-
-        if att == None:
-            pvoptions = vtkProcessModule.GetProcessModule().GetOptions()
-            if pvoptions.GetSymmetricMPIMode() == False:
-                raise ValueError("Could not locate array %s in the input." % arr)
-        else:
-            catt = self.Proxy.GetProperty("ColorAttributeType")
-            catt.SetData(att)
-        self.SMProperty.SetElement(0, arr)
-        self._UpdateProperty()
-
-    def __str__(self):
-        """Returns a user-friendly representation string."""
-        catt = self.Proxy.GetProperty("ColorAttributeType")
-        if catt:
-            if not type(catt) is Property:
-                catt = _wrap_property(self.Proxy, catt)
-            return str((catt.GetData(), self.GetData()))
-        else:
-            return str(self.GetData())
-
-    Available = property(GetAvailable, None, None, \
-        "This read-only property returns the list of arrays that can be colored by.")
-
-
 class EnumerationProperty(VectorProperty):
     """Subclass of VectorProperty that is applicable for enumeration type
     properties."""
@@ -914,11 +922,7 @@ class ArraySelectionProperty(VectorProperty):
         val = self.GetElement(3)
         if val == "":
             return None
-        for key, value in ASSOCIATIONS.iteritems():
-            if value == int(val):
-                return key
-
-        return None
+        return GetAssociationAsString(int(val))
 
     def GetArrayName(self):
         return self.GetElement(4)
@@ -946,7 +950,7 @@ class ArraySelectionProperty(VectorProperty):
         elif idx >= 2 or idx < 0:
             raise IndexError
 
-        if i == 0:
+        if idx == 0:
             return self.GetAssociation()
         else:
             return self.GetArrayName()
@@ -954,6 +958,12 @@ class ArraySelectionProperty(VectorProperty):
     def SetData(self, values):
         """Allows setting of all values at once. Requires a single value,
         a tuple or list."""
+        if not values:
+            # if values is None or empty list, we are resetting the selection.
+            self.SMProperty.SetElement(4, "")
+            self._UpdateProperty()
+            return
+
         if not isinstance(values, tuple) and \
            not isinstance(values, list):
             values = (values,)
@@ -961,11 +971,11 @@ class ArraySelectionProperty(VectorProperty):
             self.SMProperty.SetElement(4, values[0])
         elif len(values) == 2:
             if isinstance(values[0], str):
-                val = str(ASSOCIATIONS[values[0]])
+                val = GetAssociationFromString(values[0])
             else:
                 # In case user didn't specify valid association,
                 # just pick POINTS.
-                val = str(ASSOCIATIONS['POINTS'])
+                val = GetAssociationFromString("POINTS")
             self.SMProperty.SetElement(3,  str(val))
             self.SMProperty.SetElement(4, values[1])
         else:
@@ -983,9 +993,7 @@ class ArraySelectionProperty(VectorProperty):
         for i in range(0,3):
             if self.GetElement(i) == '':
                 self.SMProperty.SetElement(i, '0')
-        al = self.SMProperty.GetDomain("array_list")
-        al.Update(self.SMProperty)
-        al.SetDefaultValues(self.SMProperty)
+        self.SMProperty.ResetToDomainDefaults(False)
 
 class ArrayListProperty(VectorProperty):
     """This property provides a simpler interface for selecting arrays.
@@ -1141,7 +1149,7 @@ class ProxyProperty(Property):
                     iproxy = CreateProxy(igroup, name)
                     listdomain.AddProxy(iproxy)
                     pm.RegisterProxy(group, proxy.GetPropertyName(smproperty), iproxy)
-                listdomain.SetDefaultValues(self.SMProperty)
+                smproperty.ResetToDomainDefaults(False)
 
     def GetAvailable(self):
         """If this proxy has a list domain, then this function returns the
@@ -1739,7 +1747,7 @@ class ProxyManager(object):
               newArgs.append(arg)
       func = getattr(self.SMProxyManager, self.__LastAttrName)
       retVal = func(*newArgs)
-      if type(retVal) is type(self.SMProxyManager) and retVal.IsA("vtkSMProxy"):
+      if isinstance(retVal, vtkSMProxy):
           return _getPyProxy(retVal)
       else:
           return retVal
@@ -2099,7 +2107,7 @@ def GetRenderView(connection=None):
 def GetRenderViews(connection=None):
     """Returns the set of all render views."""
     render_modules = []
-    for aProxy in ProxyManager():
+    for aProxy in ProxyManager().GetProxiesInGroup("views").values():
         if aProxy.IsA("vtkSMRenderViewProxy"):
             render_modules.append(aProxy)
     return render_modules
@@ -2138,16 +2146,11 @@ def _create_view(view_xml_name, session=None, **extraArgs):
         view_module = CreateProxy("views", view_xml_name, session)
     if not view_module:
         return None
-    extraArgs['proxy'] = view_module
-    python_proxy_name = _make_name_valid(view_module.GetXMLName())
-    proxy = rendering.__dict__[python_proxy_name](**extraArgs)
-    return proxy
+    return _getPyProxy(view_module)
 
 def GetRepresentation(aProxy, view):
-    for rep in view.Representations:
-        try: isRep = rep.Input == aProxy
-        except: isRep = False
-        if isRep: return rep
+    if view:
+      return view.FindRepresentation(aProxy.SMProxy, aProxy.Port)
     return None
 
 def CreateRepresentation(aProxy, view, **extraArgs):
@@ -2415,6 +2418,11 @@ def _getPyProxy(smproxy, outputPort=0):
     new one. Proxies register themselves in _pyproxies upon creation."""
     if not smproxy:
         return None
+    try:
+        # is argument is already a Proxy instance, this takes care of it.
+        return _getPyProxy(smproxy.SMProxy, outputPort)
+    except AttributeError:
+        pass
     if (smproxy, outputPort) in _pyproxies:
         return _pyproxies[(smproxy, outputPort)]()
 
@@ -2426,7 +2434,20 @@ def _getPyProxy(smproxy, outputPort=0):
     if classForProxy:
         retVal = classForProxy(proxy=smproxy, port=outputPort)
     else:
-        retVal = Proxy(proxy=smproxy, port=outputPort)
+        # Since the class for this proxy, doesn't exist yet, we attempt to
+        # create a new class definition for it, if possible and then add it
+        # to the "misc" module. This is essential since the Python property
+        # variables for a proxy are only setup whne the Proxy class is created
+        # (in _createClass).
+        # NOTE: _createClass() takes the xml group and name, not the xml label,
+        # hence we don't pass xmlName variable.
+        classForProxy = _createClass(smproxy.GetXMLGroup(), smproxy.GetXMLName())
+        if classForProxy:
+            global misc
+            misc.__dict__[classForProxy.__name__] = classForProxy
+            retVal = classForProxy(proxy=smproxy, port=outputPort)
+        else:
+            retVal = Proxy(proxy=smproxy, port=outputPort)
     return retVal
 
 def _makeUpdateCameraMethod(rv):
@@ -2551,6 +2572,7 @@ def updateModules(m):
     createModule("lookup_tables", m.rendering)
     createModule("textures", m.rendering)
     createModule('cameramanipulators', m.rendering)
+    createModule('annotations', m.rendering)
     createModule("animation", m.animation)
     createModule("misc", m.misc)
     createModule('animation_keyframes', m.animation)
@@ -2571,6 +2593,7 @@ def _createModules(m):
     createModule("lookup_tables", m.rendering)
     createModule("textures", m.rendering)
     createModule('cameramanipulators', m.rendering)
+    createModule('annotations', m.rendering)
     m.animation = createModule('animation')
     createModule('animation_keyframes', m.animation)
     m.implicit_functions = createModule('implicit_functions')
@@ -2584,6 +2607,65 @@ class PVModule(object):
 
 def _make_name_valid(name):
     return paraview.make_name_valid(name)
+
+def _createClass(groupName, proxyName, apxm=None):
+    """Defines a new class type for the proxy."""
+    global ActiveConnection
+    pxm = ProxyManager() if not apxm else apxm
+    proto = pxm.GetPrototypeProxy(groupName, proxyName)
+    if not proto:
+       paraview.print_error("Error while loading %s/%s %s"%(groupName, i['group'], proxyName))
+       return None
+    pname = proxyName
+    if paraview.compatibility.GetVersion() >= 3.5 and proto.GetXMLLabel():
+        pname = proto.GetXMLLabel()
+    pname = _make_name_valid(pname)
+    if not pname:
+        return None
+    cdict = {}
+    # Create an Initialize() method for this sub-class.
+    cdict['Initialize'] = _createInitialize(groupName, proxyName)
+    iter = PropertyIterator(proto)
+    # Add all properties as python properties.
+    for prop in iter:
+        propName = iter.GetKey()
+        if paraview.compatibility.GetVersion() >= 3.5:
+            if (prop.GetInformationOnly() and propName != "TimestepValues" ) \
+              or prop.GetIsInternal():
+                continue
+        names = [propName]
+        if paraview.compatibility.GetVersion() >= 3.5:
+            names = [iter.PropertyLabel]
+
+        propDoc = None
+        if prop.GetDocumentation():
+            propDoc = prop.GetDocumentation().GetDescription()
+        for name in names:
+            name = _make_name_valid(name)
+            if name:
+                cdict[name] = property(_createGetProperty(propName),
+                                       _createSetProperty(propName),
+                                       None,
+                                       propDoc)
+    # Add the documentation as the class __doc__
+    if proto.GetDocumentation() and \
+       proto.GetDocumentation().GetDescription():
+        doc = proto.GetDocumentation().GetDescription()
+    else:
+        doc = Proxy.__doc__
+    cdict['__doc__'] = doc
+    # Create the new type
+    if proto.GetXMLName() == "ExodusIIReader":
+        superclasses = (ExodusIIReaderProxy,)
+    elif proto.IsA("vtkSMSourceProxy"):
+        superclasses = (SourceProxy,)
+    elif proto.IsA("vtkSMViewLayoutProxy"):
+        superclasses = (ViewLayoutProxy,)
+    else:
+        superclasses = (Proxy,)
+
+    cobj = type(pname, superclasses, cdict)
+    return cobj
 
 def createModule(groupName, mdl=None):
     """Populates a module with proxy classes defined in the given group.
@@ -2604,65 +2686,16 @@ def createModule(groupName, mdl=None):
     definitionIter = pxm.NewDefinitionIterator(groupName)
     for i in definitionIter:
         proxyName = i['key']
-        proto = pxm.GetPrototypeProxy(groupName, proxyName)
-        if not proto:
-           paraview.print_error("Error while loading %s/%s %s"%(groupName, i['group'], proxyName))
-           continue
-        pname = proxyName
-        if paraview.compatibility.GetVersion() >= 3.5 and\
-           proto.GetXMLLabel():
-            pname = proto.GetXMLLabel()
-        pname = _make_name_valid(pname)
-        if not pname:
-            continue
-        if pname in mdl.__dict__:
-            if debug:
-                paraview.print_warning("Warning: %s is being overwritten. This may point to an issue in the ParaView configuration files" % pname)
-        cdict = {}
-        # Create an Initialize() method for this sub-class.
-        cdict['Initialize'] = _createInitialize(groupName, proxyName)
-        iter = PropertyIterator(proto)
-        # Add all properties as python properties.
-        for prop in iter:
-            propName = iter.GetKey()
-            if paraview.compatibility.GetVersion() >= 3.5:
-                if (prop.GetInformationOnly() and propName != "TimestepValues" ) \
-                  or prop.GetIsInternal():
-                    continue
-            names = [propName]
-            if paraview.compatibility.GetVersion() >= 3.5:
-                names = [iter.PropertyLabel]
-
-            propDoc = None
-            if prop.GetDocumentation():
-                propDoc = prop.GetDocumentation().GetDescription()
-            for name in names:
-                name = _make_name_valid(name)
-                if name:
-                    cdict[name] = property(_createGetProperty(propName),
-                                           _createSetProperty(propName),
-                                           None,
-                                           propDoc)
-        # Add the documentation as the class __doc__
-        if proto.GetDocumentation() and \
-           proto.GetDocumentation().GetDescription():
-            doc = proto.GetDocumentation().GetDescription()
-        else:
-            doc = Proxy.__doc__
-        cdict['__doc__'] = doc
-        # Create the new type
-        if proto.GetXMLName() == "ExodusIIReader":
-            superclasses = (ExodusIIReaderProxy,)
-        elif proto.IsA("vtkSMSourceProxy"):
-            superclasses = (SourceProxy,)
-        elif proto.IsA("vtkSMViewLayoutProxy"):
-            superclasses = (ViewLayoutProxy,)
-        else:
-            superclasses = (Proxy,)
-
-        cobj = type(pname, superclasses, cdict)
-        # Add it to the modules dictionary
-        mdl.__dict__[pname] = cobj
+        cobj = _createClass(groupName, proxyName, apxm=pxm)
+        if cobj:
+            pname = cobj.__name__
+            if pname in mdl.__dict__ and debug:
+                paraview.print_warning(\
+                        "Warning: %s is being overwritten."\
+                        " This may point to an issue in the ParaView configuration files"\
+                        % pname)
+            # Add it to the modules dictionary
+            mdl.__dict__[pname] = cobj
     return mdl
 
 
@@ -2849,8 +2882,7 @@ def demo2(fname="/Users/berk/Work/ParaViewData/Data/disk_out_ref.ex2"):
     # Assign it to the representation
     rep.LookupTable = lt
     # Color by point array called Pres
-    rep.ColorAttributeType = 0 # point data
-    rep.ColorArrayName = "Pres"
+    rep.ColorArrayName = ("POINTS", "Pres")
     # Add to RGB points. These are tuples of 4 values. First one is
     # the scalar values, the other 3 the RGB values. This list has
     # 2 points: Pres: 0.00678, color: blue, Pres: 0.0288, color: red
@@ -2997,7 +3029,30 @@ def demo5():
     scene.Play()
     return scene
 
-ASSOCIATIONS = { 'POINTS' : 0, 'CELLS' : 1, 'VERTICES' : 4, 'EDGES' : 5, 'ROWS' : 6}
+ASSOCIATIONS = { 'POINTS' : 0, 'CELLS' : 1, 'FIELD' : 2, 'VERTICES' : 4, 'EDGES' : 5, 'ROWS' : 6}
+_LEGACY_ASSOCIATIONS = { 'POINT_DATA' : 0, 'CELL_DATA' : 1 }
+
+def GetAssociationAsString(val):
+    """Returns array association string from its integer value"""
+    global ASSOCIATIONS
+    if not type(val) == int:
+        raise ValueError, "argument must be of type 'int'"
+    for k, v in ASSOCIATIONS.iteritems():
+        if v == val:
+            return k
+    raise RuntimeError, "invalid association type '%d'" % val
+
+def GetAssociationFromString(val):
+    """Returns array association interger value from its string representation"""
+    global ASSOCIATIONS, _LEGACY_ASSOCIATIONS
+    val = str(val).upper()
+    try:
+        return ASSOCIATIONS[val]
+    except KeyError:
+        try:
+            return _LEGACY_ASSOCIATIONS[val]
+        except KeyError:
+            raise RuntimeError, "invalid association string '%s'" % val
 
 # Users can set the active connection which will be used by API
 # to create proxies etc when no connection argument is passed.
@@ -3037,7 +3092,12 @@ def SetActiveConnection(connection=None):
     return ActiveConnection
 
 # Needs to be called when paraview module is loaded from python instead
-# of pvpython, pvbatch or GUI.
+# of pvpython, pvbatch or GUI. If running in parallel this will
+# also set up the vtkMPIController automatically as well. Users
+# should specify paraview.options.{batch,symmetric} to be true
+# or false to set up ParaView properly. If MPI was initialized, calling
+# servermanager.Finalize() may also be needed to exit properly without
+# VTK_DEBUG_LEAKS reporting memory leaks.
 if not vtkProcessModule.GetProcessModule():
     pvoptions = None
     if paraview.options.batch:
@@ -3045,8 +3105,11 @@ if not vtkProcessModule.GetProcessModule():
       pvoptions.SetProcessType(vtkPVOptions.PVBATCH)
       if paraview.options.symmetric:
         pvoptions.SetSymmetricMPIMode(True)
-    vtkInitializationHelper.Initialize(sys.executable,
-        vtkProcessModule.PROCESS_CLIENT, pvoptions)
+      vtkInitializationHelper.Initialize(sys.executable,
+          vtkProcessModule.PROCESS_BATCH, pvoptions)
+    else:
+      vtkInitializationHelper.Initialize(sys.executable,
+          vtkProcessModule.PROCESS_CLIENT, pvoptions)
 
 # Initialize progress printing. Can be turned off by calling
 # ToggleProgressPrinting() again.

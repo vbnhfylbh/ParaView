@@ -20,17 +20,17 @@
 #include "vtkCommand.h"
 #include "vtkCompositeDataPipeline.h"
 #include "vtkDummyController.h"
-#include "vtkDynamicLoader.h"
 #include "vtkFloatingPointExceptions.h"
 #include "vtkMultiThreader.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkOutputWindow.h"
+#include "vtkPVConfig.h"
 #include "vtkPVConfig.h"
 #include "vtkPVOptions.h"
 #include "vtkSessionIterator.h"
 #include "vtkStdString.h"
 #include "vtkTCPNetworkAccessManager.h"
-#include "vtkPVConfig.h"
 
 #include <vtksys/SystemTools.hxx>
 
@@ -43,15 +43,23 @@
 # include "vtkProcessModuleInitializePython.h"
 #endif
 
-#ifndef _WIN32
-#include <signal.h>
+#ifdef _WIN32
+# include "vtkDynamicLoader.h"
+#else
+# include <signal.h>
 #endif
+
+// this include is needed to ensure that vtkPVPluginLoader singleton doesn't get
+// destroyed before the process module singleton is cleaned up.
+#include "vtkPVPluginLoader.h"
 
 #include <assert.h>
 #include <stdexcept> // for runtime_error
+#include <clocale> // needed for setlocale()
 
 namespace
 {
+#ifdef PARAVIEW_USE_MPI
   // Returns true if the arguments has the specified boolean_arg.
   bool vtkFindArgument(const char* boolean_arg,
     int argc, char** &argv)
@@ -65,6 +73,22 @@ namespace
       }
     return false;
     }
+#endif
+
+  // This is used to avoid creating vtkWin32OutputWindow on ParaView executables.
+  // vtkWin32OutputWindow is not a useful window for any of the ParaView commandline
+  // executables.
+  class vtkPVGenericOutputWindow : public vtkOutputWindow
+  {
+public:
+  vtkTypeMacro(vtkPVGenericOutputWindow, vtkOutputWindow);
+  static vtkPVGenericOutputWindow* New();
+
+private:
+  vtkPVGenericOutputWindow() {}
+  ~vtkPVGenericOutputWindow() {}
+  };
+  vtkStandardNewMacro(vtkPVGenericOutputWindow);
 }
 
 //----------------------------------------------------------------------------
@@ -89,25 +113,26 @@ bool vtkProcessModule::Initialize(ProcessTypes type, int &argc, char** &argv)
 
 #ifdef PARAVIEW_USE_MPI
   bool use_mpi = (type != PROCESS_CLIENT);
+  // scan the arguments to determine if we need to initialize MPI on client.
+  bool default_use_mpi = use_mpi;
+
   if (!use_mpi) // i.e. type == PROCESS_CLIENT.
     {
-    // scan the arguments to determine if we need to initialize MPI on client.
-    bool default_use_mpi = false;
 #if defined(PARAVIEW_INITIALIZE_MPI_ON_CLIENT)
     default_use_mpi = true;
 #endif
-
-    // Refer to vtkPVOptions.cxx for details.
-    if (vtkFindArgument("--mpi", argc, argv))
-      {
-      default_use_mpi = true;
-      }
-    else if (vtkFindArgument("--no-mpi", argc, argv))
-      {
-      default_use_mpi = false;
-      }
-    use_mpi = default_use_mpi;
     }
+
+  // Refer to vtkPVOptions.cxx for details.
+  if (vtkFindArgument("--mpi", argc, argv))
+    {
+    default_use_mpi = true;
+    }
+  else if (vtkFindArgument("--no-mpi", argc, argv))
+    {
+    default_use_mpi = false;
+    }
+  use_mpi = default_use_mpi;
 
   // initialize MPI only on all processes if paraview is compiled w/MPI.
   int mpi_already_initialized = 0;
@@ -133,28 +158,34 @@ bool vtkProcessModule::Initialize(ProcessTypes type, int &argc, char** &argv)
 
   if (use_mpi || mpi_already_initialized)
     {
-    // Get number of ranks passed to mpiexec/mpirun etc.
-    int numRanks = 0;
-    MPI_Comm_size(MPI_COMM_WORLD,&numRanks);
-
+    if(vtkMPIController* controller = vtkMPIController::SafeDownCast(
+         vtkMultiProcessController::GetGlobalController()))
+      {
+      vtkProcessModule::GlobalController = controller;
+      }
+    else
+      {
+      vtkProcessModule::GlobalController = vtkSmartPointer<vtkMPIController>::New();
+      vtkProcessModule::GlobalController->Initialize(
+        &argc, &argv, /*initializedExternally*/1);
+      }
+    // Get number of ranks in this process group
+    int numRanks = vtkProcessModule::GlobalController->GetNumberOfProcesses();
     // Ensure that the user cannot run a client with more than one rank.
     if (type==PROCESS_CLIENT && numRanks > 1)
       {
       throw std::runtime_error("Client process should be run with one process!");
       }
 
-    vtkProcessModule::GlobalController = vtkSmartPointer<vtkMPIController>::New();
-    vtkProcessModule::GlobalController->Initialize(
-      &argc, &argv, /*initializedExternally*/1);
     }
 #else
   static_cast<void>(argc); // unused warning when MPI is off
   static_cast<void>(argv); // unused warning when MPI is off
 #endif // PARAVIEW_USE_MPI
+  vtkProcessModule::GlobalController->BroadcastTriggerRMIOn();
   vtkMultiProcessController::SetGlobalController(
     vtkProcessModule::GlobalController);
 
-#ifdef PARAVIEW_USE_X
   // Hack to support -display parameter.  vtkPVOptions requires parameters to be
   // specified as -option=value, but it is generally expected that X window
   // programs allow you to set the display as -display host:port (i.e. without
@@ -179,7 +210,6 @@ bool vtkProcessModule::Initialize(ProcessTypes type, int &argc, char** &argv)
       break;
       }
     }
-#endif // VTK_USE_X
 
 #ifdef _WIN32
   // Avoid Ghost windows on windows XP
@@ -199,6 +229,14 @@ bool vtkProcessModule::Initialize(ProcessTypes type, int &argc, char** &argv)
 #ifdef PARAVIEW_ENABLE_FPE
   vtkFloatingPointExceptions::Enable();
 #endif //PARAVIEW_ENABLE_FPE
+
+  if (vtkProcessModule::ProcessType != PROCESS_CLIENT)
+    {
+    // On non-client processes, we don't want VTK default output window esp. on
+    // Windows since that pops up too many windows. Hence we replace it.
+    vtkNew<vtkPVGenericOutputWindow> window;
+    vtkOutputWindow::SetInstance(window.GetPointer());
+    }
 
   // In general turn off error prompts. This is where the process waits for
   // user-input on any error/warning. In past, we turned on prompts on Windows.
@@ -269,6 +307,9 @@ bool vtkProcessModule::Finalize()
     {
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Finalize();
+
+    // prevent caling MPI_Finalize() twice
+    vtkProcessModule::FinalizeMPI = false;
     }
 #endif
 

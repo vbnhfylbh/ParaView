@@ -89,7 +89,6 @@ private:
 class pqContextView::pqInternal
 {
 public:
-  QPointer<QWidget> Viewport;
   bool InitializedAfterObjectsCreated;
   int SelectionAction;
 
@@ -100,7 +99,6 @@ public:
     }
   ~pqInternal()
     {
-    delete this->Viewport;
     }
 
   vtkNew<vtkEventQtSlotConnect> VTKConnect;
@@ -137,78 +135,15 @@ QWidget* pqContextView::createWidget()
   // correctly when an overlapping window is present, unlike 3D views.
   vtkwidget->setAutomaticImageCacheEnabled(false);
   vtkwidget->setViewProxy(this->getProxy());
-  vtkwidget->setObjectName("Viewport");
+  vtkwidget->setContextMenuPolicy(Qt::NoContextMenu);
+  vtkwidget->installEventFilter(this);
+
+  vtkSMContextViewProxy* proxy = this->getContextViewProxy();
+  Q_ASSERT(proxy);
+
+  vtkwidget->SetRenderWindow(proxy->GetRenderWindow());
+  proxy->SetupInteractor(vtkwidget->GetInteractor());
   return vtkwidget;
-}
-
-//-----------------------------------------------------------------------------
-void pqContextView::initialize()
-{
-  this->Superclass::initialize();
-
-  // The render module needs to obtain client side objects
-  // for the RenderWindow etc. to initialize the QVTKWidget
-  // correctly. It cannot do this unless the underlying proxy
-  // has been created. Since any pqProxy should never call
-  // UpdateVTKObjects() on itself in the constructor, we
-  // do the following.
-  vtkSMProxy* proxy = this->getProxy();
-  if (!proxy->GetObjectsCreated())
-    {
-    // Wait till first UpdateVTKObjects() call on the render module.
-    // Under usual circumstances, after UpdateVTKObjects() the
-    // render module objects will be created.
-    this->getConnector()->Connect(proxy, vtkCommand::UpdateEvent,
-      this, SLOT(initializeAfterObjectsCreated()));
-    }
-  else
-    {
-    this->initializeAfterObjectsCreated();
-    }
-}
-
-//-----------------------------------------------------------------------------
-void pqContextView::initializeAfterObjectsCreated()
-{
-  if (!this->Internal->InitializedAfterObjectsCreated)
-    {
-    this->Internal->InitializedAfterObjectsCreated = true;
-    // Initialize the interactors and all global settings. global-settings
-    // override the values specified in state files or through python client.
-    this->initializeInteractors();
-    }
-}
-
-//-----------------------------------------------------------------------------
-void pqContextView::initializeInteractors()
-{
-  vtkSMContextViewProxy* proxy =
-    vtkSMContextViewProxy::SafeDownCast(this->getProxy());
-  QVTKWidget* qvtk = qobject_cast<QVTKWidget*>(this->Internal->Viewport);
-
-  if(proxy && qvtk)
-    {
-    vtkContextView* view = proxy->GetContextView();
-    view->SetInteractor(qvtk->GetInteractor());
-    qvtk->SetRenderWindow(view->GetRenderWindow());
-    }
-}
-
-//-----------------------------------------------------------------------------
-/// Return a widget associated with this view.
-QWidget* pqContextView::getWidget()
-{
-  if(!this->Internal->Viewport)
-    {
-    this->Internal->Viewport = this->createWidget();
-    // we manage the context menu ourself, so it doesn't interfere with
-    // render window interactions
-    this->Internal->Viewport->setContextMenuPolicy(Qt::NoContextMenu);
-    this->Internal->Viewport->installEventFilter(this);
-    this->Internal->Viewport->setObjectName("Viewport");
-    this->initializeInteractors();
-    }
-  return this->Internal->Viewport;
 }
 
 //-----------------------------------------------------------------------------
@@ -226,20 +161,6 @@ vtkSMContextViewProxy* pqContextView::getContextViewProxy() const
 }
 
 //-----------------------------------------------------------------------------
-/// Capture the view image into a new vtkImageData with the given magnification
-/// and returns it. The caller is responsible for freeing the returned image.
-vtkImageData* pqContextView::captureImage(int magnification)
-{
-  if (this->getWidget()->isVisible())
-    {
-    return this->getContextViewProxy()->CaptureWindow(magnification);
-    }
-
-  // Don't return any image when the view is not visible.
-  return NULL;
-}
-
-//-----------------------------------------------------------------------------
 bool pqContextView::supportsSelection() const
 {
   return true;
@@ -253,76 +174,18 @@ void pqContextView::resetDisplay()
   if (proxy)
     {
     proxy->ResetDisplay();
+    this->render();
     }
-}
-
-//-----------------------------------------------------------------------------
-/// Returns true if data on the given output port can be displayed by this view.
-bool pqContextView::canDisplay(pqOutputPort* opPort) const
-{
-  if(this->Superclass::canDisplay(opPort))
-    {
-    return true;
-    }
-
-  pqPipelineSource* source = opPort? opPort->getSource() :0;
-  vtkSMSourceProxy* sourceProxy = source ?
-    vtkSMSourceProxy::SafeDownCast(source->getProxy()) : 0;
-  if(!opPort || !source ||
-     opPort->getServer()->GetConnectionID() !=
-     this->getServer()->GetConnectionID() || !sourceProxy ||
-     sourceProxy->GetOutputPortsCreated()==0)
-    {
-    return false;
-    }
-
-  if (sourceProxy->GetHints() &&
-    sourceProxy->GetHints()->FindNestedElementByName("Plotable"))
-    {
-    return true;
-    }
-
-  vtkPVDataInformation* dataInfo = opPort->getDataInformation();
-  if ( !dataInfo )
-    {
-    return false;
-    }
-
-  QString className = dataInfo->GetDataClassName();
-  if( className == "vtkTable" )
-    {
-    return true;
-    }
-  else if(className == "vtkImageData" || className == "vtkRectilinearGrid")
-    {
-    int extent[6];
-    dataInfo->GetExtent(extent);
-    int temp[6]={0, 0, 0, 0, 0, 0};
-    int dimensionality = vtkStructuredData::GetDataDimension(
-      vtkStructuredData::SetExtent(extent, temp));
-    if (dimensionality == 1)
-      {
-      return true;
-      }
-    }
-  return false;
 }
 
 void pqContextView::selectionChanged()
 {
   // Fill the selection source with the selection from the view
-  vtkSelection* sel = 0;
-
-  if(vtkChart *chart = vtkChart::SafeDownCast(this->getContextViewProxy()->GetContextItem()))
+  vtkSelection* sel = this->getContextViewProxy()->GetCurrentSelection();
+  if (sel)
     {
-    sel = chart->GetAnnotationLink()->GetCurrentSelection();
+    this->setSelection(sel);
     }
-
-  if(!sel)
-    {
-    return;
-    }
-  this->setSelection(sel);
 }
 
 void pqContextView::setSelection(vtkSelection* sel)

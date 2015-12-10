@@ -31,6 +31,7 @@
 class vtkSMProperty;
 class vtkSMProxy;
 class vtkSMProxyListDomainInternals;
+class vtkSMSessionProxyManager;
 
 class VTKPVSERVERMANAGERCORE_EXPORT vtkSMProxyListDomain : public vtkSMDomain
 {
@@ -50,6 +51,11 @@ public:
   // Description:
   // Returns the xml type name for the proxy at a given index.
   const char* GetProxyName(unsigned int index);
+
+  // Description:
+  // If the \c proxy is part of the domain, then this returns the name used for
+  // the proxy in the domain. Returns NULL otherwise.
+  const char* GetProxyName(vtkSMProxy* proxy);
 
   // Description:
   // This always returns true.
@@ -72,6 +78,10 @@ public:
   vtkSMProxy* GetProxy(unsigned int index);
 
   // Description:
+  // Find a proxy in the domain of the given group and type.
+  vtkSMProxy* FindProxy(const char* xmlgroup, const char* xmlname);
+
+  // Description:
   // Removes the first occurence of the \c proxy in the domain.
   // Returns if the proxy was removed.
   int RemoveProxy(vtkSMProxy* proxy);
@@ -82,6 +92,12 @@ public:
   int RemoveProxy(unsigned int index);
 
   // Description:
+  // Creates and populates the domain with the proxy-types. This will remove any
+  // existing proxies in the domain. Note that the newly created proxies won't
+  // be registered with the proxy manager.
+  void CreateProxies(vtkSMSessionProxyManager* pxm);
+
+  // Description:
   // A vtkSMProperty is often defined with a default value in the
   // XML itself. However, many times, the default value must be determined
   // at run time. To facilitate this, domains can override this method
@@ -89,7 +105,7 @@ public:
   // Note that unlike the compile-time default values, the
   // application must explicitly call this method to initialize the
   // property.
-  virtual int SetDefaultValues(vtkSMProperty* prop);
+  virtual int SetDefaultValues(vtkSMProperty* prop, bool use_unchecked_values);
 protected:
   vtkSMProxyListDomain();
   ~vtkSMProxyListDomain();
@@ -109,7 +125,10 @@ protected:
 
   // Load the state of the domain from the XML.
   virtual int LoadState(vtkPVXMLElement* domainElement, 
-    vtkSMProxyLocator* loader); 
+    vtkSMProxyLocator* loader);
+
+  friend class vtkSMProxyProperty;
+  void SetProxies(vtkSMProxy** proxies, unsigned int count);
 
 private:
   vtkSMProxyListDomain(const vtkSMProxyListDomain&); // Not implemented.

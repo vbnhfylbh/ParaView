@@ -31,18 +31,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ========================================================================*/
 #include "pqColorAnnotationsPropertyWidget.h"
 #include "ui_pqColorAnnotationsPropertyWidget.h"
+#include "ui_pqSavePresetOptions.h"
 
 #include "pqActiveObjects.h"
-#include "pqColorMapModel.h"
-#include "pqColorPresetManager.h"
 #include "pqDataRepresentation.h"
+#include "pqPresetDialog.h"
 #include "pqPropertiesPanel.h"
 #include "pqPropertyWidgetDecorator.h"
 #include "pqUndoStack.h"
 #include "vtkAbstractArray.h"
+#include "vtkCollection.h"
 #include "vtkCommand.h"
 #include "vtkEventQtSlotConnect.h"
 #include "vtkNew.h"
+#include "vtkPVArrayInformation.h"
 #include "vtkPVProminentValuesInformation.h"
 #include "vtkPVXMLElement.h"
 #include "vtkSmartPointer.h"
@@ -50,9 +52,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxy.h"
+#include "vtkSMPVRepresentationProxy.h"
+#include "vtkSMSessionProxyManager.h"
+#include "vtkSMStringVectorProperty.h"
+#include "vtkSMTransferFunctionPresets.h"
 #include "vtkSMTransferFunctionProxy.h"
+#include "vtkStringList.h"
 #include "vtkTuple.h"
 #include "vtkVariant.h"
+
+#include <vtk_jsoncpp.h>
 
 #include <QAbstractTableModel>
 #include <QColorDialog>
@@ -60,7 +69,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QMessageBox>
 #include <QPointer>
 #include <QPointer>
-
+#include <QSet>
+#include <algorithm>
 
 namespace
 {
@@ -100,25 +110,58 @@ private:
 // First column is IndexedColors and the 2nd and 3rd columns are the
 // annotation value and text.
 class pqAnnotationsModel : public QAbstractTableModel
-  {
+{
   typedef QAbstractTableModel Superclass;
 
+  struct ItemType
+    {
+    QColor Color;
+    QString Value;
+    QString Annotation;
+    bool setData(int index, const QVariant& value)
+      {
+      if (index == 0 && value.canConvert(QVariant::Color))
+        {
+        this->Color = value.value<QColor>();
+        return true;
+        }
+      else if (index == 1)
+        {
+        this->Value = value.toString();
+        return true;
+        }
+      else if (index == 2)
+        {
+        this->Annotation = value.toString();
+        return true;
+        }
+      return false;
+      }
+    QVariant data(int index) const
+      {
+      if (index == 0 && this->Color.isValid())
+        {
+        return this->Color;
+        }
+      else if (index == 1)
+        {
+        return this->Value;
+        }
+      else if (index == 2)
+        {
+        return this->Annotation;
+        }
+      return QVariant();
+      }
+    };
+
   QIcon MissingColorIcon;
-  QVector<vtkTuple<QString, 2> > Annotations;
-  QVector<QColor> IndexedColors;
+  QVector<ItemType> Items;
 public:
   pqAnnotationsModel(QObject* parentObject = 0):
     Superclass(parentObject),
     MissingColorIcon(":/pqWidgets/Icons/pqUnknownData16.png")
   {
-  vtkTuple<QString, 2> item;
-  item.GetData()[0] = QString("12.0");
-  item.GetData()[1] = QString("Label 1");
-  this->Annotations.push_back(item);
-
-  item.GetData()[0] = QString("13.0");
-  item.GetData()[1] = QString("Label 2");
-  this->Annotations.push_back(item);
   }
   virtual ~pqAnnotationsModel()
     {
@@ -133,45 +176,28 @@ public:
       this->Superclass::flags(idx);
     }
 
-  virtual bool setData(const QModelIndex &idx, const QVariant &value,
-    int role=Qt::EditRole)
-    {
-    Q_UNUSED(role);
-
-    if (idx.column() == 0)
-      {
-      if (value.canConvert(QVariant::Color))
-        {
-        if (this->IndexedColors.size() <= idx.row())
-          {
-          this->IndexedColors.resize(idx.row()+1);
-          }
-        this->IndexedColors[idx.row()] = value.value<QColor>();
-        emit this->dataChanged(idx, idx);
-        return true;
-        }
-      }
-    else
-      {
-      if (!value.toString().isEmpty())
-        {
-        this->Annotations[idx.row()].GetData()[idx.column()-1] = value.toString();
-        emit this->dataChanged(idx, idx);
-        return true;
-        }
-      }
-    return false;
-    }
-
   virtual int rowCount(const QModelIndex &prnt=QModelIndex()) const
     {
     Q_UNUSED(prnt);
-    return this->Annotations.size();
+    return this->Items.size();
     }
 
   virtual int columnCount(const QModelIndex &/*parent*/) const
     {
     return 3;
+    }
+
+  virtual bool setData(const QModelIndex &idx, const QVariant &value, int role=Qt::EditRole)
+    {
+    Q_UNUSED(role);
+    Q_ASSERT(idx.row() < this->rowCount());
+    Q_ASSERT(idx.column() >= 0 && idx.column() < 3);
+    if (this->Items[idx.row()].setData(idx.column(), value))
+      {
+      emit this->dataChanged(idx, idx);
+      return true;
+      }
+    return false;
     }
 
   virtual QVariant data(const QModelIndex& idx, int role=Qt::DisplayRole) const
@@ -180,25 +206,13 @@ public:
       {
       if (idx.column()==0)
         {
-        if (idx.row() < this->IndexedColors.size())
-          {
-          return this->IndexedColors[idx.row()];
-          }
-        else
-          {
-          return this->MissingColorIcon;
-          }
+        QVariant value = this->Items[idx.row()].data(0);
+        return value.isValid()? value : QVariant(this->MissingColorIcon);
         }
       }
-    else if (role == Qt::DisplayRole)
+    else if (role == Qt::DisplayRole || role == Qt::EditRole)
       {
-      switch (idx.column())
-        {
-      case 1:
-        return this->Annotations[idx.row()].GetData()[0];
-      case 2:
-        return this->Annotations[idx.row()].GetData()[1];
-        }
+      return idx.column() == 0? QVariant() : this->Items[idx.row()].data(idx.column());
       }
     else if (role == Qt::ToolTipRole || role == Qt::StatusTipRole)
       {
@@ -237,161 +251,137 @@ public:
   QModelIndex addAnnotation(const QModelIndex& after=QModelIndex())
     {
     int row = after.isValid()? after.row() : (this->rowCount(QModelIndex())-1);
-
-    vtkTuple<QString, 2> new_annotation;
-    if (row >= 0  && row < this->Annotations.size())
-      {
-      new_annotation = this->Annotations[row];
-      }
-    else
-      {
-      new_annotation.GetData()[0] = "Value";
-      new_annotation.GetData()[1] = "Text";
-      }
-
     // insert after the current one.
     row++;
 
     emit this->beginInsertRows(QModelIndex(), row, row);
-    this->Annotations.insert(row, new_annotation);
+    this->Items.insert(row, ItemType());
     emit this->endInsertRows();
-
     return this->index(row, 0);
-    }
-
-  // Given a list of modelindexes, return a vector containing multiple sorted
-  // vectors of rows, split by their discontinuity
-  void splitSelectedIndexesToRowRanges(
-    const QModelIndexList& indexList,
-    QVector<QVector<QVariant> > &result)
-    {
-    if (indexList.empty())
-      {
-      return;
-      }
-    result.clear();
-    QVector <int> rows;
-    QModelIndexList::const_iterator iter = indexList.begin();
-    for ( ; iter != indexList.end(); ++iter)
-      {
-      if ((*iter).isValid())
-        {
-        rows.push_back((*iter).row());
-        }
-      }
-    qSort(rows.begin(), rows.end());
-    result.resize(1);
-    result[0].push_back(rows[0]);
-    for (int i = 1; i < rows.size(); ++i)
-      {
-      if (rows[i] == rows[i-1])
-        {
-        // avoid duplicate
-        continue;
-        }
-      if (rows[i] != rows[i-1] + 1)
-        {
-        result.push_back(QVector<QVariant>());
-        }
-      result.back().push_back(QVariant(rows[i]));
-      }
     }
 
   // Remove the given annotation indexes. Returns item before or after the removed
   // item, if any.
   QModelIndex removeAnnotations(const QModelIndexList& toRemove=QModelIndexList())
     {
-    QVector< QVector<QVariant> > rowRanges;
-    this->splitSelectedIndexesToRowRanges(toRemove, rowRanges);
-    int numGroups = static_cast<int>(rowRanges.size());
-    for (int g = numGroups-1; g > -1; --g)
+    QSet<int> rowsToRemove;
+    foreach (const QModelIndex& idx, toRemove)
       {
-      int numRows = rowRanges.at(g).size();
-      int beginRow = rowRanges.at(g).at(0).toInt();
-      int endRow = rowRanges.at(g).at(numRows-1).toInt();
-      emit this->beginRemoveRows(QModelIndex(), beginRow, endRow);
-      for (int r = endRow; r >= beginRow; --r)
-        {
-        this->Annotations.remove(r);
-        }
+      rowsToRemove.insert(idx.row());
+      }
+    QList<int> rowsList = rowsToRemove.toList();
+    for (int cc = (rowsList.size()-1); cc >=0; --cc)
+      {
+      emit this->beginRemoveRows(QModelIndex(), rowsList[cc], rowsList[cc]);
+      this->Items.remove(rowsList[cc]);
       emit this->endRemoveRows();
       }
-
-    int firstRow = rowRanges.at(0).at(0).toInt();
-    int rowsCount = this->rowCount();
-    if (firstRow < rowsCount)
+    if (rowsList.size() > 0 && rowsList.front() > this->Items.size())
       {
-      // since firstRow is still a valid row.
-      return this->index(firstRow, toRemove.at(0).column());
+      return this->index(rowsList.front(), 0);
       }
-    else if (rowsCount > 0 && (firstRow > (rowsCount-1)))
+    if (this->Items.size() > 0)
       {
-      // just return the index for last row.
-      return this->index(rowsCount-1, toRemove.at(0).column());
+      return this->index(this->Items.size()-1, 0);
       }
-
     return QModelIndex();
     }
 
   void removeAllAnnotations()
     {
     emit this->beginResetModel();
-    this->Annotations.clear();
+    this->Items.clear();
     emit this->endResetModel();
     }
 
   void setAnnotations(const QVector<vtkTuple<QString, 2> >& new_annotations)
     {
-    int old_size = this->Annotations.size();
+    int old_size = this->Items.size();
     int new_size = new_annotations.size();
-
     if (old_size > new_size)
       {
       // rows are removed.
       emit this->beginRemoveRows(QModelIndex(), new_size, old_size-1);
-      this->Annotations.resize(new_size);
+      this->Items.resize(new_size);
       emit this->endRemoveRows();
       }
     else if (new_size > old_size)
       {
       // rows are added.
       emit this->beginInsertRows(QModelIndex(), old_size, new_size-1);
-      this->Annotations.resize(new_size);
-      for (int cc=old_size; cc < new_size; cc++)
-        {
-        this->Annotations[cc] = new_annotations[cc];
-        }
+      this->Items.resize(new_size);
       emit this->endInsertRows();
       }
+    Q_ASSERT(this->Items.size() == new_annotations.size());
 
-    Q_ASSERT(this->Annotations.size() == new_annotations.size());
     // now check for data changes.
-    for (int cc=0; cc < this->Annotations.size(); cc++)
+    for (int cc=0; cc < this->Items.size(); cc++)
       {
-      if (this->Annotations[cc] != new_annotations[cc])
+      if (this->Items[cc].Value != new_annotations[cc][0])
         {
-        this->Annotations[cc] = new_annotations[cc];
-        emit this->dataChanged(this->index(cc, 1), this->index(cc, 2));
+        this->Items[cc].Value = new_annotations[cc][0];
+        emit this->dataChanged(this->index(cc, 1), this->index(cc, 1));
+        }
+      if (this->Items[cc].Annotation != new_annotations[cc][1])
+        {
+        this->Items[cc].Annotation = new_annotations[cc][1];
+        emit this->dataChanged(this->index(cc, 2), this->index(cc, 2));
         }
       }
     }
-  const QVector<vtkTuple<QString, 2> >& annotations() const
+  QVector<vtkTuple<QString, 2> > annotations() const
     {
-    return this->Annotations;
+    QVector<vtkTuple<QString, 2> > theAnnotations(this->Items.size());
+    int cc=0;
+    foreach (const ItemType& item, this->Items)
+      {
+      theAnnotations[cc].GetData()[0] = item.Value;
+      theAnnotations[cc].GetData()[1] = item.Annotation;
+      cc++;
+      }
+    return theAnnotations;
     }
 
   void setIndexedColors(const QVector<QColor>& new_colors)
     {
-    if (this->IndexedColors != new_colors)
+    int old_size = this->Items.size();
+    int new_size = new_colors.size();
+    if (old_size > new_size)
       {
-      this->IndexedColors = new_colors;
-      emit this->dataChanged(
-        this->index(0, 0), this->index(this->rowCount()-1, 0));
+      // rows are removed.
+      emit this->beginRemoveRows(QModelIndex(), new_size, old_size-1);
+      this->Items.resize(new_size);
+      emit this->endRemoveRows();
+      }
+    else if (new_size > old_size)
+      {
+      // rows are added.
+      emit this->beginInsertRows(QModelIndex(), old_size, new_size-1);
+      this->Items.resize(new_size);
+      emit this->endInsertRows();
+      }
+    Q_ASSERT(this->Items.size() == new_colors.size());
+
+    // now check for data changes.
+    for (int cc=0; cc < this->Items.size(); cc++)
+      {
+      if (this->Items[cc].Color != new_colors[cc])
+        {
+        this->Items[cc].Color = new_colors[cc];
+        emit this->dataChanged(this->index(cc, 0), this->index(cc, 0));
+        }
       }
     }
-  const QVector<QColor>& indexedColors() const
+  QVector<QColor> indexedColors() const
     {
-    return this->IndexedColors;
+    QVector<QColor> icolors (this->Items.size());
+    int cc=0;
+    foreach (const ItemType& item, this->Items)
+      {
+      icolors[cc] = item.Color;
+      cc++;
+      }
+    return icolors;
     }
 
 private:
@@ -419,7 +409,11 @@ public:
 
     this->Ui.AnnotationsTable->setModel(&this->Model);
     this->Ui.AnnotationsTable->horizontalHeader()->setHighlightSections(false);
+#if QT_VERSION >= 0x050000
+    this->Ui.AnnotationsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+#else
     this->Ui.AnnotationsTable->horizontalHeader()->setResizeMode(QHeaderView::ResizeToContents);
+#endif
     this->Ui.AnnotationsTable->horizontalHeader()->setStretchLastSection(true);
 
     this->Decorator = new pqColorAnnotationsPropertyWidgetDecorator(NULL, self);
@@ -464,6 +458,8 @@ pqColorAnnotationsPropertyWidget::pqColorAnnotationsPropertyWidget(
   Ui::ColorAnnotationsPropertyWidget &ui = this->Internals->Ui;
   QObject::connect(ui.Add, SIGNAL(clicked()), this, SLOT(addAnnotation()));
   QObject::connect(ui.AddActive, SIGNAL(clicked()), this, SLOT(addActiveAnnotations()));
+  QObject::connect(ui.AddActiveFromVisible, SIGNAL(clicked()),
+                   this, SLOT(addActiveAnnotationsFromVisibleSources()));
   QObject::connect(ui.Remove, SIGNAL(clicked()), this, SLOT(removeAnnotation()));
   QObject::connect(ui.DeleteAll, SIGNAL(clicked()), this, SLOT(removeAllAnnotations()));
   QObject::connect(ui.ChoosePreset, SIGNAL(clicked()), this, SLOT(choosePreset()));
@@ -560,6 +556,8 @@ void pqColorAnnotationsPropertyWidget::setAnnotations(
     }
 
   this->Internals->Model.setAnnotations(annotationsData);
+
+  emit this->annotationsChanged();
 }
 
 //-----------------------------------------------------------------------------
@@ -607,7 +605,7 @@ void pqColorAnnotationsPropertyWidget::addAnnotation()
 //-----------------------------------------------------------------------------
 void pqColorAnnotationsPropertyWidget::editPastLastRow()
 {
-  QModelIndex idx = this->Internals->Model.addAnnotation(
+  this->Internals->Model.addAnnotation(
     this->Internals->Ui.AnnotationsTable->currentIndex());
   emit this->annotationsChanged();
 }
@@ -617,10 +615,77 @@ void pqColorAnnotationsPropertyWidget::removeAnnotation()
 {
   QModelIndexList indexes =
     this->Internals->Ui.AnnotationsTable->selectionModel()->selectedIndexes();
+  if( indexes.size() == 0 )
+    {
+    // Nothing selected. Nothing to remove
+    return;
+    }
   QModelIndex idx = this->Internals->Model.removeAnnotations(indexes);
   this->Internals->Ui.AnnotationsTable->setCurrentIndex(idx);
   emit this->annotationsChanged();
 }
+
+namespace {
+
+//-----------------------------------------------------------------------------
+// Given a list of existing annotations and a list of potentially new
+// annotations, merge the lists. The candidate annotations are first
+// selected to fill in empty annotation values in the existing
+// annotations list, then they are added to the end.
+//
+// mergedAnnotations - interleaved annotation array (value/label)
+// existingAnnotations - interleaved annotation array (value/label)
+// candidateValues - candidate array of just annotation values, possibly new
+void MergeAnnotations(QList<QVariant> & mergedAnnotations,
+                      const QList<QVariant> & existingAnnotations,
+                      const QList<QVariant> & candidateValues)
+{
+  // Extract values from exisiting interleaved annotation list.
+  QList<QVariant> existingValues;
+  for (int idx = 0; idx < existingAnnotations.size()/2; ++idx)
+    {
+    existingValues.push_back(existingAnnotations[2*idx]);
+    }
+
+  // Subset candidate annotations to only those not in existing annotations
+  // Candidate values
+  QList<QVariant> newCandidateValues;
+  for (int idx = 0; idx < candidateValues.size(); ++idx)
+    {
+    if (!existingValues.contains(candidateValues[idx]))
+      {
+      newCandidateValues.push_back(candidateValues[idx]);
+      }
+    }
+
+  // Iterate over existing annotations, backfilling new candidates
+  // in empty slots where possible.
+  int candidateIdx = 0;
+  for (int idx = 0; idx < existingValues.size(); ++idx)
+    {
+    if (existingValues[idx] == "" &&
+        candidateIdx < newCandidateValues.size())
+      {
+      mergedAnnotations.push_back(newCandidateValues[candidateIdx]); // value
+      mergedAnnotations.push_back(newCandidateValues[candidateIdx]); // annotation
+      ++candidateIdx;
+      }
+    else
+      {
+      mergedAnnotations.push_back(existingAnnotations[2*idx + 0]); // value
+      mergedAnnotations.push_back(existingAnnotations[2*idx + 1]); // annotation
+      }
+    }
+
+  // Add any left over candidates
+  for ( ; candidateIdx < newCandidateValues.size(); ++candidateIdx)
+    {
+    mergedAnnotations.push_back(newCandidateValues[candidateIdx]); // value
+    mergedAnnotations.push_back(newCandidateValues[candidateIdx]); // annotation
+    }
+}
+
+} // end anonymous namespace
 
 //-----------------------------------------------------------------------------
 void pqColorAnnotationsPropertyWidget::addActiveAnnotations()
@@ -636,7 +701,8 @@ void pqColorAnnotationsPropertyWidget::addActiveAnnotations()
       }
 
     vtkPVProminentValuesInformation* info =
-      repr->getProxyColorProminentValuesInfo();
+      vtkSMPVRepresentationProxy::GetProminentValuesInformationForColorArray(
+        repr->getProxy());
     if (!info)
       {
       throw 0;
@@ -654,22 +720,146 @@ void pqColorAnnotationsPropertyWidget::addActiveAnnotations()
       component_no = 0;
       }
 
-    QList<QVariant> annotationList;
-    vtkSmartPointer<vtkAbstractArray> unique_values;
-    unique_values.TakeReference(
+    vtkSmartPointer<vtkAbstractArray> uniqueValues;
+    uniqueValues.TakeReference(
       info->GetProminentComponentValues(component_no));
-    if (unique_values == NULL)
+    if (uniqueValues == NULL)
       {
       throw 0;
       }
-    for (vtkIdType idx=0; idx < unique_values->GetNumberOfTuples(); idx++)
-      {
-      annotationList.push_back(unique_values->GetVariantValue(idx).ToString().c_str());
-      annotationList.push_back(unique_values->GetVariantValue(idx).ToString().c_str());
-      }
-    this->setAnnotations(annotationList);
-    }
 
+    QList<QVariant> existingAnnotations = this->annotations();
+
+    QList<QVariant> candidateAnnotationValues;
+    for (vtkIdType idx=0; idx < uniqueValues->GetNumberOfTuples(); idx++)
+      {
+      candidateAnnotationValues.push_back(uniqueValues->GetVariantValue(idx).ToString().c_str());
+      }
+
+    // Combined annotation values (old and new)
+    QList<QVariant> mergedAnnotations;
+    MergeAnnotations(mergedAnnotations, existingAnnotations, candidateAnnotationValues);
+
+    // Set the merged annotations
+    this->setAnnotations(mergedAnnotations);
+
+    }  
+  catch (int)
+    {
+    QMessageBox::warning(
+      this, "Couldn't determine discrete values",
+      "Could not determine discrete values using the data produced by the "
+      "current source/filter. Please add annotations manually.",
+      QMessageBox::Ok);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqColorAnnotationsPropertyWidget::addActiveAnnotationsFromVisibleSources()
+{
+  try
+    {
+    pqServer* server =
+      pqActiveObjects::instance().activeServer();
+    if (!server)
+      {
+      throw 0;
+      }
+
+    // obtain prominent values from all visible sources colored by the same
+    // array name as the name of color array for the active representation.
+    pqDataRepresentation* repr =
+      pqActiveObjects::instance().activeRepresentation();
+    if (!repr)
+      {
+      throw 0;
+      }
+
+    vtkSMPVRepresentationProxy* activeRepresentationProxy =
+      vtkSMPVRepresentationProxy::SafeDownCast(repr->getProxy());
+    if (!activeRepresentationProxy)
+      {
+      throw 0;
+      }
+
+    vtkPVArrayInformation* activeArrayInfo =
+      vtkSMPVRepresentationProxy::GetArrayInformationForColorArray(activeRepresentationProxy);
+
+    vtkSMSessionProxyManager* pxm = server->proxyManager();
+
+    // Iterate over representations, collecting prominent values from each.
+    QSet<QString> uniqueAnnotations;
+    vtkSmartPointer<vtkCollection> collection = vtkSmartPointer<vtkCollection>::New();
+    pxm->GetProxies("representations", collection);
+    for (int i = 0; i < collection->GetNumberOfItems(); ++i)
+      {
+      vtkSMProxy* representationProxy =
+        vtkSMProxy::SafeDownCast(collection->GetItemAsObject(i));
+      if (!representationProxy || !vtkSMPropertyHelper(representationProxy, "Visibility").GetAsInt())
+        {
+        continue;
+        }
+
+      vtkPVArrayInformation* currentArrayInfo =
+        vtkSMPVRepresentationProxy::GetArrayInformationForColorArray(representationProxy);
+      if (!activeArrayInfo || !activeArrayInfo->GetName() ||
+          !currentArrayInfo || !currentArrayInfo->GetName() ||
+          strcmp(activeArrayInfo->GetName(), currentArrayInfo->GetName()))
+        {
+        continue;
+        }
+
+      vtkPVProminentValuesInformation* info =
+        vtkSMPVRepresentationProxy::GetProminentValuesInformationForColorArray(
+          representationProxy);
+      if (!info)
+        {
+        continue;
+        }
+
+      int component_no = -1;
+      if (QString("Component") ==
+          vtkSMPropertyHelper(this->proxy(), "VectorMode", true).GetAsString())
+        {
+        component_no = vtkSMPropertyHelper(this->proxy(),
+          "VectorComponent").GetAsInt();
+        }
+      if (component_no == -1 && info->GetNumberOfComponents() == 1)
+        {
+        component_no = 0;
+        }
+
+      vtkSmartPointer<vtkAbstractArray> uniqueValues;
+      uniqueValues.TakeReference(
+        info->GetProminentComponentValues(component_no));
+      if (uniqueValues == NULL)
+        {
+        continue;
+        }
+      for (vtkIdType idx=0; idx < uniqueValues->GetNumberOfTuples(); idx++)
+        {
+        QString value(uniqueValues->GetVariantValue(idx).ToString().c_str());
+        uniqueAnnotations.insert(value);
+        }
+      }
+
+    QList<QString> uniqueList = uniqueAnnotations.values();
+    qSort(uniqueList);
+
+    QList<QVariant> existingAnnotations = this->annotations();
+
+    QList<QVariant> candidateAnnotationValues;
+    for (int idx=0; idx < uniqueList.size(); idx++)
+      {
+      candidateAnnotationValues.push_back(uniqueList[idx]);
+      }
+
+    // Combined annotation values (old and new)
+    QList<QVariant> mergedAnnotations;
+    MergeAnnotations(mergedAnnotations, existingAnnotations, candidateAnnotationValues);
+
+    this->setAnnotations(mergedAnnotations);
+    }
   catch (int)
     {
     QMessageBox::warning(
@@ -688,46 +878,65 @@ void pqColorAnnotationsPropertyWidget::removeAllAnnotations()
 }
 
 //-----------------------------------------------------------------------------
-void pqColorAnnotationsPropertyWidget::choosePreset(const pqColorMapModel* add_new/*=NULL*/)
+void pqColorAnnotationsPropertyWidget::choosePreset(const char* presetName)
 {
-  pqColorPresetManager preset(this,
-    pqColorPresetManager::SHOW_INDEXED_COLORS_ONLY);
-  preset.setUsingCloseButton(true);
-  preset.loadBuiltinColorPresets();
-  preset.restoreSettings();
-  if (add_new)
-    {
-    preset.addColorMap(*add_new, "New Color Preset");
-    }
-
-  QObject::connect(&preset, SIGNAL(currentChanged(const pqColorMapModel*)),
-    this, SLOT(applyPreset(const pqColorMapModel*)));
-  preset.exec();
-  preset.saveSettings(); 
+  pqPresetDialog dialog(this, pqPresetDialog::SHOW_INDEXED_COLORS_ONLY);
+  dialog.setCurrentPreset(presetName);
+  dialog.setCustomizableLoadColors(false);
+  dialog.setCustomizableLoadOpacities(false);
+  dialog.setCustomizableUsePresetRange(false);
+  dialog.setCustomizableLoadAnnotations(true);
+  this->connect(&dialog, SIGNAL(applyPreset(const Json::Value&)), SLOT(applyCurrentPreset()));
+  dialog.exec();
 }
 
 //-----------------------------------------------------------------------------
-void pqColorAnnotationsPropertyWidget::applyPreset(const pqColorMapModel* preset)
+void pqColorAnnotationsPropertyWidget::applyCurrentPreset()
 {
-  vtkNew<vtkPVXMLElement> xml;
-  xml->SetName("ColorMap");
-  if (pqColorPresetManager::saveColorMapToXML(preset, xml.GetPointer()))
-    {
-    BEGIN_UNDO_SET("Apply color preset");
-    vtkSMTransferFunctionProxy::ApplyColorMap(this->proxy(), xml.GetPointer());
-    emit this->changeFinished();
-    END_UNDO_SET();
-    }
+  pqPresetDialog* dialog = qobject_cast<pqPresetDialog*>(this->sender());
+  Q_ASSERT(dialog);
+
+  BEGIN_UNDO_SET("Apply color preset");
+  vtkSMTransferFunctionProxy::ApplyPreset(this->proxy(),
+    dialog->currentPreset(), !dialog->loadAnnotations());
+  END_UNDO_SET();
+  emit this->changeFinished();
 }
 
 //-----------------------------------------------------------------------------
 void pqColorAnnotationsPropertyWidget::saveAsPreset()
 {
-  vtkNew<vtkPVXMLElement> xml;
-  if (vtkSMTransferFunctionProxy::SaveColorMap(this->proxy(), xml.GetPointer()))
+  QDialog dialog(this);
+  Ui::SavePresetOptions ui;
+  ui.setupUi(&dialog);
+  ui.saveOpacities->setVisible(false);
+  ui.saveAnnotations->setEnabled(
+    vtkSMPropertyHelper(this->proxy(), "Annotations", true).GetNumberOfElements() > 0);
+
+  // For now, let's not provide an option to not save colors. We'll need to fix
+  // the pqPresetToPixmap to support rendering only opacities.
+  ui.saveColors->setChecked(true);
+  ui.saveColors->setEnabled(false);
+  ui.saveColors->hide();
+
+  if (dialog.exec() != QDialog::Accepted)
     {
-    pqColorMapModel colorMap =
-      pqColorPresetManager::createColorMapFromXML(xml.GetPointer());
-    this->choosePreset(&colorMap);
+    return;
     }
+
+  Json::Value cpreset = vtkSMTransferFunctionProxy::GetStateAsPreset(this->proxy());
+  if (!ui.saveAnnotations->isChecked())
+    {
+    cpreset.removeMember("Annotations");
+    }
+  vtkStdString presetName;
+  if (!cpreset.isNull())
+    {
+    // This scoping is necessary to ensure that the vtkSMTransferFunctionPresets
+    // saves the new preset to the "settings" before the choosePreset dialog is
+    // shown.
+    vtkNew<vtkSMTransferFunctionPresets> presets;
+    presetName = presets->AddUniquePreset(cpreset);
+    }
+  this->choosePreset(presetName);
 }

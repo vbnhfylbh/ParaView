@@ -9,20 +9,19 @@ IF (ParaView_SOURCE_DIR)
     ${VTK_INCLUDE_DIR}
     ${PARAVIEW_INCLUDE_DIRS}
   )
-ELSE (ParaView_SOURCE_DIR)
+ELSE ()
   FIND_PACKAGE(ParaView REQUIRED)
   INCLUDE(${PARAVIEW_USE_FILE})
-ENDIF (ParaView_SOURCE_DIR)
+ENDIF ()
 
-IF(PARAVIEW_BUILD_QT_GUI)
-  QT4_WRAP_CPP(MOC_SRCS RegisterRenderPassViews.h)
-ENDIF()
+# Set a consistent MACOSX_RPATH default across all CMake versions.
+# When CMake 2.8.12 is required, change this default to 1.
+# When CMake 3.0.0 is required, remove this block (see CMP0042).
+if(NOT DEFINED CMAKE_MACOSX_RPATH)
+  set(CMAKE_MACOSX_RPATH 0)
+endif()
 
-ADD_PARAVIEW_AUTO_START(
-  IFACES
-  IFACE_SRCS
-  CLASS_NAME RegisterRenderPassViews
-)
+if (VTK_RENDERING_BACKEND STREQUAL "OpenGL")
 
 add_paraview_plugin(
   RenderPassViews "1.0"
@@ -33,10 +32,5 @@ add_paraview_plugin(
     vtkPVRenderViewWithShadowMap.cxx
   SERVER_MANAGER_XML
     RenderPassViews.xml
-  GUI_INTERFACES
-    ${IFACES}
-  GUI_SOURCES
-    ${IFACE_SRCS}
-    ${MOC_SRCS}
-    RegisterRenderPassViews.cxx
 )
+endif()

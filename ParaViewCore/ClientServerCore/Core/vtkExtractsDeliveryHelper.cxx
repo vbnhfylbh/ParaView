@@ -15,6 +15,7 @@
 #include "vtkExtractsDeliveryHelper.h"
 
 #include "vtkAlgorithmOutput.h"
+#include "vtkCellData.h"
 #include "vtkCompositeDataSet.h"
 #include "vtkDataObject.h"
 #include "vtkDataObjectTypes.h"
@@ -22,8 +23,11 @@
 #include "vtkMultiProcessControllerHelper.h"
 #include "vtkMultiProcessStream.h"
 #include "vtkObjectFactory.h"
+#include "vtkPointData.h"
 #include "vtkSocketController.h"
+#include "vtkStructuredGrid.h"
 #include "vtkTrivialProducer.h"
+#include "vtkUnsignedCharArray.h"
 
 #include <assert.h>
 

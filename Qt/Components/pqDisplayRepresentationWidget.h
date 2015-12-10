@@ -36,36 +36,52 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QWidget>
 #include "pqPropertyWidget.h"
 
-class pqDisplayRepresentationWidgetInternal;
 class pqDataRepresentation;
+class vtkSMProxy;
 
-/// A widget for representation of a display proxy.
+/// A widget for representation type for a vtkSMRepresentationProxy. It works
+/// with a vtkSMRepresentationProxy, calling
+/// vtkSMRepresentationProxy::SetRepresentationType() to change the
+/// representation type to the one chosen by the user.
 class PQCOMPONENTS_EXPORT pqDisplayRepresentationWidget : public QWidget
 {
-  Q_OBJECT
-
+  Q_OBJECT;
+  Q_PROPERTY(QString representationText
+             READ representationText
+             WRITE setRepresentationText
+             NOTIFY representationTextChanged);
+  typedef QWidget Superclass;
 public:
   pqDisplayRepresentationWidget(QWidget* parent=0);
   virtual ~pqDisplayRepresentationWidget();
 
-signals:
-  void currentTextChanged(const QString&);
+  /// Returns the selected representation as a string.
+  QString representationText() const;
 
 public slots:
+  /// set the representation proxy or pqDataRepresentation instance.
   void setRepresentation(pqDataRepresentation* display);
-  
-  void reloadGUI();
+  void setRepresentation(vtkSMProxy* proxy);
+
+  /// set representation type.
+  void setRepresentationText(const QString&);
 
 private slots:
-  void onCurrentTextChanged(const QString&);
+  /// Slot called when the combo-box is changed. If this change was due to
+  /// a UI interaction, we need to prompt the user if he really intended to make
+  /// that change (BUG #0015117).
+  void comboBoxChanged(const QString&);
 
-  /// Called when the qt widget changes, we mark undo set
-  /// and push the widget changes to the property.
-  void onQtWidgetChanged();
+signals:
+  void representationTextChanged(const QString&);
 
-  void updateLinks();
 private:
-  pqDisplayRepresentationWidgetInternal* Internal;
+  Q_DISABLE_COPY(pqDisplayRepresentationWidget);
+
+  class pqInternals;
+  pqInternals* Internal;
+
+  class PropertyLinksConnection;
 };
 
 /// A property widget for selecting the display representation.

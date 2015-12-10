@@ -16,6 +16,7 @@
 
 #include "vtkCellData.h"
 #include "vtkCharArray.h"
+#include "vtkCompositeDataIterator.h"
 #include "vtkCompositeDataSet.h"
 #include "vtkDataSetReader.h"
 #include "vtkDirectedGraph.h"
@@ -49,7 +50,7 @@
 #include "vtkUnstructuredGrid.h"
 
 #include "vtk_zlib.h"
-#include <vtksys/ios/sstream>
+#include <sstream>
 #include <vector>
 
 #ifdef PARAVIEW_USE_MPI
@@ -63,11 +64,38 @@ bool vtkMPIMoveData::UseZLibCompression = false;
 
 namespace
 {
-  static bool vtkMPIMoveDataMerge(std::vector<vtkSmartPointer<vtkDataObject> >& pieces,
-    vtkDataObject* result)
-    {
+  bool vtkMPIMoveDataMerge(std::vector<vtkSmartPointer<vtkDataObject> >& pieces,
+                           vtkDataObject* result)
+  {
     return vtkMultiProcessControllerHelper::MergePieces(pieces, result);
-    }
+  }
+
+  void unsetGlobalIdsAttribute(vtkDataObject* piece)
+  {
+    vtkDataSet* ds = vtkDataSet::SafeDownCast(piece);
+    vtkMultiBlockDataSet* mb = vtkMultiBlockDataSet::SafeDownCast(piece);
+    if (ds)
+      {
+      ds->GetCellData()->SetActiveAttribute(-1, vtkDataSetAttributes::GLOBALIDS);
+      ds->GetPointData()->SetActiveAttribute(-1, vtkDataSetAttributes::GLOBALIDS);
+      }
+    else if (mb)
+      {
+      vtkCompositeDataIterator* it = mb->NewIterator();
+      for (it->InitTraversal(); ! it->IsDoneWithTraversal(); it->GoToNextItem())
+        {
+        vtkDataSet* leaf = vtkDataSet::SafeDownCast(it->GetCurrentDataObject());
+        if (leaf)
+          {
+          leaf->GetCellData()->SetActiveAttribute(
+            -1, vtkDataSetAttributes::GLOBALIDS);
+          leaf->GetPointData()->SetActiveAttribute(
+            -1, vtkDataSetAttributes::GLOBALIDS);
+          }
+        }
+      it->Delete();
+      }
+  }
 };
 
 
@@ -261,27 +289,6 @@ int vtkMPIMoveData::RequestDataObject(vtkInformation*,
 
   outputVector->GetInformationObject(0)->Set(vtkDataObject::DATA_OBJECT(), outputCopy);
   outputCopy->Delete();
-  return 1;
-}
-
-//-----------------------------------------------------------------------------
-int vtkMPIMoveData::RequestInformation(vtkInformation*,
-                                       vtkInformationVector** inputVector,
-                                       vtkInformationVector* outputVector)
-{
-  vtkInformation* outInfo = outputVector->GetInformationObject(0);
-  if (inputVector[0]->GetNumberOfInformationObjects() > 0)
-    {
-    outInfo->Set(
-      vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
-      inputVector[0]->GetInformationObject(0)->Get(
-        vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES()));
-    return 1;
-    }
-
-  outInfo->Set(
-    vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), -1);
-
   return 1;
 }
 
@@ -1061,7 +1068,7 @@ void vtkMPIMoveData::MarshalDataToBuffer(vtkDataObject* data)
     // the extents.
     int *extent = imageData->GetExtent();
     double* origin = imageData->GetOrigin();
-    vtksys_ios::ostringstream stream;
+    std::ostringstream stream;
     stream << "EXTENT " << extent[0] << " " <<
       extent[1] << " " <<
       extent[2] << " " <<
@@ -1194,14 +1201,20 @@ void vtkMPIMoveData::ReconstructDataFromBuffer(vtkDataObject* data)
       clone->ShallowCopy(reader->GetOutputDataObject(0));
       clone->SetOrigin(origin[0], origin[1], origin[2]);
       clone->SetExtent(extent);
+      // reconstructing data distributted on MPI node, so global ids are valid
+      // global ids attributes are removed when appending data so we set
+      // the active global ids attribute to null which keeps the global ids array.
+      unsetGlobalIdsAttribute(clone);
       pieces.push_back(clone);
       clone->Delete();
       }
     else
       {
-      pieces.push_back(reader->GetOutputDataObject(0));
-      }
-
+      vtkDataObject* output = reader->GetOutputDataObject(0);
+      //reconstructing data distributted on MPI node, so global ids are valid
+      unsetGlobalIdsAttribute(output);
+      pieces.push_back(output);
+      }    
     mystring->Delete();
     mystring = 0;
     reader->Delete();

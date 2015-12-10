@@ -8,7 +8,7 @@ if (PARAVIEW_ENABLE_PYTHON)
   list(APPEND __dependencies
       vtkPythonInterpreter
       vtkFiltersProgrammable)
-endif (PARAVIEW_ENABLE_PYTHON)
+endif ()
 
 set (__compile_dependencies)
 if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_USE_MPI)
@@ -36,4 +36,6 @@ vtk_module(vtkPVClientServerCoreCore
     ${__compile_dependencies}
   TEST_LABELS
     PARAVIEW
+  KIT
+    vtkPVClientServer
 )

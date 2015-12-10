@@ -29,39 +29,40 @@
 #
 #==========================================================================
 set (Module_SRCS
-  vtkPVCameraAnimationCue.cxx
-  vtkPVCameraCueManipulator.cxx
-  vtkPVCameraKeyFrame.cxx
-  vtkPVKeyFrameAnimationCueForProxies.cxx
+  vtkPVGeneralSettings.cxx
   vtkPVMultiServerDataSource.cxx
-  vtkPVRepresentationAnimationHelper.cxx
-  vtkPVServerSideAnimationPlayer.cxx
-  vtkSMAnimationScene.cxx
-  vtkSMAnimationSceneGeometryWriter.cxx
-  vtkSMAnimationSceneImageWriter.cxx
-  vtkSMAnimationSceneProxy.cxx
-  vtkSMAnimationSceneWriter.cxx
   vtkSMCameraConfigurationReader.cxx
   vtkSMCameraConfigurationWriter.cxx
   vtkSMCSVExporterProxy.cxx
   vtkSMDirectoryProxy.cxx
+  vtkSMEnsembleDataReaderProxy.cxx
   vtkSMExporterProxy.cxx
-  vtkSMGL2PSExporterProxy.cxx
   vtkSMInteractionUndoStackBuilder.cxx
+  vtkSMInteractiveSelectionPipeline.cxx
   vtkSMMultiServerSourceProxy.cxx
   vtkSMPropertyModificationUndoElement.cxx
+  vtkSMProxyClipboard.cxx
   vtkSMProxyConfigurationReader.cxx
   vtkSMProxyConfigurationWriter.cxx
   vtkSMPSWriterProxy.cxx
   vtkSMRenderViewExporterProxy.cxx
   vtkSMTesting.cxx
+  vtkSMViewExportHelper.cxx
 )
 
+# Disabled unless using the OpenGL backend.
+if ("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL")
+  list(APPEND Module_SRCS
+    vtkSMGL2PSExporterProxy.cxx
+    )
+endif()
+if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
+  add_definitions(-DVTKGL2)
+endif()
+
 SET_SOURCE_FILES_PROPERTIES(
-  vtkSMAnimationSceneWriter.cxx
   vtkSMExporterProxy.cxx
   ABSTRACT
   )
 
-vtk_module_library(vtkPVServerManagerDefault
-  ${Module_SRCS})
+vtk_module_library(vtkPVServerManagerDefault ${Module_SRCS})

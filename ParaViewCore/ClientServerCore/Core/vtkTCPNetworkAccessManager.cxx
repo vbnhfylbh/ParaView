@@ -30,7 +30,7 @@
 #include <vtksys/SystemTools.hxx>
 
 #include <string>
-#include <vtksys/ios/sstream>
+#include <sstream>
 #include <vector>
 #include <map>
 
@@ -318,7 +318,7 @@ vtkMultiProcessController* vtkTCPNetworkAccessManager::ConnectToRemote(
   vtkSocketCommunicator* comm = vtkSocketCommunicator::SafeDownCast(
     controller->GetCommunicator());
 #if GENERATE_DEBUG_LOG
-  vtksys_ios::ostringstream mystr;
+  std::ostringstream mystr;
   mystr << "/tmp/client."<< getpid() << ".log";
   comm->LogToFile(mystr.str().c_str());
 #endif
@@ -327,10 +327,17 @@ vtkMultiProcessController* vtkTCPNetworkAccessManager::ConnectToRemote(
     !this->ParaViewHandshake(controller, false, handshake))
     {
     controller->Delete();
-    vtkErrorMacro("Failed to connect to " << hostname << ":" << port
-      << ". Client-Server Handshake failed. Please verify that the client and"
-      << " server versions are compatible with each other, and that 'connect-id'"
-      << ", if any, matches.");
+    vtkErrorMacro("Failed to connect to " << hostname << ":" << port);
+    vtkErrorMacro("\n"
+      "**********************************************************************\n"
+      "Connection failed during handshake. This can happen for the following reasons:\n"
+      " 1. Connection dropped during the handshake.\n"
+      " 2. vtkSocketCommunicator::GetVersion() returns different values on the\n"
+      "    two connecting processes (Current value: "
+      << vtkSocketCommunicator::GetVersion() << ").\n"
+      " 3. ParaView handshake strings are different on the two connecting\n"
+      "    processes (Current value: " << (handshake? handshake : "<empty>") << ").\n"
+      "**********************************************************************\n");
     return NULL;
     }
   this->Internals->Controllers.push_back(controller);
@@ -405,6 +412,16 @@ vtkMultiProcessController* vtkTCPNetworkAccessManager::WaitForConnection(
       controller = NULL;
       // handshake failed, must be bogus client, continue waiting (unless
       // this->AbortPendingConnectionFlag == true).
+      vtkErrorMacro("\n"
+        "**********************************************************************\n"
+        "Connection failed during handshake. This can happen for the following reasons:\n"
+        " 1. Connection dropped during the handshake.\n"
+        " 2. vtkSocketCommunicator::GetVersion() returns different values on the\n"
+        "    two connecting processes (Current value: "
+        << vtkSocketCommunicator::GetVersion() << ").\n"
+        " 3. ParaView handshake strings are different on the two connecting\n"
+        "    processes (Current value: " << (handshake? handshake : "<empty>") << ").\n"
+        "**********************************************************************\n");
       }
     }
 
@@ -425,36 +442,32 @@ vtkMultiProcessController* vtkTCPNetworkAccessManager::WaitForConnection(
 
 //----------------------------------------------------------------------------
 bool vtkTCPNetworkAccessManager::ParaViewHandshake(
-  vtkMultiProcessController* controller, bool server_side, const char* handshake)
+  vtkMultiProcessController* controller, bool server_side, const char* _handshake)
 {
+  const std::string handshake = _handshake? _handshake : "";
+  int size = static_cast<int>(handshake.size() + 1);
   if (server_side)
     {
-    int size = handshake? static_cast<int>(strlen(handshake)+1) : -1;
-
+    std::string other_handshake;
     int othersize;
-    char* other_handshake = NULL;
-
     controller->Receive(&othersize, 1, 1, 99991);
-
     if (othersize > 0)
       {
-      other_handshake = new char[othersize];
-      controller->Receive(other_handshake, othersize, 1, 99991);
+      char* _other_handshake = new char[othersize];
+      controller->Receive(_other_handshake, othersize, 1, 99991);
+      other_handshake = _other_handshake;
+      delete [] _other_handshake;
       }
-
-    int accept = (size == othersize &&
-     (size == -1 || strcmp(handshake, other_handshake) == 0))? 1 : 0;
+    int accept = (handshake == other_handshake)? 1 : 0;
     controller->Send(&accept, 1, 1, 99990);
-    delete []other_handshake;
     return (accept == 1);
     }
   else
     {
-    int size = handshake? static_cast<int>(strlen(handshake)+1) : -1;
     controller->Send(&size, 1, 1, 99991);
     if (size > 0)
       {
-      controller->Send(handshake, size, 1, 99991);
+      controller->Send(handshake.c_str(), size, 1, 99991);
       }
     int accept;
     controller->Receive(&accept, 1, 1, 99990);

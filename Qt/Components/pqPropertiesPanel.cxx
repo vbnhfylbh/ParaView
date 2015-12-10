@@ -34,51 +34,38 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
+#include "pqCoreUtilities.h"
 #include "pqDataRepresentation.h"
 #include "pqDebug.h"
-#include "pqDisplayPolicy.h"
-#include "pqObjectBuilder.h"
+#include "pqLiveInsituManager.h"
 #include "pqOutputPort.h"
-#include "pqPipelineFilter.h"
 #include "pqPipelineSource.h"
-#include "pqProxyModifiedStateUndoElement.h"
 #include "pqProxyWidget.h"
+#include "pqSearchBox.h"
 #include "pqServerManagerModel.h"
 #include "pqSettings.h"
+#include "pqTimer.h"
 #include "pqUndoStack.h"
 #include "vtkCollection.h"
+#include "vtkCommand.h"
 #include "vtkEventQtSlotConnect.h"
 #include "vtkNew.h"
+#include "vtkPVGeneralSettings.h"
 #include "vtkSMProperty.h"
+#include "vtkSMProxyClipboard.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMViewProxy.h"
+#include "vtkTimerLog.h"
 
 #include <QKeyEvent>
 #include <QPointer>
+#include <QStyle>
 #include <QStyleFactory>
-#include <QTimer>
+
+#include <iostream>
 
 namespace
 {
-  class pqClearTextOnEsc : public QObject
-  {
-public:
-  pqClearTextOnEsc(QLineEdit* parentObject) : QObject(parentObject)
-    {
-    }
-protected:
-  virtual bool eventFilter(QObject *obj, QEvent *evt)
-    {
-    if (evt->type() == QEvent::KeyPress)
-      {
-      QKeyEvent *keyEvent = static_cast<QKeyEvent*>(evt);
-      if (keyEvent->key() == Qt::Key_Escape)
-        {
-        qobject_cast<QLineEdit*>(this->parent())->clear();
-        }
-      }
-    return this->QObject::eventFilter(obj, evt);
-    }
-  };
 
   // internal class used to keep track of all the widgets associated with a
   // panel either for a source or representation.
@@ -139,26 +126,8 @@ protected:
 
     void apply(pqView* view)
       {
+      (void) view;
       this->Panel->apply();
-      pqPipelineSource *source = qobject_cast<pqPipelineSource*>(this->Proxy);
-      if (source)
-        {
-        if (source->modifiedState() == pqProxy::UNINITIALIZED)
-          {
-          this->showData(source, view);
-
-          // add undo-element to ensure this state change happens when
-          // undoing/redoing.
-          pqProxyModifiedStateUndoElement* undoElement =
-            pqProxyModifiedStateUndoElement::New();
-          undoElement->SetSession(source->getServer()->session());
-          undoElement->MadeUnmodified(source);
-          ADD_UNDO_ELEM(undoElement);
-          undoElement->Delete();
-          }
-        source->setModifiedState(pqProxy::UNMODIFIED);
-        source->renderAllViews();
-        }
       }
 
     void reset()
@@ -169,34 +138,6 @@ protected:
       if (this->Proxy->modifiedState() == pqProxy::MODIFIED)
         {
         this->Proxy->setModifiedState(pqProxy::UNMODIFIED);
-        }
-      }
-
-    void showData(pqPipelineSource* source, pqView* view)
-      {
-      pqDisplayPolicy *displayPolicy = pqApplicationCore::instance()->getDisplayPolicy();
-      if (!displayPolicy)
-        {
-        qCritical() << "No display policy defined. Cannot create pending displays.";
-        return;
-        }
-
-      // create representations for all output ports.
-      for (int i = 0; i < source->getNumberOfOutputPorts(); i++)
-        {
-        pqDataRepresentation *repr = displayPolicy->createPreferredRepresentation(
-          source->getOutputPort(i), view, false);
-        if (!repr || !repr->getView())
-          {
-          continue;
-          }
-
-        pqView *reprView = repr->getView();
-        pqPipelineFilter *filter = qobject_cast<pqPipelineFilter *>(source);
-        if (filter)
-          {
-          filter->hideInputIfRequired(reprView);
-          }
         }
       }
   private:
@@ -222,7 +163,12 @@ public:
   QPointer<pqDataRepresentation> Representation;
   QMap<void*, QPointer<pqProxyWidgets> > SourceWidgets;
   QPointer<pqProxyWidgets> DisplayWidgets;
+  QPointer<pqProxyWidgets> ViewWidgets;
   bool ReceivedChangeAvailable;
+  pqTimer AutoApplyTimer;
+  vtkNew<vtkSMProxyClipboard> SourceClipboard;
+  vtkNew<vtkSMProxyClipboard> DisplayClipboard;
+  vtkNew<vtkSMProxyClipboard> ViewClipboard;
 
   vtkNew<vtkEventQtSlotConnect> RepresentationEventConnect;
 
@@ -237,14 +183,21 @@ public:
     // if XP Style is being used swap it out for cleanlooks which looks
     // almost the same so we can have a green apply button make all
     // the buttons the same
-    QString styleName = this->Ui.Accept->style()->metaObject()->className();
+    QStyle *styleLocal = this->Ui.Accept->style();
+    QString styleName = styleLocal->metaObject()->className();
     if (styleName == "QWindowsXPStyle")
       {
-      QStyle *styleLocal = QStyleFactory::create("cleanlooks");
+      styleLocal = QStyleFactory::create("cleanlooks");
       styleLocal->setParent(panel);
       this->Ui.Accept->setStyle(styleLocal);
       this->Ui.Reset->setStyle(styleLocal);
       this->Ui.Delete->setStyle(styleLocal);
+      this->Ui.PropertiesRestoreDefaults->setStyle(styleLocal);
+      this->Ui.PropertiesSaveAsDefaults->setStyle(styleLocal);
+      this->Ui.DisplayRestoreDefaults->setStyle(styleLocal);
+      this->Ui.DisplaySaveAsDefaults->setStyle(styleLocal);
+      this->Ui.ViewRestoreDefaults->setStyle(styleLocal);
+      this->Ui.DisplaySaveAsDefaults->setStyle(styleLocal);
       QPalette buttonPalette = this->Ui.Accept->palette();
       buttonPalette.setColor(QPalette::Button, QColor(244,246,244));
       this->Ui.Accept->setPalette(buttonPalette);
@@ -252,11 +205,35 @@ public:
       this->Ui.Delete->setPalette(buttonPalette);
       }
 
+    // Add icons to the settings save/restore defaults buttons
+    this->Ui.PropertiesRestoreDefaults->
+      setIcon(styleLocal->standardIcon(QStyle::SP_BrowserReload));
+    this->Ui.PropertiesSaveAsDefaults->
+      setIcon(styleLocal->standardIcon(QStyle::SP_DialogSaveButton));
+    this->Ui.DisplayRestoreDefaults->
+      setIcon(styleLocal->standardIcon(QStyle::SP_BrowserReload));
+    this->Ui.DisplaySaveAsDefaults->
+      setIcon(styleLocal->standardIcon(QStyle::SP_DialogSaveButton));
+    this->Ui.ViewRestoreDefaults->
+      setIcon(styleLocal->standardIcon(QStyle::SP_BrowserReload));
+    this->Ui.ViewSaveAsDefaults->
+      setIcon(styleLocal->standardIcon(QStyle::SP_DialogSaveButton));
+
+    this->Ui.PropertiesButtons->layout()->setSpacing(
+      pqPropertiesPanel::suggestedHorizontalSpacing());
+    this->Ui.DisplayButtons->layout()->setSpacing(
+      pqPropertiesPanel::suggestedHorizontalSpacing());
+    this->Ui.ViewButtons->layout()->setSpacing(
+      pqPropertiesPanel::suggestedHorizontalSpacing());
+
     // change the apply button palette so it is green when it is enabled.
     QPalette applyPalette = this->Ui.Accept->palette();
     applyPalette.setColor(QPalette::Active, QPalette::Button, QColor(161, 213, 135));
     applyPalette.setColor(QPalette::Inactive, QPalette::Button, QColor(161, 213, 135));
     this->Ui.Accept->setPalette(applyPalette);
+
+    this->AutoApplyTimer.setSingleShot(true);
+    panel->connect(&this->AutoApplyTimer, SIGNAL(timeout()), SLOT(apply()));
     }
 
   ~pqInternals()
@@ -267,7 +244,14 @@ public:
       }
     this->SourceWidgets.clear();
     delete this->DisplayWidgets;
+    delete this->ViewWidgets;
     }
+
+  void triggerAutoApply()
+    {
+    this->AutoApplyTimer.start(pqPropertiesPanel::autoApplyDelay());
+    }
+
 
   //---------------------------------------------------------------------------
   void updateInformationAndDomains()
@@ -291,17 +275,17 @@ public:
 //-----------------------------------------------------------------------------
 pqPropertiesPanel::pqPropertiesPanel(QWidget* parentObject)
   : Superclass(parentObject),
-  Internals(new pqInternals(this))
+  Internals(new pqInternals(this)),
+  PanelMode(pqPropertiesPanel::ALL_PROPERTIES)
 {
-  // Setup configuration defaults using settings.
-  pqSettings *settings = pqApplicationCore::instance()->settings();
-  if (settings)
-    {
-    pqPropertiesPanel::AutoApply = settings->value("autoAccept", false).toBool();
-    this->Internals->Ui.AdvancedButton->setChecked(
-      settings->value("showAdvancedProperties", false).toBool());
-    }
-  
+  // Get AutoApply setting from GeneralSettings object.
+  vtkPVGeneralSettings* generalSettings = vtkPVGeneralSettings::GetInstance();
+  pqPropertiesPanel::AutoApply = generalSettings->GetAutoApply();
+
+  // every time the settings change, we need to update our auto-apply status.
+  pqCoreUtilities::connect(generalSettings, vtkCommand::ModifiedEvent,
+    this, SLOT(generalSettingsChanged()));
+
   //---------------------------------------------------------------------------
   // Listen to various signals from the application indicating changes in active
   // source/view/representation, etc.
@@ -316,17 +300,17 @@ pqPropertiesPanel::pqPropertiesPanel(QWidget* parentObject)
   // listen to server manager changes
   pqServerManagerModel *smm = pqApplicationCore::instance()->getServerManagerModel();
   this->connect(smm, SIGNAL(sourceRemoved(pqPipelineSource*)),
-                this, SLOT(proxyDeleted(pqPipelineSource*)));
+    SLOT(proxyDeleted(pqPipelineSource*)));
+  // this connection ensures that the button state is updated everytime any
+  // item's state changes.
+  this->connect(smm, SIGNAL(modifiedStateChanged(pqServerManagerModelItem*)),
+    SLOT(updateButtonState()));
   this->connect(pqApplicationCore::instance()->getServerManagerModel(),
-      SIGNAL(connectionRemoved(pqPipelineSource*, pqPipelineSource*, int)),
-      SLOT(updateButtonState()));
+    SIGNAL(connectionRemoved(pqPipelineSource*, pqPipelineSource*, int)),
+    SLOT(updateButtonState()));
   this->connect(pqApplicationCore::instance()->getServerManagerModel(),
-      SIGNAL(connectionAdded(pqPipelineSource*, pqPipelineSource*, int)),
-      SLOT(updateButtonState()));
-
-  // Setup shortcut to clear search text.
-  this->Internals->Ui.SearchLineEdit->installEventFilter(
-    new pqClearTextOnEsc(this->Internals->Ui.SearchLineEdit));
+    SIGNAL(connectionAdded(pqPipelineSource*, pqPipelineSource*, int)),
+    SLOT(updateButtonState()));
 
   // Listen to UI signals.
   QObject::connect(this->Internals->Ui.Accept, SIGNAL(clicked()),
@@ -337,15 +321,42 @@ pqPropertiesPanel::pqPropertiesPanel(QWidget* parentObject)
                    this, SLOT(deleteProxy()));
   QObject::connect(this->Internals->Ui.Help, SIGNAL(clicked()),
                    this, SLOT(showHelp()));
-  QObject::connect(this->Internals->Ui.AdvancedButton, SIGNAL(toggled(bool)),
+  QObject::connect(this->Internals->Ui.SearchBox, SIGNAL(textChanged(QString)),
                    this, SLOT(updatePanel()));
-  QObject::connect(this->Internals->Ui.SearchLineEdit, SIGNAL(textChanged(QString)),
+  QObject::connect(this->Internals->Ui.PropertiesRestoreDefaults, SIGNAL(clicked()),
+                   this, SLOT(propertiesRestoreDefaults()));
+  QObject::connect(this->Internals->Ui.PropertiesSaveAsDefaults, SIGNAL(clicked()),
+                   this, SLOT(propertiesSaveAsDefaults()));
+  QObject::connect(this->Internals->Ui.SearchBox, SIGNAL(advancedSearchActivated(bool)),
                    this, SLOT(updatePanel()));
 
   QObject::connect(this->Internals->Ui.PropertiesButton, SIGNAL(toggled(bool)),
                    this->Internals->Ui.PropertiesFrame, SLOT(setVisible(bool)));
+  QObject::connect(this->Internals->Ui.DisplayRestoreDefaults, SIGNAL(clicked()),
+                   this, SLOT(displayRestoreDefaults()));
+  QObject::connect(this->Internals->Ui.DisplaySaveAsDefaults, SIGNAL(clicked()),
+                   this, SLOT(displaySaveAsDefaults()));
+  QObject::connect(this->Internals->Ui.ViewRestoreDefaults, SIGNAL(clicked()),
+                   this, SLOT(viewRestoreDefaults()));
+  QObject::connect(this->Internals->Ui.ViewSaveAsDefaults, SIGNAL(clicked()),
+                   this, SLOT(viewSaveAsDefaults()));
   QObject::connect(this->Internals->Ui.DisplayButton, SIGNAL(toggled(bool)),
                    this->Internals->Ui.DisplayFrame, SLOT(setVisible(bool)));
+  QObject::connect(this->Internals->Ui.ViewButton, SIGNAL(toggled(bool)),
+                   this->Internals->Ui.ViewFrame, SLOT(setVisible(bool)));
+
+  this->connect(this->Internals->Ui.PropertiesCopy, SIGNAL(clicked()),
+                SLOT(copyProperties()));
+  this->connect(this->Internals->Ui.PropertiesPaste, SIGNAL(clicked()),
+                SLOT(pasteProperties()));
+  this->connect(this->Internals->Ui.DisplayCopy, SIGNAL(clicked()),
+                SLOT(copyDisplay()));
+  this->connect(this->Internals->Ui.DisplayPaste, SIGNAL(clicked()),
+                SLOT(pasteDisplay()));
+  this->connect(this->Internals->Ui.ViewCopy, SIGNAL(clicked()),
+                SLOT(copyView()));
+  this->connect(this->Internals->Ui.ViewPaste, SIGNAL(clicked()),
+                SLOT(pasteView()));
 
   this->setOutputPort(NULL);
 }
@@ -353,17 +364,56 @@ pqPropertiesPanel::pqPropertiesPanel(QWidget* parentObject)
 //-----------------------------------------------------------------------------
 pqPropertiesPanel::~pqPropertiesPanel()
 {
-  pqSettings *settings = pqApplicationCore::instance()->settings();
-  if (settings)
-    {
-    // save the state of advanced button in the user config.
-    settings->setValue("showAdvancedProperties",
-      this->Internals->Ui.AdvancedButton->isChecked());
-    }
-
   delete this->Internals;
   this->Internals = 0;
 }
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::setPanelMode(int val)
+{
+  if (this->PanelMode == val)
+    {
+    return;
+    }
+
+  this->PanelMode = val;
+
+  // show buttons only when showing source properties.
+  bool has_source = (this->PanelMode & pqPropertiesPanel::SOURCE_PROPERTIES) != 0;
+  bool has_display = (this->PanelMode & pqPropertiesPanel::DISPLAY_PROPERTIES) != 0;
+  bool has_view = (this->PanelMode & pqPropertiesPanel::VIEW_PROPERTIES) != 0;
+
+  this->Internals->Ui.Accept->setVisible(has_source);
+  this->Internals->Ui.Delete->setVisible(has_source);
+  this->Internals->Ui.Help->setVisible(has_source);
+  this->Internals->Ui.Reset->setVisible(has_source);
+
+  this->Internals->Ui.PropertiesButtons->setVisible(has_source);
+  this->Internals->Ui.PropertiesFrame->setVisible(has_source);
+
+  this->Internals->Ui.ViewFrame->setVisible(has_view);
+  this->Internals->Ui.ViewButtons->setVisible(has_view);
+
+  this->Internals->Ui.DisplayFrame->setVisible(has_display);
+  this->Internals->Ui.DisplayButtons->setVisible(has_display);
+
+  // the buttons need not be shown if there's only 1 type in the panel.
+  bool has_multiples_types =
+    ((has_source? 1 : 0) + (has_display? 1 : 0) + (has_view? 1 : 0)) > 1;
+  this->Internals->Ui.PropertiesButton->setVisible(has_multiples_types && has_source);
+  this->Internals->Ui.DisplayButton->setVisible(has_multiples_types && has_display);
+  this->Internals->Ui.ViewButton->setVisible(has_multiples_types && has_view);
+
+  this->updatePanel();
+}
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::generalSettingsChanged()
+{
+  vtkPVGeneralSettings* generalSettings = vtkPVGeneralSettings::GetInstance();
+  pqPropertiesPanel::AutoApply = generalSettings->GetAutoApply();
+}
+
 
 //-----------------------------------------------------------------------------
 void pqPropertiesPanel::setAutoApply(bool enabled)
@@ -408,11 +458,7 @@ void pqPropertiesPanel::setRepresentation(pqDataRepresentation* repr)
 //-----------------------------------------------------------------------------
 void pqPropertiesPanel::setView(pqView* pqview)
 {
-  if (this->Internals->View != pqview)
-    {
-    this->Internals->View = pqview;
-    emit this->viewChanged(pqview);
-    }
+  this->updateViewPanel(pqview);
 }
 
 //-----------------------------------------------------------------------------
@@ -436,12 +482,18 @@ void pqPropertiesPanel::updatePanel(pqOutputPort* port)
   // entire panel, else we simply update the widgets.
   this->updatePropertiesPanel(port? port->getSource() : NULL);
   this->updateDisplayPanel(port? port->getRepresentation(this->view()) : NULL);
+  this->updateViewPanel(this->view());
   this->updateButtonState();
 }
 
 //-----------------------------------------------------------------------------
 void pqPropertiesPanel::updatePropertiesPanel(pqPipelineSource *source)
 {
+  if ( (this->PanelMode & SOURCE_PROPERTIES) == 0)
+    {
+    source = NULL;
+    }
+
   if (this->Internals->Source != source)
     {
     // Panel has changed.
@@ -479,19 +531,19 @@ void pqPropertiesPanel::updatePropertiesPanel(pqPipelineSource *source)
     this->Internals->Ui.PropertiesButton->setText(
       QString("Properties (%1)").arg(source->getSMName()));
     this->Internals->SourceWidgets[source]->showWidgets(
-      this->Internals->Ui.AdvancedButton->isChecked(),
-      this->Internals->Ui.SearchLineEdit->text());
+      this->Internals->Ui.SearchBox->isAdvancedSearchActive(),
+      this->Internals->Ui.SearchBox->text());
 
-    if (source->modifiedState() == pqProxy::UNINITIALIZED &&
-        pqPropertiesPanel::AutoApply)
+    if (pqPropertiesPanel::AutoApply)
       {
-      QTimer::singleShot(pqPropertiesPanel::AutoApplyDelay, this, SLOT(apply()));
+      this->Internals->triggerAutoApply();
       }
     }
   else
     {
     this->Internals->Ui.PropertiesButton->setText("Properties");
     }
+  this->updateButtonEnableState();
 }
 
 //-----------------------------------------------------------------------------
@@ -503,6 +555,11 @@ void pqPropertiesPanel::updateDisplayPanel()
 //-----------------------------------------------------------------------------
 void pqPropertiesPanel::updateDisplayPanel(pqDataRepresentation* repr)
 {
+  if ( (this->PanelMode & pqPropertiesPanel::DISPLAY_PROPERTIES) == 0)
+    {
+    repr = NULL;
+    }
+
   // since this->Internals->Representation is QPointer, it can go NULL (e.g. during
   // disconnect) before we get the chance to clear the panel's widgets. Hence we
   // do the block of code if (repr==NULL) event if nothing has changed.
@@ -542,13 +599,68 @@ void pqPropertiesPanel::updateDisplayPanel(pqDataRepresentation* repr)
     this->Internals->Ui.DisplayButton->setText(
       QString("Display (%1)").arg(repr->getProxy()->GetXMLName()));
     this->Internals->DisplayWidgets->showWidgets(
-      this->Internals->Ui.AdvancedButton->isChecked(),
-      this->Internals->Ui.SearchLineEdit->text());
+      this->Internals->Ui.SearchBox->isAdvancedSearchActive(),
+      this->Internals->Ui.SearchBox->text());
     }
   else
     {
     this->Internals->Ui.DisplayButton->setText("Display");
     }
+
+  this->updateButtonEnableState();
+}
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::updateViewPanel (pqView* argView)
+{
+  pqView* _view = argView;
+  if ( (this->PanelMode & pqPropertiesPanel::VIEW_PROPERTIES) == 0)
+    {
+    _view = NULL;
+    }
+
+  if (this->Internals->View != argView)
+    {
+    // The view has changed.
+    if (this->Internals->View)
+      {
+      if (this->Internals->ViewWidgets)
+        {
+        this->Internals->ViewWidgets->hide();
+        delete this->Internals->ViewWidgets;
+        }
+      }
+    this->Internals->View = argView;
+    emit this->viewChanged(argView);
+    if (_view)
+      {
+      // create the widgets for this view
+      pqProxyWidgets* widgets = new pqProxyWidgets(_view, this);
+      widgets->Panel->setApplyChangesImmediately(true);
+      QObject::connect(widgets->Panel, SIGNAL(changeFinished()),
+                       this, SLOT(renderActiveView()));
+      this->Internals->ViewWidgets = widgets;
+      this->Internals->ViewWidgets->show(this->Internals->Ui.ViewFrame);
+      }
+    }
+
+  if (_view)
+    {
+    // update the label and show the widgets
+    vtkSMViewProxy* proxy = _view->getViewProxy();
+    const char* label = proxy->GetXMLLabel ();
+    this->Internals->Ui.ViewButton->setText(
+      QString ("View (%1)").arg (label != 0 ? label : _view->getViewType ()));
+    this->Internals->ViewWidgets->showWidgets(
+      this->Internals->Ui.SearchBox->isAdvancedSearchActive(),
+      this->Internals->Ui.SearchBox->text());
+    }
+  else
+    {
+    this->Internals->Ui.ViewButton->setText("View");
+    }
+
+  this->updateButtonEnableState();
 }
 
 //-----------------------------------------------------------------------------
@@ -600,7 +712,7 @@ void pqPropertiesPanel::sourcePropertyChanged(bool change_finished/*=true*/)
     }
   if (pqPropertiesPanel::AutoApply && change_finished)
     {
-    QTimer::singleShot(pqPropertiesPanel::AutoApplyDelay, this, SLOT(apply()));
+    this->Internals->triggerAutoApply();
     }
 
   this->updateButtonState();
@@ -609,19 +721,17 @@ void pqPropertiesPanel::sourcePropertyChanged(bool change_finished/*=true*/)
 //-----------------------------------------------------------------------------
 void pqPropertiesPanel::updateButtonState()
 {
-  this->Internals->Ui.Accept->setEnabled(false);
-  this->Internals->Ui.Reset->setEnabled(false);
+  Ui::propertiesPanel& ui = this->Internals->Ui;
+  ui.Accept->setEnabled(false);
+  ui.Reset->setEnabled(false);
 
-  // disable advanced button when searching.
-  this->Internals->Ui.AdvancedButton->setEnabled(
-    this->Internals->Ui.SearchLineEdit->text().isEmpty());
-
-  this->Internals->Ui.Help->setEnabled(
+  ui.Help->setEnabled(
     this->Internals->Source != NULL);
 
-  this->Internals->Ui.Delete->setEnabled(
-    (this->Internals->Source != NULL &&
-     this->Internals->Source->getNumberOfConsumers() == 0));
+  ui.Delete->setEnabled(
+    this->Internals->Source != NULL &&
+    this->Internals->Source->getNumberOfConsumers() == 0 &&
+    ! pqLiveInsituManager::isInsitu(this->Internals->Source));
 
   foreach (const pqProxyWidgets* widgets, this->Internals->SourceWidgets)
     {
@@ -638,7 +748,9 @@ void pqPropertiesPanel::updateButtonState()
         << (proxy->getProxy() ? proxy->getProxy()->GetXMLName() : "(unknown)")
         << "proxy is uninitialized";
 
-      this->Internals->Ui.Accept->setEnabled(true);
+      ui.Accept->setEnabled(true);
+      ui.PropertiesRestoreDefaults->setEnabled(true);
+      ui.PropertiesSaveAsDefaults->setEnabled(true);
       }
     else if (proxy->modifiedState() == pqProxy::MODIFIED)
       {
@@ -647,28 +759,93 @@ void pqPropertiesPanel::updateButtonState()
        << (proxy->getProxy() ? proxy->getProxy()->GetXMLName() : "(unknown)")
        << "proxy is modified";
 
-      this->Internals->Ui.Accept->setEnabled(true);
-      this->Internals->Ui.Reset->setEnabled(true);
+      ui.Accept->setEnabled(true);
+      ui.Reset->setEnabled(true);
+      ui.PropertiesRestoreDefaults->setEnabled(true);
+      ui.PropertiesSaveAsDefaults->setEnabled(true);
       }
     }
 
-  if (!this->Internals->Ui.Accept->isEnabled())
+  if (!ui.Accept->isEnabled())
     {
     // It's a good place to reset the ReceivedChangeAvailable if Accept button
     // is not enabled. This is same as doing it in apply()/reset() or if the
     // only modified proxy is deleted.
     this->Internals->ReceivedChangeAvailable = false;
     }
+
+  this->updateButtonEnableState();
+}
+
+//-----------------------------------------------------------------------------
+/// Updates enabled state for buttons on panel (other than
+/// apply/reset/delete);
+void pqPropertiesPanel::updateButtonEnableState()
+{
+  pqInternals& internals = *this->Internals;
+  Ui::propertiesPanel& ui = internals.Ui;
+
+  // Update PropertiesSaveAsDefaults and PropertiesRestoreDefaults state.
+  // If the source's properties are yet to be applied, we disable the two
+  // buttons (see BUG #15338).
+  bool canSaveRestoreSourcePropertyDefaults = internals.Source != NULL?
+    (internals.Source->modifiedState() == pqProxy::UNMODIFIED) :
+    false;
+  ui.PropertiesSaveAsDefaults->setEnabled(canSaveRestoreSourcePropertyDefaults);
+  ui.PropertiesRestoreDefaults->setEnabled(canSaveRestoreSourcePropertyDefaults);
+
+  ui.DisplayRestoreDefaults->setEnabled(internals.DisplayWidgets != NULL);
+  ui.DisplaySaveAsDefaults->setEnabled(internals.DisplayWidgets != NULL);
+
+  ui.ViewRestoreDefaults->setEnabled(internals.ViewWidgets != NULL);
+  ui.ViewSaveAsDefaults->setEnabled(internals.ViewWidgets != NULL);
+
+  // Now update copy-paste button state as well.
+  if (internals.Source)
+    {
+    ui.PropertiesCopy->setEnabled(true);
+    ui.PropertiesPaste->setEnabled(
+      internals.SourceClipboard->CanPaste(internals.Source->getProxy()));
+    }
+  else
+    {
+    ui.PropertiesCopy->setEnabled(false);
+    ui.PropertiesPaste->setEnabled(false);
+    }
+  if (internals.Representation)
+    {
+    ui.DisplayCopy->setEnabled(true);
+    ui.DisplayPaste->setEnabled(
+      internals.DisplayClipboard->CanPaste(internals.Representation->getProxy()));
+    }
+  else
+    {
+    ui.DisplayCopy->setEnabled(false);
+    ui.DisplayPaste->setEnabled(false);
+    }
+  if (internals.View)
+    {
+    ui.ViewCopy->setEnabled(true);
+    ui.ViewPaste->setEnabled(
+      internals.ViewClipboard->CanPaste(internals.View->getProxy()));
+    }
+  else
+    {
+    ui.ViewCopy->setEnabled(false);
+    ui.ViewPaste->setEnabled(false);
+    }
 }
 
 //-----------------------------------------------------------------------------
 void pqPropertiesPanel::apply()
 {
+  vtkTimerLog::MarkStartEvent("PropertiesPanel::Apply");
+  this->Internals->AutoApplyTimer.stop();
+
   BEGIN_UNDO_SET("Apply");
 
-  pqSettings* settings = pqApplicationCore::instance()->settings();
   bool onlyApplyCurrentPanel =
-    settings->value("onlyApplyCurrentPanel", false).toBool();
+    vtkPVGeneralSettings::GetInstance()->GetAutoApplyActiveOnly();
 
   if (onlyApplyCurrentPanel)
     {
@@ -677,6 +854,7 @@ void pqPropertiesPanel::apply()
     if (widgets)
       {
       widgets->apply(this->view());
+      emit this->applied(widgets->Proxy);
       }
     }
   else
@@ -684,6 +862,7 @@ void pqPropertiesPanel::apply()
     foreach (pqProxyWidgets* widgets, this->Internals->SourceWidgets)
       {
       widgets->apply(this->view());
+      emit this->applied(widgets->Proxy);
       }
     }
 
@@ -692,15 +871,16 @@ void pqPropertiesPanel::apply()
 
   emit this->applied();
   END_UNDO_SET();
+  vtkTimerLog::MarkEndEvent("PropertiesPanel::Apply");
 }
 
 //-----------------------------------------------------------------------------
 void pqPropertiesPanel::reset()
 {
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  bool onlyApplyCurrentPanel =
-    settings->value("onlyApplyCurrentPanel", false).toBool();
+  this->Internals->AutoApplyTimer.stop();
 
+  bool onlyApplyCurrentPanel =
+    vtkPVGeneralSettings::GetInstance()->GetAutoApplyActiveOnly();
   if (onlyApplyCurrentPanel)
     {
     pqProxyWidgets* widgets = this->Internals->Source?
@@ -727,10 +907,9 @@ void pqPropertiesPanel::deleteProxy()
 {
   if (this->Internals->Source)
     {
-    pqApplicationCore *core = pqApplicationCore::instance();
     BEGIN_UNDO_SET(QString("Delete %1").arg(
         this->Internals->Source->getSMName()));
-    core->getObjectBuilder()->destroy(this->Internals->Source);
+    emit this->deleteRequested(this->Internals->Source);
     END_UNDO_SET();
     }
 }
@@ -745,7 +924,79 @@ void pqPropertiesPanel::showHelp()
       this->Internals->Source->getProxy()->GetXMLName());
     }
 }
-  
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::propertiesRestoreDefaults()
+{
+  pqProxyWidgets* widgets = this->Internals->Source ?
+    this->Internals->SourceWidgets[this->Internals->Source] : NULL;
+  if (widgets && widgets->Panel)
+    {
+    if (widgets->Panel->restoreDefaults())
+      {
+      // If defaults were restored, we're going to pretend that the user hit
+      // apply for the source, so that the property changes are "accepted" and
+      // rest of the application updates.
+      widgets->apply(this->view());
+      emit this->applied(widgets->Proxy);
+      emit this->applied();
+      }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::propertiesSaveAsDefaults()
+{
+  pqProxyWidgets* widgets = this->Internals->Source?
+    this->Internals->SourceWidgets[this->Internals->Source] : NULL;
+  if (widgets && widgets->Panel)
+    {
+    widgets->Panel->saveAsDefaults();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::displayRestoreDefaults()
+{
+  if (this->Internals->DisplayWidgets)
+    {
+    if (this->Internals->DisplayWidgets->Panel->restoreDefaults())
+      {
+      this->Internals->DisplayWidgets->Panel->apply();
+      }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::displaySaveAsDefaults()
+{
+  if (this->Internals->DisplayWidgets)
+    {
+    this->Internals->DisplayWidgets->Panel->saveAsDefaults();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::viewRestoreDefaults()
+{
+  if (this->Internals->ViewWidgets)
+    {
+    if (this->Internals->ViewWidgets->Panel->restoreDefaults())
+      {
+      this->Internals->ViewWidgets->Panel->apply();
+      }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::viewSaveAsDefaults()
+{
+  if (this->Internals->ViewWidgets)
+    {
+    this->Internals->ViewWidgets->Panel->saveAsDefaults();
+    }
+}
+
 //-----------------------------------------------------------------------------
 void pqPropertiesPanel::proxyDeleted(pqPipelineSource* source)
 {
@@ -760,4 +1011,46 @@ void pqPropertiesPanel::proxyDeleted(pqPipelineSource* source)
     }
 
   this->updateButtonState();
+}
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::copyProperties()
+{
+  this->Internals->SourceClipboard->Copy(this->Internals->Source->getProxy());
+  this->updateButtonEnableState();
+}
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::pasteProperties()
+{
+  this->Internals->SourceClipboard->Paste(this->Internals->Source->getProxy());
+  this->renderActiveView();
+}
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::copyDisplay()
+{
+  this->Internals->DisplayClipboard->Copy(this->Internals->Representation->getProxy());
+  this->updateButtonEnableState();
+}
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::pasteDisplay()
+{
+  this->Internals->DisplayClipboard->Paste(this->Internals->Representation->getProxy());
+  this->renderActiveView();
+}
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::copyView()
+{
+  this->Internals->ViewClipboard->Copy(this->Internals->View->getProxy());
+  this->updateButtonEnableState();
+}
+
+//-----------------------------------------------------------------------------
+void pqPropertiesPanel::pasteView()
+{
+  this->Internals->ViewClipboard->Paste(this->Internals->View->getProxy());
+  this->renderActiveView();
 }

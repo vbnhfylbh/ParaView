@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMSession.h"
 #include "vtkSMRemoteObject.h"
 
-#include <vtksys/ios/sstream>
+#include <sstream>
 #include <vtksys/RegularExpression.hxx>
 
 vtkStandardNewMacro(pqUndoStackBuilder);
@@ -80,7 +80,11 @@ bool pqUndoStackBuilder::Filter(vtkSMSession *session, vtkTypeUInt32 globalId)
   // XML Flag: state_ignored="1"
   if( !remoteObj || (proxy && (
       proxy->IsA("vtkSMCameraProxy") ||
-      proxy->IsA("vtkSMTimeKeeperProxy") ||
+
+      // we no longer skip TimeKeeper. We need to record the changes to
+      // TimeSources, SuppressedTimeSources properties.
+      // proxy->IsA("vtkSMTimeKeeperProxy") ||
+      //
       proxy->IsA("vtkSMAnimationScene") ||
       proxy->IsA("vtkSMAnimationSceneProxy") ||
       proxy->IsA("vtkSMNewWidgetRepresentationProxy") ||
@@ -118,7 +122,7 @@ void pqUndoStackBuilder::OnStateChange( vtkSMSession *session,
     {
     vtkSMRemoteObject* proxy =
       vtkSMRemoteObject::SafeDownCast(session->GetRemoteObject(globalId));
-    vtksys_ios::ostringstream stream;
+    std::ostringstream stream;
     stream << "Changed '" << proxy->GetClassName() <<"'";
     this->Begin(stream.str().c_str());
     }

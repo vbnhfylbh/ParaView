@@ -29,33 +29,42 @@
 #
 #==========================================================================
 set(Module_SRCS
+  vtkAdditionalFieldReader.cxx
   vtkAMRConnectivity.cxx
   vtkAMRDualClip.cxx
   vtkAMRDualContour.cxx
   vtkAMRDualGridHelper.cxx
-  vtkAMRFragmentIntegration.cxx
   vtkAMRFileSeriesReader.cxx
+  vtkAMRFragmentIntegration.cxx
+  vtkAMRFragmentsFilter.cxx
   vtkAppendArcLength.cxx
   vtkAppendRectilinearGrid.cxx
   vtkAttributeDataReductionFilter.cxx
   vtkCellIntegrator.cxx
-  vtkCleanUnstructuredGrid.cxx
   vtkCleanUnstructuredGridCells.cxx
+  vtkCleanUnstructuredGrid.cxx
   vtkCSVWriter.cxx
-  vtkDataSetToRectilinearGrid.cxx
+  vtkDataSetRegionSurfaceFilter.cxx
+  vtkEnsembleDataReader.cxx
   vtkEquivalenceSet.cxx
   vtkExodusFileSeriesReader.cxx
   vtkExtractHistogram.cxx
   vtkExtractScatterPlot.cxx
+  vtkExtractSelectionRange.cxx
   vtkFileSequenceParser.cxx
   vtkFileSeriesReader.cxx
   vtkFileSeriesWriter.cxx
   vtkFlashContour.cxx
+  vtkGridAxes2DActor.cxx
+  vtkGridAxes3DActor.cxx
+  vtkGridAxesHelper.cxx
+  vtkGridAxesPlane2DActor.cxx
   vtkGridConnectivity.cxx
   vtkHierarchicalFractal.cxx
+  vtkHybridProbeFilter.cxx
+  vtkImageFileSeriesReader.cxx
   vtkIntegrateAttributes.cxx
   vtkIntegrateFlowThroughSurface.cxx
-#  vtkInteractorStyleTransferFunctionEditor.cxx
   vtkIntersectFragments.cxx
   vtkIsoVolume.cxx
   vtkMaterialInterfaceCommBuffer.cxx
@@ -69,6 +78,7 @@ set(Module_SRCS
   vtkMaterialInterfaceToProcMap.cxx
   vtkMergeArrays.cxx
   vtkMergeCompositeDataSet.cxx
+  vtkMetaReader.cxx
   vtkMinMax.cxx
   vtkParallelSerialWriter.cxx
   vtkPEnSightGoldBinaryReader.cxx
@@ -96,15 +106,20 @@ set(Module_SRCS
   vtkPVClipDataSet.cxx
   vtkPVConnectivityFilter.cxx
   vtkPVContourFilter.cxx
-  vtkPVDReader.cxx
+  vtkPVCylinder.cxx
   vtkPVDataSetAlgorithmSelectorFilter.cxx
-  vtkPVEnSightMasterServerReader.cxx
+  vtkPVDReader.cxx
   vtkPVEnSightMasterServerReader2.cxx
+  vtkPVEnSightMasterServerReader.cxx
   vtkPVEnSightMasterServerTranslator.cxx
+  vtkPVExtractBagPlots.cxx
+  vtkPVExtractComponent.cxx
   vtkPVExtractVOI.cxx
   vtkPVFrustumActor.cxx
   vtkPVGlyphFilter.cxx
+  vtkPVGridAxes3DActor.cxx
   vtkPVImageReader.cxx
+  vtkPVLegacyGlyphFilter.cxx
   vtkPVLinearExtrusionFilter.cxx
   vtkPVMetaClipDataSet.cxx
   vtkPVMetaSliceDataSet.cxx
@@ -113,13 +128,13 @@ set(Module_SRCS
   vtkPVSelectionSource.cxx
   vtkPVTextSource.cxx
   vtkPVTransform.cxx
+  vtkPVTransposeTable.cxx
   vtkQuerySelectionSource.cxx
   vtkRectilinearGridConnectivity.cxx
-  vtkScatterPlotMapper.cxx
-  vtkScatterPlotPainter.cxx
   vtkSciVizStatistics.cxx
   vtkSpyPlotBlock.cxx
   vtkSpyPlotBlockIterator.cxx
+  vtkSpyPlotFileSeriesReader.cxx
   vtkSpyPlotHistoryReader.cxx
   vtkSpyPlotIStream.cxx
   vtkSpyPlotReader.cxx
@@ -127,25 +142,28 @@ set(Module_SRCS
   vtkSpyPlotUniReader.cxx
   vtkSurfaceVectors.cxx
   vtkTimeToTextConvertor.cxx
-# vtkTransferFunctionEditorRepresentation.cxx
-# vtkTransferFunctionEditorRepresentation1D.cxx
-# vtkTransferFunctionEditorRepresentationShapes1D.cxx
-# vtkTransferFunctionEditorRepresentationShapes2D.cxx
-# vtkTransferFunctionEditorRepresentationSimple1D.cxx
-# vtkTransferFunctionEditorWidget.cxx
-# vtkTransferFunctionEditorWidget1D.cxx
-# vtkTransferFunctionEditorWidgetShapes1D.cxx
-# vtkTransferFunctionEditorWidgetShapes2D.cxx
-# vtkTransferFunctionEditorWidgetSimple1D.cxx
-# vtkTransferFunctionViewer.cxx
   vtkUnstructuredPOPReader.cxx
   vtkVRMLSource.cxx
   vtkXMLCollectionReader.cxx
   vtkXMLPVDWriter.cxx
 )
 
+# Disabled unless using the OpenGL backend.
+if ("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL")
+  list(APPEND Module_SRCS
+    vtkScatterPlotPainter.cxx
+    vtkScatterPlotMapper.cxx
+    )
+endif()
+
+# Add header-only files so they get installed correctly.
+set (${vtk-module}_HDRS
+  vtkMaterialInterfaceIdListItem.h
+)
+
 set_source_files_properties(
   vtkAMRDualGridHelper
+  vtkGridAxesHelper
   vtkMaterialInterfaceCommBuffer
   vtkMaterialInterfaceIdList
   vtkMaterialInterfacePieceLoading
@@ -167,19 +185,19 @@ set_source_files_properties(
   vtkCellIntegrator
   vtkPEnSightReader
   vtkSciVizStatistics
-  vtkTransferFunctionEditorRepresentation
-  vtkTransferFunctionEditorRepresentation1D
-  vtkTransferFunctionEditorWidget
-  vtkTransferFunctionEditorWidget1D
   ABSTRACT)
 
 # Use a custom hints file for this module.
 set(${vtk-module}_WRAP_HINTS "${CMAKE_CURRENT_SOURCE_DIR}/hints")
 vtk_module_library(vtkPVVTKExtensionsDefault ${Module_SRCS})
+target_link_libraries(vtkPVVTKExtensionsDefault LINK_PRIVATE
+  ${vtkIOInfovis_LIBRARIES})
+include(vtkOpenGL)
+vtk_opengl_link(vtkPVVTKExtensionsDefault)
 
 OPTION(PARAVIEW_ENABLE_SPYPLOT_MARKERS
        "Enables markers in the spyplot reader"
-       OFF)
+       ON)
 MARK_AS_ADVANCED(PARAVIEW_ENABLE_SPYPLOT_MARKERS)
 
 IF(${PARAVIEW_ENABLE_SPYPLOT_MARKERS})

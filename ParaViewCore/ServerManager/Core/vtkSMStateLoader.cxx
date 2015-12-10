@@ -18,7 +18,6 @@
 #include "vtkPVInstantiator.h"
 #include "vtkPVXMLElement.h"
 #include "vtkSmartPointer.h"
-#include "vtkSMGlobalPropertiesManager.h"
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyLink.h"
 #include "vtkSMProxyIterator.h"
@@ -117,19 +116,7 @@ vtkSMProxy* vtkSMStateLoader::CreateProxy( const char* xml_group,
     && strcmp(xml_name, "AnimationScene")==0)
     {
     // If an animation scene already exists, we use that.
-    vtkSMProxyIterator* iter = vtkSMProxyIterator::New();
-    iter->SetSessionProxyManager(pxm);
-    vtkSMProxy* scene = 0;
-    for (iter->Begin("animation"); !iter->IsAtEnd(); iter->Next())
-      {
-      if (strcmp(iter->GetProxy()->GetXMLGroup(), xml_group) == 0 &&
-        strcmp(iter->GetProxy()->GetXMLName(), xml_name) == 0)
-        {
-        scene = iter->GetProxy();
-        break;
-        }
-      }
-    iter->Delete();
+    vtkSMProxy* scene = pxm->FindProxy("animation", "animation", "AnimationScene");
     if (scene)
       {
       scene->Register(this);
@@ -140,19 +127,7 @@ vtkSMProxy* vtkSMStateLoader::CreateProxy( const char* xml_group,
            && strcmp(xml_name, "TimeAnimationCue")==0)
     {
     // If an animation cue already exists, we use that.
-    vtkSMProxyIterator* iter = vtkSMProxyIterator::New();
-    iter->SetSessionProxyManager(pxm);
-    vtkSMProxy* cue = 0;
-    for (iter->Begin("animation"); !iter->IsAtEnd(); iter->Next())
-      {
-      if (strcmp(iter->GetProxy()->GetXMLGroup(), xml_group) == 0 &&
-          strcmp(iter->GetProxy()->GetXMLName(), xml_name) == 0)
-        {
-        cue = iter->GetProxy();
-        break;
-        }
-      }
-    iter->Delete();
+    vtkSMProxy* cue = pxm->FindProxy("animation", "animation", "TimeAnimationCue");
     if (cue)
       {
       cue->Register(this);
@@ -164,7 +139,7 @@ vtkSMProxy* vtkSMStateLoader::CreateProxy( const char* xml_group,
     {
     // There is only one time keeper per connection, simply
     // load the state on the timekeeper.
-    vtkSMProxy* timekeeper = pxm->GetProxy("timekeeper", "TimeKeeper");
+    vtkSMProxy* timekeeper = pxm->FindProxy("timekeeper", xml_group, xml_name);
     if (timekeeper)
       {
       timekeeper->Register(this);
@@ -376,48 +351,6 @@ void vtkSMStateLoader::HandleCustomProxyDefinitions(
 }
 
 //---------------------------------------------------------------------------
-int vtkSMStateLoader::HandleGlobalPropertiesManagers(vtkPVXMLElement* element)
-{
-  vtkSMSessionProxyManager* pxm = this->GetSessionProxyManager();
-  assert(pxm != NULL);
-
-  unsigned int numElems = element->GetNumberOfNestedElements();
-  for (unsigned int cc=0; cc < numElems; cc++)
-    {
-    vtkPVXMLElement* currentElement= element->GetNestedElement(cc);
-    const char* name = currentElement->GetName();
-    const char* mgrname = currentElement->GetAttribute("name");
-    if (!name || !mgrname || strcmp(name, "GlobalPropertiesManager") != 0)
-      {
-      continue;
-      }
-    std::string group = currentElement->GetAttribute("group");
-    std::string type = currentElement->GetAttribute("type");
-    vtkSMGlobalPropertiesManager* mgr =
-      pxm->GetGlobalPropertiesManager(mgrname);
-    if (mgr && (group != mgr->GetXMLGroup() || type != mgr->GetXMLName()))
-      {
-      vtkErrorMacro("GlobalPropertiesManager with name " << mgrname
-        << " exists, however is of different type.");
-      return 0;
-      }
-    if (!mgr)
-      {
-      mgr = vtkSMGlobalPropertiesManager::New();
-      mgr->SetSession(this->GetSession());
-      mgr->InitializeProperties(group.c_str(), type.c_str());
-      pxm->SetGlobalPropertiesManager(mgrname, mgr);
-      mgr->Delete();
-      }
-    if (!mgr->LoadLinkState(currentElement, this->ProxyLocator))
-      {
-      return 0;
-      }
-    }
-  return 1;
-}
-
-//---------------------------------------------------------------------------
 int vtkSMStateLoader::HandleLinks(vtkPVXMLElement* element)
 {
   vtkSMSessionProxyManager* pxm = this->GetSessionProxyManager();
@@ -429,6 +362,7 @@ int vtkSMStateLoader::HandleLinks(vtkPVXMLElement* element)
     vtkPVXMLElement* currentElement= element->GetNestedElement(cc);
     const char* name = currentElement->GetName();
     const char* linkname = currentElement->GetAttribute("name");
+
     if (name && linkname)
       {
       vtkSMLink* link = pxm->GetRegisteredLink(linkname);
@@ -442,9 +376,9 @@ int vtkSMStateLoader::HandleLinks(vtkPVXMLElement* element)
         if (link == NULL)
           {
           vtkWarningMacro("Failed to create object for link (name="
-            << name
-            << "). Expected type was " << classname.c_str()
-            << ". Skipping.");
+                          << name
+                          << "). Expected type was " << classname.c_str()
+                          << ". Skipping.");
           continue;
           }
         pxm->RegisterLink(linkname, link);
@@ -456,6 +390,13 @@ int vtkSMStateLoader::HandleLinks(vtkPVXMLElement* element)
         }
       }
     }
+
+  // Load the global_properties
+  if (vtkSMProxy* globalPropertiesProxy = pxm->GetProxy("global_properties", "ColorPalette"))
+    {
+    globalPropertiesProxy->LoadXMLState(element, this->ProxyLocator);
+    }
+
   return 1;
 }
 
@@ -593,10 +534,6 @@ int vtkSMStateLoader::LoadStateInternal(vtkPVXMLElement* parent)
       else if (strcmp(name, "Links") == 0)
         {
         this->HandleLinks(currentElement);
-        }
-      else if (strcmp(name, "GlobalPropertiesManagers") == 0)
-        {
-        this->HandleGlobalPropertiesManagers(currentElement);
         }
       }
     }

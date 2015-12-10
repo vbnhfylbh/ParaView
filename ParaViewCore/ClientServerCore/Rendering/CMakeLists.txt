@@ -33,28 +33,32 @@ set (Module_SRCS
   vtkAMROutlineRepresentation.cxx
   vtkAMRStreamingPriorityQueue.cxx
   vtkAMRStreamingVolumeRepresentation.cxx
+  vtkCacheSizeKeeper.cxx
   vtkCaveSynchronizedRenderers.cxx
   vtkChartRepresentation.cxx
   vtkChartSelectionRepresentation.cxx
   vtkChartWarning.cxx
   vtkClientServerMoveData.cxx
   vtkCompositeRepresentation.cxx
-  vtkCompositeSliceRepresentation.cxx
   vtkCubeAxesRepresentation.cxx
   vtkDataLabelRepresentation.cxx
   vtkGeometryRepresentation.cxx
   vtkGeometryRepresentationWithFaces.cxx
+  vtkGeometrySliceRepresentation.cxx
   vtkGlyph3DRepresentation.cxx
   vtkImageSliceRepresentation.cxx
   vtkImageVolumeRepresentation.cxx
   vtkMoleculeRepresentation.cxx
   vtkMPIMoveData.cxx
   vtkOutlineRepresentation.cxx
-  vtkPVBarChartView.cxx
+  vtkPExtentTranslator.cxx
+  vtkPVBagChartRepresentation.cxx
+  vtkPVBoxChartRepresentation.cxx
   vtkPVCacheKeeper.cxx
   vtkPVCacheKeeperPipeline.cxx
   vtkPVCacheSizeInformation.cxx
   vtkPVClientServerSynchronizedRenderers.cxx
+  vtkPVCompositeOrthographicSliceRepresentation.cxx
   vtkPVCompositeRepresentation.cxx
   vtkPVContextView.cxx
   vtkPVDataDeliveryManager.cxx
@@ -62,19 +66,21 @@ set (Module_SRCS
   vtkPVDataRepresentationPipeline.cxx
   vtkPVDisplayInformation.cxx
   vtkPVHardwareSelector.cxx
+  vtkPVHistogramChartRepresentation.cxx
   vtkPVImageSliceMapper.cxx
   vtkPVImplicitPlaneRepresentation.cxx
   vtkPVLastSelectionInformation.cxx
-  vtkPVLineChartView.cxx
   vtkPVMultiSliceView.cxx
+  vtkPVOpenGLInformation.cxx
   vtkPVOpenGLExtensionsInformation.cxx
-  vtkPVParallelCoordinatesChartView.cxx
+  vtkPVOrthographicSliceView.cxx
   vtkPVParallelCoordinatesRepresentation.cxx
   vtkPVPlotMatrixRepresentation.cxx
   vtkPVPlotMatrixView.cxx
   vtkPVProminentValuesInformation.cxx
   vtkPVRayCastPickingHelper.cxx
   vtkPVRenderView.cxx
+  vtkPVRenderViewSettings.cxx
   vtkPVRepresentedDataInformation.cxx
   vtkPVSelectionInformation.cxx
   vtkPVStreamingPiecesInformation.cxx
@@ -82,21 +88,25 @@ set (Module_SRCS
   vtkPVSynchronizedRenderWindows.cxx
   vtkPVView.cxx
   vtkPVXYChartView.cxx
+  vtkQuartileChartRepresentation.cxx
   vtkSelectionDeliveryFilter.cxx
   vtkSelectionRepresentation.cxx
-  vtkSliceFriendGeometryRepresentation.cxx
   vtkSpreadSheetRepresentation.cxx
   vtkSpreadSheetView.cxx
   vtkStructuredGridVolumeRepresentation.cxx
+  vtkTableExtentTranslator.cxx
   vtkTextSourceRepresentation.cxx
   vtkThreeSliceFilter.cxx
   vtkUnstructuredGridVolumeRepresentation.cxx
   vtkXYChartRepresentation.cxx
 )
 
-if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_ENABLE_MATPLOTLIB)
+if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
+  add_definitions(-DVTKGL2)
+endif()
+
+if (PARAVIEW_ENABLE_PYTHON)
   list(APPEND Module_SRCS
-    vtkMatplotlibUtilities.cxx
     vtkPythonRepresentation.cxx
     vtkPythonView.cxx)
 endif()
@@ -107,11 +117,16 @@ if (PARAVIEW_USE_ICE_T)
     vtkIceTSynchronizedRenderers.cxx)
 endif()
 
-#set_source_files_properties(
-#  WRAP_EXCLUDE
-#  )
+set_source_files_properties(
+  vtkCacheSizeKeeper
+
+  # No need to wrap vtkPExtentTranslator, its an internal class.
+  vtkPExtentTranslator
+  WRAP_EXCLUDE
+)
 
 set_source_files_properties(
+  vtkCacheSizeKeeper
   vtkPVContextView
   vtkPVDataRepresentation
   vtkPVSynchronizedRenderWindows
@@ -123,3 +138,5 @@ set (${vtk-module}_HDRS vtkStreamingPriorityQueue.h)
 # Use a custom hints file for this module.
 set(${vtk-module}_WRAP_HINTS "${CMAKE_CURRENT_SOURCE_DIR}/hints")
 vtk_module_library(vtkPVClientServerCoreRendering ${Module_SRCS})
+include(vtkOpenGL)
+vtk_opengl_link(vtkPVClientServerCoreRendering)

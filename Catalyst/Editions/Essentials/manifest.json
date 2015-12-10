@@ -1,14 +1,10 @@
 {
+  "edition": "Essentials",
+  "requires": [
+    "Base"
+  ],
   "cmake":{
     "cache":[
-      { "name":"Module_vtkFiltersSources",
-        "type":"BOOL",
-        "value":"ON"
-      },
-      { "name":"Module_vtkImagingCore",
-        "type":"BOOL",
-        "value":"ON"
-      },
       { "name":"Module_vtkPVVTKExtensionsDefault",
         "type":"BOOL",
         "value":"ON"
@@ -26,8 +22,10 @@
         { "class":"vtkPVBox" },
         { "class":"vtkPVClipDataSet" },
         { "class":"vtkPVContourFilter" },
+        { "class":"vtkPVCylinder" },
         { "class":"vtkPVDataSetAlgorithmSelectorFilter" },
         { "class":"vtkPVGlyphFilter" },
+        { "class":"vtkPVLegacyGlyphFilter" },
         { "class":"vtkPVMetaClipDataSet" },
         { "class":"vtkPVMetaSliceDataSet" },
         { "class":"vtkPVPlane" }
@@ -73,6 +71,9 @@
         { "path":"VTK/Filters/Extraction/module.cmake" },
         { "path":"VTK/Filters/Extraction/CMakeLists.txt" }
       ],
+      "exclude":[
+        { "path":"Testing" }
+      ],
       "cswrap":true,
       "pythonwrap":true
     },
@@ -82,6 +83,7 @@
         { "path":"vtkTableBasedClipCases.h" },
         { "class":"vtkClipDataSet" },
         { "class":"vtkClipVolume" },
+        { "class":"vtkPassArrays" },
         { "class":"vtkTableBasedClipDataSet" }
       ],
       "replace":[
@@ -99,7 +101,13 @@
         "Contour",
         "Clip",
         "Cut",
-        "Glyph"
+        "PassArrays"
+      ]
+    },
+    { "path":"ParaViewCore/ServerManager/SMApplication/Resources/sources.xml",
+      "proxies":[
+        "TrivialProducer",
+        "PVTrivialProducer"
       ]
     },
     { "path":"ParaViewCore/ServerManager/SMApplication/Resources/utilities.xml",
@@ -109,6 +117,7 @@
         "NonMergingPointLocator",
         "Plane",
         "Box",
+        "Cylinder",
         "Sphere",
         "Scalar"
       ]

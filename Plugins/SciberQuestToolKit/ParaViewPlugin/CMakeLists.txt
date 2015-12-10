@@ -16,9 +16,17 @@ if(PARAVIEW_BUILD_QT_GUI)
   set(_IFACE_SRCS)
 
   macro(sciberquest_wrap_qt name)
-    qt4_wrap_cpp(MOC_SRCS "${name}.h")
+    if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+      qt5_wrap_cpp(MOC_SRCS "${name}.h")
+    else ()
+      qt4_wrap_cpp(MOC_SRCS "${name}.h")
+    endif ()
     if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/${name}Form.ui")
-      qt4_wrap_ui(UI_SRCS "${name}Form.ui")
+      if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+        qt5_wrap_ui(UI_SRCS "${name}Form.ui")
+      else ()
+        qt4_wrap_ui(UI_SRCS "${name}Form.ui")
+      endif ()
     endif ()
   endmacro()
 
@@ -63,7 +71,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     pqSQTranslateDialog.cxx
     pqSQVolumeSource.cxx
     )
-endif (PARAVIEW_BUILD_QT_GUI)
+endif ()
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/GetDate.cmake")
 # identify the build
@@ -73,10 +81,6 @@ GetDate(SQTK_BUILD_DATE)
 set (SQTK_VERSION "SQTK-${SQTK_RELEASE} ${CMAKE_SYSTEM} ${CMAKE_CXX_COMPILER} ${SQTK_BUILD_DATE}")
 #message(STATUS "SQTK version ${SQTK_VERSION}")
 
-set (SQTK_XML
-  SciberQuestToolKitSources.xml
-  SciberQuestToolKitFilters.xml)
-
 set (SQTK_SM_XML
   SciberQuestToolKitSMReaders.xml
   SciberQuestToolKitSMWriters.xml
@@ -85,13 +89,16 @@ set (SQTK_SM_XML
 
 include_directories(${VTK_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_PATH})
 
+if(PARAVIEW_USE_MPI)
+  include(vtkMPI)
+endif()
+
 # Generate the plugin, servermanager and wrapped language bindings.
 add_paraview_plugin(
   SciberQuestToolKit "${SQTK_VERSION}"
   GUI_INTERFACES ${_IFACES}
   SERVER_MANAGER_SOURCES ${SM_CXX_SOURCES}
   SERVER_MANAGER_XML ${SQTK_SM_XML}
-  GUI_RESOURCE_FILES ${SQTK_XML}
   SOURCES ${CXX_SOURCES})
 
 target_link_libraries(SciberQuestToolKit
@@ -102,9 +109,10 @@ if(PARAVIEW_BUILD_QT_GUI)
     LINK_PRIVATE pqComponents)
 endif()
 
-install(TARGETS SciberQuestToolKit DESTINATION lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR})
+install(TARGETS SciberQuestToolKit
+  ARCHIVE DESTINATION ${VTK_INSTALL_ARCHIVE_DIR}
+  LIBRARY DESTINATION ${VTK_INSTALL_LIBRARY_DIR})
 
 if(PARAVIEW_USE_MPI)
-  include(vtkMPI)
   vtk_mpi_link(SciberQuestToolKit)
 endif()

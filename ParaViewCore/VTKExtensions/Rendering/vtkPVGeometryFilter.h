@@ -62,6 +62,11 @@ public:
   vtkGetMacro(UseOutline, int);
 
   // Description:
+  // Determines the number of distinct values in vtkBlockColors
+  vtkSetMacro(BlockColorsDistinctValues, int);
+  vtkGetMacro(BlockColorsDistinctValues, int);
+
+  // Description:
   // When input is structured data, this flag will generate faces with
   // triangle strips.  This should render faster and use less memory, but no
   // cell data is copied.  By default, UseStrips is Off.
@@ -76,13 +81,19 @@ public:
   vtkBooleanMacro(ForceUseStrips, int);
 
   // Description:
-  // Whether to generate cell normals.  Cell normals should speed up
-  // rendering when point normals are not available.  They can only be used
+  // Whether to generate cell normals.  They can only be used
   // for poly cells now.  This option does nothing if the output
   // contains lines, verts, or strips.
   vtkSetMacro(GenerateCellNormals, int);
   vtkGetMacro(GenerateCellNormals, int);
   vtkBooleanMacro(GenerateCellNormals, int);
+
+  // Description:
+  // Whether to triangulate mesh for rendering. This parameter avoid
+  // rendering issues of non-convex polygons.
+  vtkSetMacro(Triangulate, int);
+  vtkGetMacro(Triangulate, int);
+  vtkBooleanMacro(Triangulate, int);
 
   // Description:
   // Nonlinear faces are approximated with flat polygons.  This parameter
@@ -101,8 +112,7 @@ public:
   // Description:
   // If on, the output polygonal dataset will have a celldata array that
   // holds the cell index of the original 3D cell that produced each output
-  // cell. This is useful for picking. The default is off to conserve
-  // memory.
+  // cell. This is useful for picking but it takes memory. The default is on.
   void SetPassThroughCellIds(int);
   vtkGetMacro(PassThroughCellIds,int);
   vtkBooleanMacro(PassThroughCellIds,int);
@@ -110,8 +120,7 @@ public:
   // Description:
   // If on, the output polygonal dataset will have a pointdata array that
   // holds the point index of the original vertex that produced each output
-  // vertex. This is useful for picking. The default is off to conserve
-  // memory.
+  // vertex. This is useful for picking but it takes memory. The default is on.
   void SetPassThroughPointIds(int);
   vtkGetMacro(PassThroughPointIds,int);
   vtkBooleanMacro(PassThroughPointIds,int);
@@ -162,9 +171,6 @@ protected:
   virtual int RequestDataObject(vtkInformation*,
                                 vtkInformationVector**,
                                 vtkInformationVector*);
-  virtual int RequestInformation(vtkInformation* request,
-                                 vtkInformationVector** inputVector,
-                                 vtkInformationVector* outputVector);
   virtual int RequestAMRData(vtkInformation*  request,
                              vtkInformationVector** inputVector,
                              vtkInformationVector* outputVector );
@@ -179,7 +185,7 @@ protected:
   virtual vtkExecutive* CreateDefaultExecutive();
 
   // Description:
-  // Produce geometry for a block in the dataset. 
+  // Produce geometry for a block in the dataset.
   // This does not handle producing outlines. Call only when this->UseOutline ==
   // 0; \c extractface mask it is used to determine external faces.
   void ExecuteAMRBlock(vtkUniformGrid* input,
@@ -251,8 +257,10 @@ protected:
 
   int OutlineFlag;
   int UseOutline;
+  int BlockColorsDistinctValues;
   int UseStrips;
   int GenerateCellNormals;
+  int Triangulate;
   int NonlinearSubdivisionLevel;
 
   vtkMultiProcessController* Controller;
@@ -304,6 +312,12 @@ private:
   void operator=(const vtkPVGeometryFilter&); // Not implemented
 
   void AddCompositeIndex(vtkPolyData* pd, unsigned int index);
+  // Description:
+  // Adds a field array called "vtkBlockColors". The array is
+  // added to each block only if the dataset is a composite
+  // dataset. The array has one value set to 
+  // (blockIndex % BlockColorsDistinctValues)
+  void AddBlockColors(vtkPolyData* pd, unsigned int index);
   void AddHierarchicalIndex(vtkPolyData* pd, unsigned int level, unsigned int index);
   class BoundsReductionOperation;
 //ETX

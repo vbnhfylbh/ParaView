@@ -24,6 +24,7 @@
 #include "vtkMultiProcessController.h"
 #include "vtkMultiProcessStream.h"
 #include "vtkObjectFactory.h"
+#include "vtkStructuredGridAppend.h"
 #include "vtkTrivialProducer.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
@@ -151,6 +152,10 @@ bool vtkMultiProcessControllerHelper::MergePieces(
     ia->PreserveExtentsOn();
     appender = ia;
     }
+  else if (vtkStructuredGrid::SafeDownCast(result))
+    {
+    appender = vtkStructuredGridAppend::New();;
+    }
   else if (vtkGraph::SafeDownCast(result))
     {
     vtkGenericWarningMacro("Support for vtkGraph has been depreciated.")
@@ -160,7 +165,9 @@ bool vtkMultiProcessControllerHelper::MergePieces(
     {
     // this only supports composite datasets of polydata and unstructured
     // grids.
-    appender = vtkAppendCompositeDataLeaves::New();
+    vtkAppendCompositeDataLeaves* cdl = vtkAppendCompositeDataLeaves::New();
+    cdl->AppendFieldDataOn();
+    appender = cdl;
     }
   else
     {
@@ -184,8 +191,12 @@ bool vtkMultiProcessControllerHelper::MergePieces(
     tp->SetOutput(iter->GetPointer());
     appender->AddInputConnection(0, tp->GetOutputPort());
     }
-  appender->Update();
-  result->ShallowCopy(appender->GetOutputDataObject(0));
+  // input connections may be 0, since we skip empty inputs in the loop above.
+  if (appender->GetNumberOfInputConnections(0) > 0)
+    {
+    appender->Update();
+    result->ShallowCopy(appender->GetOutputDataObject(0));
+    }
   appender->Delete();
   return true;
 }

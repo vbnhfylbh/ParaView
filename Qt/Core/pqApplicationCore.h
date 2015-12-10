@@ -40,7 +40,6 @@ class pq3DWidgetFactory;
 class pqDisplayPolicy;
 class pqInterfaceTracker;
 class pqLinksModel;
-class pqLookupTableManager;
 class pqObjectBuilder;
 class pqOptions;
 class pqOutputWindow;
@@ -61,7 +60,6 @@ class QApplication;
 class QHelpEngine;
 class QStringList;
 class vtkPVXMLElement;
-class vtkSMGlobalPropertiesManager;
 class vtkSMProxyLocator;
 
 /// This class is the crux of the ParaView application. It creates
@@ -86,10 +84,6 @@ public:
   /// otherwise a new instance of pqOptions with standard ParaView command line
   /// options will be created.
   pqApplicationCore(int& argc, char** argv, pqOptions* options=0, QObject* parent=0);
-
-  /// Dangerous option that disables the debug output window, intended for
-  /// demo purposes only
-  void disableOutputWindow();
 
   /// Provides access to the command line options object.
   pqOptions* getOptions() const
@@ -182,6 +176,9 @@ public:
   pqOutputWindowAdapter* outputWindowAdapter()
     { return this->OutputWindowAdapter; }
 
+  pqOutputWindow* outputWindow()
+  { return this->OutputWindow; }
+
   /// It is possible to change the display policy used by
   /// the application. Used to change the active display
   /// policy. The pqApplicationCore takes over the ownership of the display policy.
@@ -189,16 +186,6 @@ public:
 
   /// Provides access to the test utility.
   virtual pqTestUtility* testUtility();
-
-  /// Set/Get the lookup table manager. Lookup table manager is used to manage
-  /// lookup tables used for coloring using data arrays.
-  /// policy. The pqApplicationCore takes over the ownership of the manager.
-  void setLookupTableManager(pqLookupTableManager*);
-  pqLookupTableManager* getLookupTableManager() const
-    { return this->LookupTableManager; }
-
-  /// Returns the manager for the global properties such as ForegroundColor etc.
-  vtkSMGlobalPropertiesManager* getGlobalPropertiesManager();
 
   /// Returns the set of recently-used resources i.e. data files and state
   /// files.
@@ -224,23 +211,6 @@ public:
   /// Reliance on this flag is chimerical since we cannot set this ivar when
   /// state file is  being loaded from python shell.
   bool isLoadingState(){return this->LoadingState;};
-
-  /// Loads global properties values from settings.
-  /// HACK: Need more graceful way of dealing with changes to settings and
-  /// updating items that depend on it.
-  void loadGlobalPropertiesFromSettings();
-
-  /// loads palette i.e. global property values given the name of the palette.
-  void loadPalette(const QString& name);
-
-  /// loads palette i.e. global property values given the name XML state for a
-  /// palette.
-  void loadPalette(vtkPVXMLElement* xml);
-
-  /// save the current palette as XML. A new reference is returned, so the
-  /// caller is responsible for releasing memory i.e. call Delete() on the
-  /// returned value.
-  vtkPVXMLElement* getCurrrentPalette();
 
   /// returns the active server is any.
   pqServer* getActiveServer() const;
@@ -317,7 +287,6 @@ protected:
   pq3DWidgetFactory* WidgetFactory;
   pqDisplayPolicy* DisplayPolicy;
   pqLinksModel* LinksModel;
-  pqLookupTableManager* LookupTableManager;
   pqObjectBuilder* ObjectBuilder;
   pqInterfaceTracker* InterfaceTracker;
   pqPluginManager* PluginManager;

@@ -36,12 +36,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkEventQtSlotConnect.h"
 #include "vtkSmartPointer.h" 
 #include "vtkSMProperty.h"
+#include "vtkSMPropertyHelper.h"
 #include "vtkSMProxy.h"
 
 // Qt includes.
 #include <QPointer>
 
 // ParaView includes.
+#include "pqServer.h"
 #include "pqView.h"
 #include "pqSMAdaptor.h"
 
@@ -92,6 +94,13 @@ void pqRepresentation::setView(pqView* view)
 pqView* pqRepresentation::getView() const
 {
   return this->Internal->View;
+}
+
+//-----------------------------------------------------------------------------
+vtkSMViewProxy* pqRepresentation::getViewProxy() const
+{
+  return (this->Internal->View?
+    this->Internal->View->getViewProxy() : NULL);
 }
 
 //-----------------------------------------------------------------------------

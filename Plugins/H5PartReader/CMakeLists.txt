@@ -2,10 +2,6 @@
 ## CSCS - Swiss National Supercomputing Centre for creating and contributing
 ## this plugin.
 
-IF (QT_USE_FILE)
-  INCLUDE(${QT_USE_FILE})
-ENDIF (QT_USE_FILE)
-
 vtk_module_load(vtkhdf5)
 
 INCLUDE_DIRECTORIES(
@@ -22,6 +18,10 @@ ADD_DEFINITIONS(-DH5_USE_16_API)
 
 # needed for mpich
 add_definitions("-DMPICH_IGNORE_CXX_SEEK")
+
+if(PARAVIEW_USE_MPI)
+  include(vtkMPI)
+endif()
 
 ADD_PARAVIEW_PLUGIN(H5PartReader "1.0"
   SERVER_MANAGER_SOURCES
@@ -42,7 +42,6 @@ target_link_libraries(H5PartReader LINK_PRIVATE
   vtksys)
 
 if(PARAVIEW_USE_MPI)
-  include(vtkMPI)
   vtk_mpi_link(H5PartReader)
 endif()
 
@@ -51,3 +50,8 @@ SET_SOURCE_FILES_PROPERTIES(
   ${CMAKE_CURRENT_SOURCE_DIR}/H5Part/src/H5Block.c
   PROPERTIES LANGUAGE CXX
 )
+
+# Add testing if necessary
+if (BUILD_TESTING)
+  add_subdirectory(Testing)
+endif ()

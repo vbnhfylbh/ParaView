@@ -31,7 +31,12 @@ INCLUDE_DIRECTORIES(${VTK_INCLUDE_DIRS})
 
 IF (PARAVIEW_BUILD_QT_GUI)
 
-  INCLUDE(${QT_USE_FILE})
+  IF(PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    SET(Qt5_FIND_COMPONENTS Widgets)
+    INCLUDE(ParaViewQt5)
+  ELSE()
+    INCLUDE(${QT_USE_FILE})
+  ENDIF()
 
   INCLUDE_DIRECTORIES(
     ${ParaView_SOURCE_DIR}/VTK/GUISupport/Qt
@@ -43,8 +48,13 @@ IF (PARAVIEW_BUILD_QT_GUI)
     ${QtWidgets_BINARY_DIR}
     )
 
-  QT4_WRAP_CPP(MOC_SRCS ${MOC_HEADERS})
-  QT4_WRAP_UI(UI_SRCS ${UI_FILES})
+  IF(PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    QT5_WRAP_CPP(MOC_SRCS ${MOC_HEADERS})
+    QT5_WRAP_UI(UI_SRCS ${UI_FILES})
+  ELSE()
+    QT4_WRAP_CPP(MOC_SRCS ${MOC_HEADERS})
+    QT4_WRAP_UI(UI_SRCS ${UI_FILES})
+  ENDIF()
 
   ADD_PARAVIEW_ACTION_GROUP(IFACES IFACE_SRCS
     CLASS_NAME PVBlotPluginActions
@@ -57,12 +67,12 @@ IF (PARAVIEW_BUILD_QT_GUI)
     REQUIRED_ON_CLIENT
     SOURCES ${MOC_SRCS} ${UI_SRCS} ${IFACE_SRCS} ${CLIENT_SRCS}
     )
-ELSE (PARAVIEW_BUILD_QT_GUI)
+ELSE ()
   ADD_PARAVIEW_PLUGIN(pvblot "1.0"
     PYTHON_MODULES ${PYMODULES}
     REQUIRED_ON_CLIENT
     )
-ENDIF (PARAVIEW_BUILD_QT_GUI)
+ENDIF ()
 
 #############################################################################
 # Set up a simple shell script to run pvblot from the command line.
@@ -72,7 +82,7 @@ SET(PVBLOT_BLOTISH_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 SET(script_ext)
 IF(WIN32 AND NOT CYGWIN)
   SET(script_ext ".bat")
-ENDIF(WIN32 AND NOT CYGWIN)
+ENDIF()
 
 #############################################################################
 # Set up pvblot script for when ParaView is installed.  This includes

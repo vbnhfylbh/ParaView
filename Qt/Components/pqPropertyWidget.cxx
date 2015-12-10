@@ -36,6 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqProxy.h"
 #include "pqUndoStack.h"
 #include "pqView.h"
+#include "pqTimer.h"
+#include "vtkPVXMLElement.h"
 #include "vtkSMDocumentation.h"
 #include "vtkSMDomain.h"
 #include "vtkSMProperty.h"
@@ -46,7 +48,7 @@ pqPropertyWidget::pqPropertyWidget(vtkSMProxy *smProxy, QWidget *parentObject)
     Proxy(smProxy),
     Property(0),
     ChangeAvailableAsChangeFinished(true),
-    AutoUpdateVTKObjects(false)
+    Timer(new pqTimer())
 {
   this->ShowLabel = true;
   this->Links.setAutoUpdateVTKObjects(false);
@@ -55,13 +57,13 @@ pqPropertyWidget::pqPropertyWidget(vtkSMProxy *smProxy, QWidget *parentObject)
   this->connect(&this->Links, SIGNAL(qtWidgetChanged()),
                 this, SIGNAL(changeAvailable()));
 
+
   // This has to be a QueuedConnection otherwise changeFinished() gets fired
   // before changeAvailable() is handled by pqProxyWidget and see BUG #13029.
-  this->connect(this, SIGNAL(changeAvailable()),
-                this, SLOT(onChangeAvailable()), Qt::QueuedConnection);
-
-  this->connect(this, SIGNAL(changeFinished()),
-    this, SLOT(onChangeFinished()));
+  this->Timer->setSingleShot(true);
+  this->Timer->setInterval(0);
+  this->Timer->connect(this, SIGNAL(changeAvailable()), SLOT(start()));
+  this->connect(this->Timer.data(), SIGNAL(timeout()), SLOT(onChangeAvailable()));
 }
 
 //-----------------------------------------------------------------------------
@@ -85,17 +87,6 @@ void pqPropertyWidget::onChangeAvailable()
 }
 
 //-----------------------------------------------------------------------------
-void pqPropertyWidget::onChangeFinished()
-{
-  if (this->AutoUpdateVTKObjects)
-    {
-    BEGIN_UNDO_SET("Property Changed");
-    this->apply();
-    END_UNDO_SET();
-    }
-}
-
-//-----------------------------------------------------------------------------
 pqView* pqPropertyWidget::view() const
 {
   return this->View;
@@ -115,16 +106,28 @@ vtkSMProxy* pqPropertyWidget::proxy() const
 }
 
 //-----------------------------------------------------------------------------
+QString pqPropertyWidget::getTooltip(vtkSMProperty* smproperty)
+{
+  if (smproperty && smproperty->GetDocumentation())
+    {
+    QString doc = pqProxy::rstToHtml(
+      smproperty->GetDocumentation()->GetDescription()).c_str();
+    doc = doc.trimmed();
+    doc = doc.replace(QRegExp("\\s+")," ");
+    return QString("<html><head/><body><p align=\"justify\">%1</p></body></html>").arg(doc);
+    }
+  return QString();
+}
+
+//-----------------------------------------------------------------------------
 void pqPropertyWidget::setProperty(vtkSMProperty *smproperty)
 {
   this->Property = smproperty;
-  if (smproperty && smproperty->GetDocumentation())
+  this->setToolTip(pqPropertyWidget::getTooltip(smproperty));
+  if ((smproperty->GetHints() &&
+       smproperty->GetHints()->FindNestedElementByName("RestartRequired")))
     {
-    QString doc = smproperty->GetDocumentation()->GetDescription();
-    doc = doc.trimmed();
-    doc = doc.replace(QRegExp("\\s+")," ");
-    this->setToolTip(
-      QString("<html><head/><body><p align=\"justify\">%1</p></body></html>").arg(doc));
+    this->connect(this, SIGNAL(changeAvailable()), SIGNAL(restartRequired()));
     }
 }
 
@@ -135,9 +138,24 @@ vtkSMProperty* pqPropertyWidget::property() const
 }
 
 //-----------------------------------------------------------------------------
+char* pqPropertyWidget::panelVisibility() const
+{
+  return this->Property->GetPanelVisibility();
+}
+
+//-----------------------------------------------------------------------------
+void pqPropertyWidget::setPanelVisibility(const char* vis)
+{
+  return this->Property->SetPanelVisibility(vis);
+}
+
+
+//-----------------------------------------------------------------------------
 void pqPropertyWidget::apply()
 {
+  BEGIN_UNDO_SET("Property Changed");
   this->Links.accept();
+  END_UNDO_SET();
 }
 
 //-----------------------------------------------------------------------------
@@ -186,16 +204,32 @@ void pqPropertyWidget::addPropertyLink(QObject *qobject,
 }
 
 //-----------------------------------------------------------------------------
-void pqPropertyWidget::setAutoUpdateVTKObjects(bool autoUpdate)
+void pqPropertyWidget::removePropertyLink(QObject *qobject,
+                                       const char *qproperty,
+                                       const char *qsignal,
+                                       vtkSMProperty *smproperty,
+                                       int smindex)
 {
-  this->AutoUpdateVTKObjects = autoUpdate;
+  this->Links.removePropertyLink(qobject,
+                              qproperty,
+                              qsignal,
+                              this->Proxy,
+                              smproperty,
+                              smindex);
 }
 
 //-----------------------------------------------------------------------------
-void pqPropertyWidget::setUseUncheckedProperties(bool useUnchecked)
+void pqPropertyWidget::removePropertyLink(QObject *qobject,
+                                       const char *qproperty,
+                                       const char *qsignal,
+                                       vtkSMProxy* smproxy,
+                                       vtkSMProperty *smproperty,
+                                       int smindex)
 {
-  this->Links.setUseUncheckedProperties(useUnchecked);
+  this->Links.removePropertyLink(qobject, qproperty, qsignal,
+    smproxy, smproperty, smindex);
 }
+
 
 //-----------------------------------------------------------------------------
 void pqPropertyWidget::addDecorator(pqPropertyWidgetDecorator* decorator)

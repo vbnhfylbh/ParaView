@@ -31,29 +31,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ========================================================================*/
 #include "pqSGExportStateWizard.h"
 
-#include <pqApplicationCore.h>
-#include <pqContextView.h>
-#include <pqFileDialog.h>
-#include <pqPipelineFilter.h>
-#include <pqPipelineRepresentation.h>
-#include <pqPipelineSource.h>
-#include <pqPythonDialog.h>
-#include <pqPythonManager.h>
-#include <pqRenderViewBase.h>
-#include <pqServerManagerModel.h>
-#include <pqSettings.h>
+#include "pqApplicationCore.h"
+#include "pqContextView.h"
 #include "pqImageOutputInfo.h"
+#include "pqPipelineFilter.h"
+#include "pqRenderViewBase.h"
+#include "pqServerManagerModel.h"
+#include "vtkPythonInterpreter.h"
+#include "vtkSmartPointer.h"
+#include "vtkSMCoreUtilities.h"
 
-#include <vtkImageData.h>
-#include <vtkNew.h>
-#include <vtkPNGWriter.h>
-#include <vtkPVXMLElement.h>
-#include <vtkSMProxyManager.h>
-#include <vtkSMSessionProxyManager.h>
-#include <vtkSMSourceProxy.h>
-#include <vtkSMViewProxy.h>
-#include <vtkSmartPointer.h>
-#include <vtkUnsignedCharArray.h>
+#include "pqPipelineFilter.h"
+#include "vtkSMProperty.h"
+#include "vtkSMDoubleRangeDomain.h"
+#include "pqCinemaTrack.h"
+
 #include <vtksys/SystemTools.hxx>
 
 #include <QLabel>
@@ -98,7 +90,17 @@ void pqSGExportStateWizardPage2::initializePage()
       {
       continue;
       }
-    this->Internals->allInputs->addItem(source->getSMName());
+    if(this->Internals->showAllSources->isChecked())
+      {
+      this->Internals->allInputs->addItem(source->getSMName());
+      }
+    else
+      { // determine if the source is a reader or not, only include readers
+      if( vtkSMCoreUtilities::GetFileNameProperty(source->getProxy()) )
+        {
+        this->Internals->allInputs->addItem(source->getSMName());
+        }
+      }
     }
 }
 
@@ -158,6 +160,8 @@ pqSGExportStateWizard::pqSGExportStateWizard(
     this, SLOT(updateAddRemoveButton()));
   QObject::connect(this->Internals->simulationInputs, SIGNAL(itemSelectionChanged()),
     this, SLOT(updateAddRemoveButton()));
+  QObject::connect(this->Internals->showAllSources, SIGNAL(toggled(bool)),
+    this, SLOT(onShowAllSources(bool)));
   QObject::connect(this->Internals->addButton, SIGNAL(clicked()),
     this, SLOT(onAdd()));
   QObject::connect(this->Internals->removeButton, SIGNAL(clicked()),
@@ -177,6 +181,19 @@ pqSGExportStateWizard::pqSGExportStateWizard(
                    this, SLOT(incrementView()));
   QObject::connect(this->Internals->previousView, SIGNAL(pressed()),
                    this, SLOT(decrementView()));
+
+  this->CurrentTrack = 0;
+  this->Internals->cinemaContainer->hide();
+  this->Internals->previousTrack->hide();
+  this->Internals->nextTrack->hide();
+  QObject::connect(this->Internals->outputCinema, SIGNAL(toggled(bool)),
+                   this->Internals->cinemaContainer, SLOT(setVisible(bool)));
+  QObject::connect(this->Internals->outputCinema, SIGNAL(toggled(bool)),
+                   this, SLOT(toggleCinema(bool)));
+  QObject::connect(this->Internals->nextTrack, SIGNAL(pressed()),
+                   this, SLOT(incrementTrack()));
+  QObject::connect(this->Internals->previousTrack, SIGNAL(pressed()),
+                   this, SLOT(decrementTrack()));
 
   pqServerManagerModel* smModel = pqApplicationCore::instance()->getServerManagerModel();
   QList<pqRenderViewBase*> renderViews = smModel->findItems<pqRenderViewBase*>();
@@ -210,6 +227,21 @@ pqSGExportStateWizard::pqSGExportStateWizard(
     }
   this->Internals->viewsContainer->setCurrentIndex(0);
 
+
+  //look for filters that cinema can parameterize
+  QList<pqPipelineFilter*> filters = smModel->findItems<pqPipelineFilter*>();
+  for(QList<pqPipelineFilter*>::Iterator it=filters.begin();
+      it!=filters.end();it++)
+    {
+    if (!strcmp((*it)->getProxy()->GetVTKClassName(), "vtkPVContourFilter") ||
+        !strcmp((*it)->getProxy()->GetVTKClassName(), "vtkPVMetaSliceDataSet"))
+      {
+      pqCinemaTrack *track = new pqCinemaTrack(this->Internals->cinemaContainer, parentFlags, *it);
+      this->Internals->cinemaContainer->addWidget(track);
+      }
+    }
+  this->Internals->cinemaContainer->setCurrentIndex(0);
+
   // a bit of a hack but we name the finish button here since for testing
   // it's having a hard time finding that button otherwise.
   QAbstractButton* finishButton = this->button(FinishButton);
@@ -233,6 +265,49 @@ void pqSGExportStateWizard::updateAddRemoveButton()
 }
 
 //-----------------------------------------------------------------------------
+void pqSGExportStateWizard::onShowAllSources(bool isChecked)
+{
+  if(isChecked)
+    { // add any sources that aren't readers and aren't in simulationInputs
+    QList<pqPipelineSource*> sources =
+      pqApplicationCore::instance()->getServerManagerModel()->
+      findItems<pqPipelineSource*>();
+    foreach (pqPipelineSource* source, sources)
+      {
+      if (qobject_cast<pqPipelineFilter*>(source))
+        {
+        continue;
+        }
+      if( vtkSMCoreUtilities::GetFileNameProperty(source->getProxy()) == NULL )
+        {
+        // make sure it's not in the list of simulationInputs
+        QList<QListWidgetItem*> matchingNames =
+          this->Internals->simulationInputs->findItems(source->getSMName(), 0);
+        if(matchingNames.isEmpty())
+          {
+          this->Internals->allInputs->addItem(source->getSMName());
+          }
+        }
+      }
+    }
+  else
+    { // remove any source that aren't readers from allInputs
+    for(int i=this->Internals->allInputs->count()-1;i>=0;i--)
+      {
+      QListWidgetItem* item = this->Internals->allInputs->item(i);
+      QString text = item->text();
+      pqPipelineSource* source =
+        pqApplicationCore::instance()->getServerManagerModel()->findItem<pqPipelineSource*>(text);
+      if( vtkSMCoreUtilities::GetFileNameProperty(source->getProxy())==NULL )
+        {
+        delete this->Internals->allInputs->takeItem(i);
+        }
+      }
+    }
+  dynamic_cast<pqSGExportStateWizardPage2*>(this->currentPage())->emitCompleteChanged();
+}
+
+//-----------------------------------------------------------------------------
 void pqSGExportStateWizard::onAdd()
 {
   foreach (QListWidgetItem* item, this->Internals->allInputs->selectedItems())
@@ -252,7 +327,19 @@ void pqSGExportStateWizard::onRemove()
   foreach (QListWidgetItem* item, this->Internals->simulationInputs->selectedItems())
     {
     QString text = item->text();
-    this->Internals->allInputs->addItem(text);
+    if(this->Internals->showAllSources->isChecked())
+      { // we show all sources...
+      this->Internals->allInputs->addItem(text);
+      }
+    else
+      { // show only reader sources...
+      pqPipelineSource* source =
+        pqApplicationCore::instance()->getServerManagerModel()->findItem<pqPipelineSource*>(text);
+      if( vtkSMCoreUtilities::GetFileNameProperty(source->getProxy()) )
+        {
+        this->Internals->allInputs->addItem(text);
+        }
+      }
     delete this->Internals->simulationInputs->takeItem(
       this->Internals->simulationInputs->row(item));
     }
@@ -330,34 +417,96 @@ bool pqSGExportStateWizard::validateCurrentPage()
     return true;
     }
 
-  // Last Page, export the state.
-  pqPythonManager* manager = qobject_cast<pqPythonManager*>(
-    pqApplicationCore::instance()->manager("PYTHON_MANAGER"));
-
-  pqPythonDialog* dialog = 0;
-  if (manager)
-    {
-    dialog = manager->pythonShellDialog();
-    }
-  if (!dialog)
-    {
-    qCritical("Failed to locate Python dialog. Cannot save state.");
-    return true;
-    }
-
-  // Get from the settings whether or not we should save the full state
-  // or just non-default values.
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  if(settings)
-    {
-    manager->setSaveFullState(settings->value("saveFullState", false).toBool());
-    }
-
   QString command;
-  if(this->getCommandString(command))
+  if (this->getCommandString(command))
     {
-    dialog->runString(command);
+    // ensure Python in initialized.
+    vtkPythonInterpreter::Initialize();
+    vtkPythonInterpreter::RunSimpleString(command.toLatin1().data());
     return true;
     }
   return false;
+}
+
+//-----------------------------------------------------------------------------
+void pqSGExportStateWizard::toggleCinema(bool state)
+{
+  QList<pqImageOutputInfo*> imageOuts = this->getImageOutputInfos();
+  QList<pqImageOutputInfo*>::iterator i;
+  if(state)
+    {
+    this->Internals->cinemaContainer->setEnabled(true);
+    if (this->CurrentTrack >= this->Internals->cinemaContainer->count()-1)
+      {
+      this->Internals->nextTrack->setEnabled(false);
+      }
+    else
+      {
+      this->Internals->nextTrack->setEnabled(true);
+      }
+    if (this->CurrentTrack == 0)
+      {
+      this->Internals->previousTrack->setEnabled(false);
+      }
+    else
+      {
+      this->Internals->previousTrack->setEnabled(true);
+      }
+    //cinema depends on rendering being on
+    this->Internals->outputRendering->setChecked(true);
+    //add cinema controls to each view
+    for (i = imageOuts.begin(); i != imageOuts.end(); i++)
+      {
+      (*i)->showCinema();
+      }
+    }
+  else
+    {
+    this->Internals->cinemaContainer->setEnabled(false);
+    this->Internals->nextTrack->setEnabled(false);
+    this->Internals->previousTrack->setEnabled(false);
+    for (i = imageOuts.begin(); i != imageOuts.end(); i++)
+      {
+      (*i)->hideCinema();
+      }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqSGExportStateWizard::incrementTrack()
+{
+  if(this->CurrentTrack >= this->Internals->cinemaContainer->count()-1)
+    {
+    this->Internals->nextTrack->setEnabled(false);
+    return;
+    }
+  if(this->CurrentTrack == 0)
+    {
+    this->Internals->previousTrack->setEnabled(true);
+    }
+  this->CurrentTrack++;
+  this->Internals->cinemaContainer->setCurrentIndex(this->CurrentTrack);
+  if(this->CurrentTrack >= this->Internals->cinemaContainer->count()-1)
+    {
+    this->Internals->nextTrack->setEnabled(false);
+    }
+}
+//-----------------------------------------------------------------------------
+void pqSGExportStateWizard::decrementTrack()
+{
+  if(this->CurrentTrack <= 0)
+    {
+    this->Internals->previousTrack->setEnabled(false);
+    return;
+    }
+  if(this->CurrentTrack == this->Internals->cinemaContainer->count()-1)
+    {
+    this->Internals->nextTrack->setEnabled(true);
+    }
+  this->CurrentTrack--;
+  this->Internals->cinemaContainer->setCurrentIndex(this->CurrentTrack);
+  if(this->CurrentTrack <= 0)
+    {
+    this->Internals->previousTrack->setEnabled(false);
+    }
 }

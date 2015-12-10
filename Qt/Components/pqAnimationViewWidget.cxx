@@ -64,11 +64,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqPipelineTimeKeyFrameEditor.h"
 #include "pqPropertyLinks.h"
 #include "pqRenderView.h"
-#include "pqSMAdaptor.h"
 #include "pqServer.h"
 #include "pqServerManagerModel.h"
 #include "pqSetName.h"
 #include "pqSignalAdaptors.h"
+#include "pqSMAdaptor.h"
 #include "pqTimeKeeper.h"
 #include "pqUndoStack.h"
 
@@ -78,6 +78,41 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxy.h"
 #include "vtkSMRenderViewProxy.h"
+#include "vtkSMTrace.h"
+
+#ifdef PARAVIEW_ENABLE_PYTHON
+# include "pqPythonSyntaxHighlighter.h"
+#endif
+//-----------------------------------------------------------------------------
+// FIXME: this could be generalized. Seems like a useful extension to
+// pqPropertyLinksConnection. Makes it easy to trace property changes.
+class pqTraceablePropertyLinksConnection : public pqPropertyLinksConnection
+{
+  typedef pqPropertyLinksConnection Superclass;
+public:
+  pqTraceablePropertyLinksConnection(
+    QObject* qobject, const char* qproperty, const char* qsignal,
+    vtkSMProxy* smproxy, vtkSMProperty* smproperty, int smindex,
+    bool use_unchecked_modified_event,
+    QObject* parentObject=0)
+    : Superclass(qobject, qproperty, qsignal,
+      smproxy, smproperty, smindex, use_unchecked_modified_event,
+      parentObject)
+    {
+    }
+  virtual ~pqTraceablePropertyLinksConnection()
+    {
+    }
+protected:
+  /// Called to update the ServerManager Property due to UI change.
+  virtual void setServerManagerValue(bool use_unchecked, const QVariant& value)
+    {
+    SM_SCOPED_TRACE(PropertiesModified).arg("proxy", this->proxySM());
+    this->Superclass::setServerManagerValue(use_unchecked, value);
+    }
+private:
+  Q_DISABLE_COPY(pqTraceablePropertyLinksConnection);
+};
 
 //-----------------------------------------------------------------------------
 class pqAnimationViewWidget::pqInternal
@@ -138,20 +173,19 @@ public:
     }
   QString cueName(pqAnimationCue* cue)
     {
-    QString name;
     if(this->cameraCue(cue))
       {
-      name = "Camera";
+      return "Camera";
       }
     else if (this->pythonCue(cue))
       {
-      name = "Python";
+      return "Python";
       }
     else
       {
-      pqServerManagerModel* model = 
+      pqServerManagerModel* model =
         pqApplicationCore::instance()-> getServerManagerModel();
-      
+
       vtkSMProxy* pxy = cue->getAnimatedProxy();
       vtkSMProperty* pty = cue->getAnimatedProperty();
       QString p = pty->GetXMLLabel();
@@ -159,50 +193,26 @@ public:
         {
         p = QString("%1 (%2)").arg(p).arg(cue->getAnimatedPropertyIndex());
         }
-      
-      QList<pqProxy*> pxys = model->findItems<pqProxy*>();
-      for(int i=0; i<pxys.size(); i++)
+
+      if (pqProxy* animation_pqproxy = model->findItem<pqProxy*>(pxy))
         {
-        if(pxys[i]->getProxy() == pxy)
-          {
-          QString n = pxys[i]->getSMName();
-          name = QString("%1 - %2").arg(n).arg(p);
-          }
+        return QString("%1 - %2").arg(animation_pqproxy->getSMName()).arg(p);
         }
-      
+
       // could be a helper proxy
-      for(int i=0; i<pxys.size(); i++)
+      QString helper_key;
+      if (pqProxy* pqproxy = pqProxy::findProxyWithHelper(pxy, helper_key))
         {
-        pqProxy* pqproxy = pxys[i];
-        QList<QString> keys = pqproxy->getHelperKeys();
-        for(int j=0; j<keys.size(); j++)
+        vtkSMProperty* prop = pqproxy->getProxy()->GetProperty(helper_key.toLatin1().data());
+        if (prop)
           {
-          QString key = keys[j];
-          QList<vtkSMProxy*> helpers = pqproxy->getHelperProxies(keys[j]);
-          int idx = helpers.indexOf(pxy);
-          if(idx != -1)
-            {
-            vtkSMProperty* prop =
-              pqproxy->getProxy()->GetProperty(key.toAscii().data());
-            QString n = pqproxy->getSMName();
-            if (prop)
-              {
-              QString pp = prop->GetXMLLabel();
-              name = QString("%1 - %2 - %3").arg(n).arg(pp).arg(p);
-              }
-            else
-              {
-              name = QString("%1 - %2").arg(n).arg(p);
-              if (helpers.size() > 0)
-                {
-                name = QString("%1 [%2]").arg(name).arg(idx);
-                }
-              }
-            }
+          return QString("%1 - %2 - %3")
+            .arg(pqproxy->getSMName()).arg(prop->GetXMLLabel()).arg(p);
           }
+        return QString("%1 - %2").arg(pqproxy->getSMName()).arg(p);
         }
       }
-    return name;
+    return QString("<unrecognized>");
     }
   // returns if this is a cue for animating a camera
   bool cameraCue(pqAnimationCue* cue)
@@ -397,6 +407,8 @@ pqAnimationViewWidget::~pqAnimationViewWidget()
 //-----------------------------------------------------------------------------
 void pqAnimationViewWidget::setScene(pqAnimationScene* scene)
 {
+  typedef pqTraceablePropertyLinksConnection TPL;
+
   if(this->Internal->Scene)
     {
     this->Internal->Links.removeAllPropertyLinks();
@@ -424,27 +436,27 @@ void pqAnimationViewWidget::setScene(pqAnimationScene* scene)
     pqSignalAdaptorComboBox* adaptor = 
       new pqSignalAdaptorComboBox(this->Internal->PlayMode);
     adaptor->setObjectName("ComboBoxAdaptor");
-    this->Internal->Links.addPropertyLink(adaptor, "currentText",
+    this->Internal->Links.addPropertyLink<TPL>(adaptor, "currentText",
       SIGNAL(currentTextChanged(const QString&)), scene->getProxy(),
       scene->getProxy()->GetProperty("PlayMode"));
    
     // connect time 
-    this->Internal->Links.addPropertyLink(this->Internal->Time, "text",
+    this->Internal->Links.addPropertyLink<TPL>(this->Internal->Time, "text",
       SIGNAL(editingFinished()), scene->getProxy(),
       scene->getProxy()->GetProperty("AnimationTime"));
     // connect start time 
-    this->Internal->Links.addPropertyLink(this->Internal->StartTime, "text",
+    this->Internal->Links.addPropertyLink<TPL>(this->Internal->StartTime, "text",
       SIGNAL(editingFinished()), scene->getProxy(),
       scene->getProxy()->GetProperty("StartTime"));
     // connect end time 
-    this->Internal->Links.addPropertyLink(this->Internal->EndTime, "text",
+    this->Internal->Links.addPropertyLink<TPL>(this->Internal->EndTime, "text",
       SIGNAL(editingFinished()), scene->getProxy(),
       scene->getProxy()->GetProperty("EndTime"));
     // connect lock start time.
-    this->Internal->Links.addPropertyLink(this->Internal->LockStartTime,
+    this->Internal->Links.addPropertyLink<TPL>(this->Internal->LockStartTime,
       "checked", SIGNAL(toggled(bool)), scene->getProxy(),
       scene->getProxy()->GetProperty("LockStartTime"));
-    this->Internal->Links.addPropertyLink(this->Internal->LockEndTime,
+    this->Internal->Links.addPropertyLink<TPL>(this->Internal->LockEndTime,
       "checked", SIGNAL(toggled(bool)), scene->getProxy(),
       scene->getProxy()->GetProperty("LockEndTime"));
 
@@ -687,12 +699,15 @@ void pqAnimationViewWidget::trackSelected(pqAnimationTrack* track)
     QDialog dialog(this);
     Ui::PythonAnimationCue ui;
     ui.setupUi(&dialog);
+#ifdef PARAVIEW_ENABLE_PYTHON
+    new pqPythonSyntaxHighlighter(ui.script, ui.script);
+#endif
     ui.script->setPlainText(
       vtkSMPropertyHelper(cue->getProxy(), "Script").GetAsString());
     if (dialog.exec() == QDialog::Accepted)
       {
       vtkSMPropertyHelper(cue->getProxy(), "Script").Set(
-        ui.script->toPlainText().toAscii().data());
+        ui.script->toPlainText().toLatin1().data());
       cue->getProxy()->UpdateVTKObjects();
       }
     return;
@@ -761,6 +776,8 @@ void pqAnimationViewWidget::trackSelected(pqAnimationTrack* track)
 //-----------------------------------------------------------------------------
 void pqAnimationViewWidget::updatePlayMode()
 {
+  typedef pqTraceablePropertyLinksConnection TPL;
+
   pqAnimationModel* animModel =
     this->Internal->AnimationWidget->animationModel();
   vtkSMProxy* pxy = this->Internal->Scene->getProxy();
@@ -779,7 +796,7 @@ void pqAnimationViewWidget::updatePlayMode()
     this->Internal->Duration->setEnabled(true);
     this->Internal->DurationLabel->setEnabled(true);
     this->Internal->DurationLabel->setText("Duration:");
-    this->Internal->DurationLink.addPropertyLink(
+    this->Internal->DurationLink.addPropertyLink<TPL>(
       this->Internal->Duration, "text",
       SIGNAL(editingFinished()), this->Internal->Scene->getProxy(),
       this->Internal->Scene->getProxy()->GetProperty("Duration"));
@@ -793,7 +810,7 @@ void pqAnimationViewWidget::updatePlayMode()
     this->Internal->Duration->setEnabled(true);
     this->Internal->DurationLabel->setEnabled(true);
     this->Internal->DurationLabel->setText("No. Frames:");
-    this->Internal->DurationLink.addPropertyLink(
+    this->Internal->DurationLink.addPropertyLink<TPL>(
       this->Internal->Duration, "text",
       SIGNAL(editingFinished()), this->Internal->Scene->getProxy(),
       this->Internal->Scene->getProxy()->GetProperty("NumberOfFrames"));
@@ -974,8 +991,11 @@ void pqAnimationViewWidget::createTrack()
 
   // This will create the cue and initialize it with default keyframes.
   pqAnimationCue* cue = this->Internal->Scene->createCue(curProxy,
-    pname.toAscii().data(), pindex, ren? "CameraAnimationCue" :
+    pname.toLatin1().data(), pindex, ren? "CameraAnimationCue" :
     "KeyFrameAnimationCue");
+
+  SM_SCOPED_TRACE(CreateAnimationTrack)
+    .arg("cue", cue->getProxy());
 
   if (ren)
     {

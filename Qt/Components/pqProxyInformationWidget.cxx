@@ -204,11 +204,11 @@ void pqProxyInformationWidget::updateInformation()
           QString filename = 
             pqSMAdaptor::getElementProperty(smprop).toString();
           QString path = vtksys::SystemTools::GetFilenamePath(
-            filename.toAscii().data()).c_str();
+            filename.toLatin1().data()).c_str();
 
           this->Ui->properties->show();
           this->Ui->filename->setText(vtksys::SystemTools::GetFilenameName(
-              filename.toAscii().data()).c_str());
+              filename.toLatin1().data()).c_str());
           this->Ui->filename->setToolTip(filename);
           this->Ui->filename->setStatusTip(filename);
           this->Ui->path->setText(path);
@@ -241,8 +241,10 @@ void pqProxyInformationWidget::updateInformation()
       {
       QTreeWidgetItem * item = new QTreeWidgetItem(this->Ui->timeValues);
       item->setData(0, Qt::DisplayRole, i);
-      item->setData(1, Qt::DisplayRole, tsv->GetElement(i));
-      item->setData(1, Qt::ToolTipRole, tsv->GetElement(i));
+      item->setData(1, Qt::DisplayRole,
+        QString::number(tsv->GetElement(i), 'g', 17));
+      item->setData(1, Qt::ToolTipRole,
+        QString::number(tsv->GetElement(i), 'g', 17));
       item->setFlags( item->flags() | Qt::ItemIsEditable);
       }
     }

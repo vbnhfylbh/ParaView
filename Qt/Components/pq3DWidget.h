@@ -35,11 +35,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqComponentsModule.h"
 #include "pqProxyPanel.h"
 
-class QKeySequence;
 class pq3DWidgetInternal;
 class pqPipelineSource;
 class pqProxy;
 class pqRenderViewBase;
+class QKeySequence;
+class vtkObject;
 class vtkPVXMLElement;
 class vtkSMNewWidgetRepresentationProxy;
 class vtkSMProperty;
@@ -166,6 +167,9 @@ protected slots:
   /// Called to request a render.
   void render();
 
+  // When set to true, instead of intersecting with the mesh surface for picking, it will only get a close point from the mesh
+  void setPickOnMeshPoint(bool);
+
   /// triggers a pick action using the current location of the mouse.
   void pickPoint();
   
@@ -176,9 +180,13 @@ protected slots:
   virtual void updateMasterEnableState(bool);
 
   /// Handle custom user notification to show/hide corresponding widget
-  void handleSourceNotification(pqPipelineSource*,char*);
+  void handleReferenceProxyUserEvent(vtkObject*, unsigned long, void*);
 
 protected:
+ 
+  // Return true if picking is on mesh point only
+  bool pickOnMeshPoint() const;
+
   /// Subclasses can override this method to map properties to
   /// GUI. Default implementation updates the internal datastructures
   /// so that default implementations can be provided for 

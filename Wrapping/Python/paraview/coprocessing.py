@@ -5,7 +5,7 @@ pipeline. Additionally, this module has several other utility functions that are
 approriate for co-processing.
 """
 
-from paraview import simple
+from paraview import simple, servermanager
 from vtkPVVTKExtensionsCorePython import *
 import math
 
@@ -21,8 +21,8 @@ def IsInModulo(timestep, frequencyArray):
 
         isFM = (timestep % 2 == 0) or (timestep % 3 == 0) or (timestep % 7 == 0)
     """
-    for freqency in frequencyArray:
-        if (timestep % freqency == 0):
+    for frequency in frequencyArray:
+        if frequency > 0 and (timestep % frequency == 0):
             return True
     return False
 
@@ -36,9 +36,12 @@ class CoProcessor(object):
         self.__PipelineCreated = False
         self.__ProducersMap = {}
         self.__WritersList = []
+        self.__ExporterList = []
         self.__ViewsList = []
         self.__EnableLiveVisualization = False
+        self.__LiveVisualizationFrequency = 1;
         self.__LiveVisualizationLink = None
+        self.__CinemaTracksList = []
         pass
 
     def SetUpdateFrequencies(self, frequencies):
@@ -54,11 +57,18 @@ class CoProcessor(object):
         self.__Frequencies = frequencies
 
 
-    def EnableLiveVisualization(self, enable):
+    def EnableLiveVisualization(self, enable, frequency = 1):
         """Call this method to enable live-visualization. When enabled,
         DoLiveVisualization() will communicate with ParaView server if possible
-        for live visualization"""
+        for live visualization. Frequency specifies how often the
+        communication happens (default is every second)."""
         self.__EnableLiveVisualization = enable
+        self.__LiveVisualizationFrequency = frequency
+        if (enable):
+            for currentFrequencies in self.__Frequencies.itervalues():
+                if not frequency in currentFrequencies:
+                    currentFrequencies.append(frequency)
+                    currentFrequencies.sort()
 
     def CreatePipeline(self, datadescription):
         """This methods must be overridden by subclasses to create the
@@ -77,13 +87,6 @@ class CoProcessor(object):
 
         timestep = datadescription.GetTimeStep()
         num_inputs = datadescription.GetNumberOfInputDescriptions()
-        # first set all inputs to be off and set to on as needed.
-        # we don't use vtkCPInputDataDescription::Reset() because
-        # that will reset any field names that were added in.
-        for cc in range(num_inputs):
-            datadescription.GetInputDescription(cc).AllFieldsOff()
-            datadescription.GetInputDescription(cc).GenerateMeshOff()
-
         for cc in range(num_inputs):
             input_name = datadescription.GetInputDescriptionName(cc)
 
@@ -114,19 +117,26 @@ class CoProcessor(object):
            write-frequencies set on the writers."""
         timestep = datadescription.GetTimeStep()
         for writer in self.__WritersList:
-            if (timestep % writer.cpFrequency) == 0 or \
+            frequency = writer.parameters.GetProperty(
+                "WriteFrequency").GetElement(0)
+            fileName = writer.parameters.GetProperty("FileName").GetElement(0)
+            if (timestep % frequency) == 0 or \
                     datadescription.GetForceOutput() == True:
-                writer.FileName = writer.cpFileName.replace("%t", str(timestep))
+                writer.FileName = fileName.replace("%t", str(timestep))
                 writer.UpdatePipeline(datadescription.GetTime())
+
+        for exporter in self.__ExporterList:
+            exporter.UpdatePipeline(datadescription.GetTime())
 
     def WriteImages(self, datadescription, rescale_lookuptable=False):
         """This method will update all views, if present and write output
             images, as needed."""
         timestep = datadescription.GetTimeStep()
 
+        cinema_dirs = []
         for view in self.__ViewsList:
-            if timestep % view.cpFrequency == 0 or \
-                                            datadescription.GetForceOutput() == True:
+            if (view.cpFrequency and timestep % view.cpFrequency == 0) or \
+               datadescription.GetForceOutput() == True:
                 fname = view.cpFileName
                 fname = fname.replace("%t", str(timestep))
                 if view.cpFitToScreen != 0:
@@ -139,44 +149,87 @@ class CoProcessor(object):
                 view.ViewTime = datadescription.GetTime()
                 if rescale_lookuptable:
                     self.RescaleDataRange(view, datadescription.GetTime())
-                simple.WriteImage(fname, view, Magnification=view.cpMagnification)
+                cinemaOptions = view.cpCinemaOptions
+                if cinemaOptions and 'camera' in cinemaOptions:
+                    dirname = self.UpdateCinema(view, datadescription)
+                    if dirname:
+                        cinema_dirs.append(dirname)
+                else:
+                    simple.WriteImage(fname, view, Magnification=view.cpMagnification)
+
+
+        if len(cinema_dirs) > 1:
+            workspace = open('cinema/info.json', 'w')
+            workspace.write('{\n')
+            workspace.write('    "metadata": {\n')
+            workspace.write('        "type": "workbench"\n')
+            workspace.write('    },\n')
+            workspace.write('    "runs": [\n')
+            for i in range(0,len(cinema_dirs)):
+                workspace.write('        {\n')
+                workspace.write('        "title": "%s",\n' % cinema_dirs[i])
+                workspace.write('        "description": "%s",\n' % cinema_dirs[i])
+                workspace.write('        "path": "%s"\n' % cinema_dirs[i])
+                if i+1 < len(cinema_dirs):
+                    workspace.write('        },\n')
+                else:
+                    workspace.write('        }\n')
+            workspace.write('    ]\n')
+            workspace.write('}\n')
+            workspace.close()
+
 
     def DoLiveVisualization(self, datadescription, hostname, port):
         """This method execute the code-stub needed to communicate with ParaView
            for live-visualization. Call this method only if you want to support
            live-visualization with your co-processing module."""
 
-        if not self.__EnableLiveVisualization:
-           return
+        if (not self.__EnableLiveVisualization or
+            (datadescription.GetTimeStep() %
+             self.__LiveVisualizationFrequency) != 0):
+            return
 
         # make sure the live insitu is initialized
         if not self.__LiveVisualizationLink:
            # Create the vtkLiveInsituLink i.e.  the "link" to the visualization processes.
-           from paraview import servermanager
            self.__LiveVisualizationLink = servermanager.vtkLiveInsituLink()
 
-           # Tell vtkLiveInsituLink what host/port must it connect to for the visualization
-           # process.
+           # Tell vtkLiveInsituLink what host/port must it connect to
+           # for the visualization process.
            self.__LiveVisualizationLink.SetHostname(hostname)
            self.__LiveVisualizationLink.SetInsituPort(int(port))
 
            # Initialize the "link"
-           self.__LiveVisualizationLink.SimulationInitialize(servermanager.ActiveConnection.Session.GetSessionProxyManager())
+           self.__LiveVisualizationLink.InsituInitialize(servermanager.ActiveConnection.Session.GetSessionProxyManager())
 
         time = datadescription.GetTime()
+        timeStep = datadescription.GetTimeStep()
 
-        # For every new timestep, update the simulation state before proceeding.
-        self.__LiveVisualizationLink.SimulationUpdate(time)
+        # stay in the loop while the simulation is paused
+        while True:
+            # Update the simulation state, extracts and simulationPaused
+            # from ParaView Live
+            self.__LiveVisualizationLink.InsituUpdate(time, timeStep)
 
-        # sources need to be updated by insitu code. vtkLiveInsituLink never updates
-        # the pipeline, it simply uses the data available at the end of the pipeline,
-        # if any.
-        from paraview import simple
-        for source in simple.GetSources().values():
-           source.UpdatePipeline(time)
+            # sources need to be updated by insitu
+            # code. vtkLiveInsituLink never updates the pipeline, it
+            # simply uses the data available at the end of the
+            # pipeline, if any.
+            from paraview import simple
+            for source in simple.GetSources().values():
+                source.UpdatePipeline(time)
 
-        # push extracts to the visualization process.
-        self.__LiveVisualizationLink.SimulationPostProcess(time)
+            # push extracts to the visualization process.
+            self.__LiveVisualizationLink.InsituPostProcess(time, timeStep)
+
+            if (self.__LiveVisualizationLink.GetSimulationPaused()):
+                # This blocks until something changes on ParaView Live
+                # and then it continues the loop. Returns != 0 if LIVE side
+                # disconnects
+                if (self.__LiveVisualizationLink.WaitForLiveChange()):
+                    break;
+            else:
+                break
 
     def CreateProducer(self, datadescription, inputname):
         """Creates a producer proxy for the grid. This method is generally used in
@@ -204,29 +257,122 @@ class CoProcessor(object):
         producer.UpdatePipeline()
         return producer
 
-    def CreateWriter(self, proxy_ctor, filename, freq):
-        """Creates a writer proxy. This method is generally used in
-           CreatePipeline() to create writers. All writes created as such will
+    def RegisterExporter(self, exporter):
+        """
+        Registers a python object that will be responsible to export any
+        kind of data. That exporter needs to provide the following set of
+        methods:
+            UpdatePipeline(time)
+            Finalize()
+
+        It will be the responsability of the exporter to skip timestep inside
+        the UpdatePipeline(time) method when the given time does not match the
+        targetted frequency.
+
+        The coprocessing engine will automatically call UpdatePipeline(time)
+        for each timestep on each registered exporter.
+        Once the simulation is done, the Finalize() method will then be called
+        to all exporter.
+        """
+        self.__ExporterList.append(exporter)
+
+    def RegisterWriter(self, writer, filename, freq):
+        """Registers a writer proxy. This method is generally used in
+           CreatePipeline() to register writers. All writes created as such will
            write the output files appropriately in WriteData() is called."""
-        writer = proxy_ctor()
+        writerParametersProxy = self.WriterParametersProxy(
+            writer, filename, freq)
+
         writer.FileName = filename
-        writer.add_attribute("cpFrequency", freq)
-        writer.add_attribute("cpFileName", filename)
+        writer.add_attribute("parameters", writerParametersProxy)
         self.__WritersList.append(writer)
+
         return writer
 
-    def CreateView(self, proxy_ctor, filename, freq, fittoscreen, magnification, width, height):
-        """Create a CoProcessing view for image capture with extra meta-data
-           such as magnification, size and frequency."""
-        view = proxy_ctor()
+    def WriterParametersProxy(self, writer, filename, freq):
+        """Creates a client only proxy that will be synchronized with ParaView
+        Live, allowing a user to set the filename and frequency.
+        """
+        controller = servermanager.ParaViewPipelineController()
+        # assume that a client only proxy with the same name as a writer
+        # is available in "insitu_writer_paramters"
+
+        # Since coprocessor sometimes pass writer as a custom object and not
+        # a proxy, we need to handle that. Just creating any arbitrary writer
+        # proxy to store the parameters it acceptable. So let's just do that
+        # when the writer is not a proxy.
+        writerIsProxy = isinstance(writer, servermanager.Proxy)
+        helperName = writer.GetXMLName() if writerIsProxy else "XMLPImageDataWriter"
+        proxy = servermanager.ProxyManager().NewProxy(
+            "insitu_writer_parameters", helperName)
+        controller.PreInitializeProxy(proxy)
+        if writerIsProxy:
+            # it's possible that the writer can take in multiple input connections
+            # so we need to go through all of them. the try/except block seems
+            # to be the best way to figure out if there are multipel input connections
+            try:
+                length = len(writer.Input)
+                for i in range(length):
+                    proxy.GetProperty("Input").AddInputConnection(
+                        writer.Input[i].SMProxy, 0)
+            except:
+                proxy.GetProperty("Input").SetInputConnection(
+                    0, writer.Input.SMProxy, 0)
+        proxy.GetProperty("FileName").SetElement(0, filename)
+        proxy.GetProperty("WriteFrequency").SetElement(0, freq)
+        controller.PostInitializeProxy(proxy)
+        controller.RegisterPipelineProxy(proxy)
+        return proxy
+
+    def RegisterCinemaTrack(self, name, proxy, smproperty, valrange):
+        """
+        Register a point of control (filter's property) that will be varied over in a cinema export.
+        """
+        if not isinstance(proxy, servermanager.Proxy):
+            raise RuntimeError, "Invalid 'proxy' argument passed to RegisterCinemaTrack."
+        self.__CinemaTracksList.append({"name":name, "proxy":proxy, "smproperty":smproperty, "valrange":valrange})
+        return proxy
+
+    def RegisterView(self, view, filename, freq, fittoscreen, magnification, width, height, cinema):
+        """Register a view for image capture with extra meta-data such
+        as magnification, size and frequency."""
+        if not isinstance(view, servermanager.Proxy):
+            raise RuntimeError, "Invalid 'view' argument passed to RegisterView."
         view.add_attribute("cpFileName", filename)
         view.add_attribute("cpFrequency", freq)
         view.add_attribute("cpFileName", filename)
         view.add_attribute("cpFitToScreen", fittoscreen)
         view.add_attribute("cpMagnification", magnification)
+        view.add_attribute("cpCinemaOptions", cinema)
         view.ViewSize = [ width, height ]
         self.__ViewsList.append(view)
         return view
+
+    def CreateWriter(self, proxy_ctor, filename, freq):
+        """ **** DEPRECATED!!! Use RegisterWriter instead ****
+           Creates a writer proxy. This method is generally used in
+           CreatePipeline() to create writers. All writes created as such will
+           write the output files appropriately in WriteData() is called."""
+        writer = proxy_ctor()
+        return self.RegisterWriter(writer, filename, freq)
+
+    def CreateView(self, proxy_ctor, filename, freq, fittoscreen, magnification, width, height):
+        """ **** DEPRECATED!!! Use RegisterView instead ****
+           Create a CoProcessing view for image capture with extra meta-data
+           such as magnification, size and frequency."""
+        view = proxy_ctor()
+        return self.RegisterView(view, filename, freq, fittoscreen, magnification, width, height, None)
+
+    def Finalize(self):
+        for writer in self.__WritersList:
+            if hasattr(writer, 'Finalize'):
+                writer.Finalize()
+        for view in self.__ViewsList:
+            if hasattr(view, 'Finalize'):
+                view.Finalize()
+        for exporter in self.__ExporterList:
+            if hasattr(view, 'Finalize'):
+                exporter.Finalize()
 
     def RescaleDataRange(self, view, time):
         """DataRange can change across time, sometime we want to rescale the
@@ -244,9 +390,9 @@ class CoProcessor(object):
             input = rep.Input
             input.UpdatePipeline(time) #make sure range is up-to-date
             lut = rep.LookupTable
-            if rep.ColorAttributeType == 'POINT_DATA':
+            if rep.ColorAttributeType == 'POINT_DATA' or rep.ColorAttributeType == "POINTS":
                 datainformation = input.GetPointDataInformation()
-            elif rep.ColorAttributeType == 'CELL_DATA':
+            elif rep.ColorAttributeType == 'CELL_DATA' or rep.ColorAttributeType == "CELLS":
                 datainformation = input.GetCellDataInformation()
             else:
                 print 'something strange with color attribute type', rep.ColorAttributeType
@@ -297,3 +443,166 @@ class CoProcessor(object):
                          newrgbpoints[v*4] = globaldatarange[0]+v*newrange/(1.0*numpts)
 
                    lut.RGBPoints.SetData(newrgbpoints)
+
+    def UpdateCinema(self, view, datadescription):
+        if not view.IsA("vtkSMRenderViewProxy") == True:
+            return
+
+        def get_nearest(eye, at, up, phis, thetas):
+            """ returns phi and theta settings that most closely match current view """
+            #todo: derive it instead of this brute force search
+            best_phi = None
+            best_theta = None
+            best_dist = None
+            best_up = None
+            dist1 = math.sqrt(sum(math.pow(eye[x]-at[x],2) for x in [0,1,2]))
+            for t,p in ((x,y) for x in thetas for y in phis):
+                theta_rad = (float(t)) / 180.0 * math.pi
+                phi_rad = float(p) / 180.0 * math.pi
+                pos = [
+                    float(at[0]) - math.cos(phi_rad)   * dist1 * math.cos(theta_rad),
+                    float(at[1]) + math.sin(phi_rad)   * dist1 * math.cos(theta_rad),
+                    float(at[2]) + math.sin(theta_rad) * dist1
+                ]
+                nup = [
+                    + math.cos(phi_rad) * math.sin(theta_rad),
+                    - math.sin(phi_rad) * math.sin(theta_rad),
+                    + math.cos(theta_rad)
+                ]
+                dist = math.sqrt(sum(math.pow(eye[x]-pos[x],2) for x in [0,1,2]))
+                updiff = math.sqrt(sum(math.pow(up[x]-nup[x],2) for x in [0,1,2]))
+                if best_dist == None or (dist<best_dist and updiff<1.0):
+                    best_phi = p
+                    best_theta = t
+                    best_dist = dist
+                    best_up = updiff
+            return best_phi, best_theta
+
+        import paraview.cinemaIO.cinema_store as CS
+        import paraview.cinemaIO.explorers as explorers
+        import paraview.cinemaIO.pv_explorers as pv_explorers
+
+        pm = servermanager.vtkProcessModule.GetProcessModule()
+        pid = pm.GetPartitionId()
+
+        #load or create the cinema store for this view
+        import os.path
+        vfname = view.cpFileName
+        vfname = vfname[0:vfname.rfind("_")] #strip _num.ext
+
+        fname = os.path.join(os.path.dirname(vfname),
+                             "cinema",
+                             os.path.basename(vfname),
+                             "info.json")
+        fs = CS.FileStore(fname)
+        try:
+            fs.load()
+        except IOError:
+            pass
+        fs.add_metadata({'type':'parametric-image-stack'})
+
+        def float_limiter(x):
+            #a shame, but needed to make sure python, java and (directory/file)name agree
+            if isinstance(x, (float)):
+                #return '%6f' % x #arbitrarily chose 6 decimal places
+                return '%.6e' % x #arbitrarily chose 6 significant digits
+            else:
+                return x
+
+        #add record of current time to the store
+        timestep = datadescription.GetTimeStep()
+        time = datadescription.GetTime()
+        view.ViewTime = time
+        formatted_time = float_limiter(time)
+        try:
+            tprop = fs.get_parameter('time')
+            tprop['values'].append(formatted_time)
+        except KeyError:
+            tprop = CS.make_parameter('time', [formatted_time])
+            fs.add_parameter('time', tprop)
+
+        parameters = []
+        tracks = []
+
+        #fixed track for time
+        fnpattern = "{time}/"
+
+        #make up track for each variable
+        vals = []
+        names = []
+        for track in self.__CinemaTracksList:
+            proxy = track['proxy']
+            #rep = servermanager.GetRepresentation(proxy, view)
+            #if not rep or rep.Visibility == 0:
+            #    #skip if track if not visible in this view
+            #    continue
+            name = track['name']
+            #make unique
+            idx = 0
+            while name in names:
+                name = track['name'] + str(idx)
+                idx = idx+1
+            names.append(name)
+            fnpattern = fnpattern + "{"+name+"}/"
+            proxy = track['proxy']
+            smproperty = track['smproperty']
+            valrange = list(float_limiter(x for x in track['valrange']))
+            fs.add_parameter(name, CS.make_parameter(name, valrange))
+            parameters.append(name)
+            tracks.append(pv_explorers.Templated(name, proxy, smproperty))
+            #save off current value for later restoration
+            vals.append([proxy, smproperty, list(proxy.GetPropertyValue(smproperty))])
+
+        #make track for the camera rotation
+        cinemaOptions = view.cpCinemaOptions
+        if cinemaOptions['camera'] == 'Spherical':
+            fnpattern = fnpattern + "{phi}/{theta}/"
+            if 'initial' in cinemaOptions:
+                eye = cinemaOptions['initial']['eye']
+                at = cinemaOptions['initial']['at']
+                up = cinemaOptions['initial']['up']
+                phis = list(float_limiter(x for x in cinemaOptions['phi']))
+                thetas = list(float_limiter(x for x in cinemaOptions['theta']))
+                best_phi, best_theta = get_nearest(eye, at, up, phis, thetas)
+                fs.add_parameter("phi", CS.make_parameter('phi', phis, default=best_phi))
+                fs.add_parameter("theta", CS.make_parameter('theta', thetas, default=best_theta))
+            else:
+                eye = view.CameraPosition
+                at = view.CameraFocalPoint
+                phis = list(float_limiter(x for x in cinemaOptions['phi']))
+                thetas = list(float_limiter(x for x in cinemaOptions['theta']))
+                fs.add_parameter("phi", CS.make_parameter('phi', phis))
+                fs.add_parameter("theta", CS.make_parameter('theta', thetas))
+            dist = math.sqrt(sum(math.pow(eye[x]-at[x],2) for x in [0,1,2]))
+            #rectify for cinema exporter
+            up = [math.fabs(x) for x in view.CameraViewUp]
+            uppest = 0;
+            if up[1]>up[uppest]: uppest = 1
+            if up[2]>up[uppest]: uppest = 2
+            cinup = [0,0,0]
+            cinup[uppest]=1
+            parameters.append("phi")
+            parameters.append("theta")
+            tracks.append(pv_explorers.Camera(at, cinup, dist, view))
+            #save off current value for later restoration
+            vals.append([view, 'CameraPosition', list(eye)])
+            vals.append([view, 'CameraFocalPoint', list(at)])
+            vals.append([view, 'CameraViewUp', list(up)])
+
+        fnpattern = fnpattern[:-1] #strip trailing /
+        imgext = view.cpFileName[view.cpFileName.rfind("."):]
+        fnpattern = fnpattern + imgext
+        fs.filename_pattern = fnpattern
+
+        #at current time, run through parameters and dump files
+        e = pv_explorers.ImageExplorer(fs, parameters, tracks, view=view, iSave=(pid==0))
+        e.explore({'time':formatted_time})
+
+        if pid == 0:
+            fs.save()
+
+        #restore values to what they were at beginning for next view
+        for proxy, property, value in vals:
+            proxy.SetPropertyWithName(property, value)
+
+        return os.path.basename(vfname)

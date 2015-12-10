@@ -90,6 +90,14 @@ int vtkPExtractHistogram::RequestData(vtkInformation *request,
     return 1;
     }
 
+  vtkTable* output = vtkTable::GetData(outputVector, 0);
+  vtkSmartPointer<vtkDataArray> oldExtents = 
+    output->GetRowData()->GetArray((int)0);
+  if (oldExtents == NULL)
+    {
+    // Nothing to do if there is no data
+    return 1;
+    }
   // Now we need to collect and reduce data from all nodes on the root.
   vtkSmartPointer<vtkReductionFilter> reduceFilter = 
     vtkSmartPointer<vtkReductionFilter>::New();
@@ -106,7 +114,6 @@ int vtkPExtractHistogram::RequestData(vtkInformation *request,
     reduceFilter->SetPostGatherHelper(rf);
     }
 
-  vtkTable* output = vtkTable::GetData(outputVector, 0);
   vtkSmartPointer<vtkTable> copy = vtkSmartPointer<vtkTable>::New();
   copy->ShallowCopy(output);
   reduceFilter->SetInputData(copy);
@@ -115,9 +122,12 @@ int vtkPExtractHistogram::RequestData(vtkInformation *request,
     {
     // We save the old bin_extents and then revert to be restored later since
     // the reduction reduces the bin_extents as well.
-    vtkSmartPointer<vtkDataArray> oldExtents = 
-      output->GetRowData()->GetArray((int)0);
     output->ShallowCopy(reduceFilter->GetOutput());
+    if (output->GetRowData()->GetNumberOfArrays() == 0)
+      {
+      vtkErrorMacro(<<"Reduced data has 0 arrays");
+      return 0;
+      }
     output->GetRowData()->GetArray((int)0)->DeepCopy(oldExtents);
     if (this->CalculateAverages)
       {

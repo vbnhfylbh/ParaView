@@ -34,7 +34,6 @@ set(Module_SRCS
   vtkCameraInterpolator2.cxx
   vtkCameraManipulator.cxx
   vtkCameraManipulatorGUIHelper.cxx
-  vtkChartNamedOptions.cxx
   vtkCleanArrays.cxx
   vtkCompositeDataToUnstructuredGridFilter.cxx
   vtkCSVExporter.cxx
@@ -49,9 +48,8 @@ set(Module_SRCS
   vtkPVAxesWidget.cxx
   vtkPVCenterAxesActor.cxx
   vtkPVDefaultPass.cxx
-  vtkPVGenericRenderWindowInteractor.cxx
+  vtkPVDiscretizableColorTransferFunction.cxx
   vtkPVGeometryFilter.cxx
-  vtkPVGL2PSExporter.cxx
   vtkPVInteractorStyle.cxx
   vtkPVJoystickFly.cxx
   vtkPVJoystickFlyIn.cxx
@@ -62,7 +60,6 @@ set(Module_SRCS
   vtkPVMergeTablesMultiBlock.cxx
   vtkPVPlotTime.cxx
   vtkPVRecoverGeometryWireframe.cxx
-  vtkPVRenderViewProxy.cxx
   vtkPVScalarBarActor.cxx
   vtkPVTrackballMoveActor.cxx
   vtkPVTrackballMultiRotate.cxx
@@ -77,16 +74,29 @@ set(Module_SRCS
   vtkSelectionSerializer.cxx
   vtkSortedTableStreamer.cxx
   vtkSquirtCompressor.cxx
-  vtkTexturePainter.cxx
   vtkTileDisplayHelper.cxx
   vtkTilesHelper.cxx
   vtkTrackballPan.cxx
   vtkUpdateSuppressorPipeline.cxx
   vtkViewLayout.cxx
   vtkVolumeRepresentationPreprocessor.cxx
-  vtkXYChartNamedOptions.cxx
   vtkZlibImageCompressor.cxx
 )
+
+# Disabled unless using the OpenGL backend.
+if ("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL")
+  list(APPEND Module_SRCS
+    vtkPVGL2PSExporter.cxx
+    vtkTexturePainter.cxx
+    )
+endif()
+
+if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
+  set_source_files_properties(
+    vtkPVDefaultPass.cxx
+    vtkPVGeometryFilter.cxx
+    PROPERTIES COMPILE_FLAGS -DVTKGL2)
+endif()
 
 if (PARAVIEW_USE_MPI)
   list(APPEND Module_SRCS
@@ -102,19 +112,26 @@ if (PARAVIEW_USE_MPI)
     list(APPEND Module_SRCS
       vtkIceTCompositePass.cxx
       vtkIceTContext.cxx)
+    if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
+      set_source_files_properties(vtkIceTCompositePass.cxx
+        PROPERTIES COMPILE_FLAGS -DVTKGL2)
+    endif()
   endif()
 endif()
 
 #set_source_files_properties(
 #  WRAP_EXCLUDE
 #  )
-include_directories(${QT_INCLUDE_DIR})
+if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+  include_directories(${Qt5Core_INCLUDE_DIRS})
+else ()
+  include_directories(${QT_INCLUDE_DIR})
+endif ()
 
 set_source_files_properties(
   vtkCameraManipulatorGUIHelper
   vtkImageCompressor
   vtkPVJoystickFly
-  vtkPVRenderViewProxy
   ABSTRACT)
 
 #---------------------------------------------------------
@@ -137,8 +154,12 @@ foreach (file vtkIceTCompositeZPassShader_fs.glsl)
 endforeach()
 #---------------------------------------------------------
 
-vtk_module_library(vtkPVVTKExtensionsRendering ${Module_SRCS})
 if(PARAVIEW_USE_MPI)
   include(vtkMPI)
+endif()
+vtk_module_library(vtkPVVTKExtensionsRendering ${Module_SRCS})
+if(PARAVIEW_USE_MPI)
   vtk_mpi_link(${vtk-module})
 endif()
+include(vtkOpenGL)
+vtk_opengl_link(vtkPVVTKExtensionsRendering)

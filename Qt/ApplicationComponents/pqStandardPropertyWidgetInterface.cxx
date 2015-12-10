@@ -32,11 +32,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqStandardPropertyWidgetInterface.h"
 
 #include "pqArrayStatusPropertyWidget.h"
+#include "pqBackgroundEditorWidget.h"
 #include "pqCalculatorWidget.h"
-#include "pqClipScalarsDecorator.h"
+#include "pqCameraManipulatorWidget.h"
 #include "pqColorAnnotationsPropertyWidget.h"
 #include "pqColorEditorPropertyWidget.h"
 #include "pqColorOpacityEditorWidget.h"
+#include "pqColorPaletteSelectorWidget.h"
 #include "pqColorSelectorPropertyWidget.h"
 #include "pqCommandButtonPropertyWidget.h"
 #include "pqCTHArraySelectionDecorator.h"
@@ -44,11 +46,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqDisplayRepresentationWidget.h"
 #include "pqDoubleRangeSliderPropertyWidget.h"
 #include "pqEnableWidgetDecorator.h"
+#include "pqFileNamePropertyWidget.h"
 #include "pqFontPropertyWidget.h"
+#include "pqGenericPropertyWidgetDecorator.h"
+#include "pqGlyphScaleFactorPropertyWidget.h"
+#include "pqImageCompressorWidget.h"
 #include "pqInputDataTypeDecorator.h"
+#include "pqIntMaskPropertyWidget.h"
+#include "pqLightsEditor.h"
 #include "pqListPropertyWidget.h"
+#include "pqPropertyGroupButton.h"
+#include "pqProxyEditorPropertyWidget.h"
+#include "pqSeriesEditorPropertyWidget.h"
+#include "pqShowWidgetDecorator.h"
+#include "pqTextLocationWidget.h"
 #include "pqTextureSelectorPropertyWidget.h"
 #include "pqTransferFunctionWidgetPropertyWidget.h"
+#include "pqViewTypePropertyWidget.h"
 #include "vtkSMPropertyGroup.h"
 #include "vtkSMProperty.h"
 
@@ -80,9 +94,19 @@ pqStandardPropertyWidgetInterface::createWidgetForProperty(vtkSMProxy *smProxy,
   std::string name = custom_widget;
 
   // *** NOTE: When adding new types, please update the header documentation ***
-  if(name == "color_selector")
+  if (name == "color_palette_selector")
     {
-    return new pqColorSelectorPropertyWidget(smProxy, smProperty);
+    return new pqColorPaletteSelectorWidget(smProxy, smProperty);
+    }
+  else if(name == "color_selector")
+    {
+    bool withPalette = false;
+    return new pqColorSelectorPropertyWidget(smProxy, smProperty, withPalette);
+    }
+  else if(name == "color_selector_with_palette")
+    {
+    bool withPalette = true;
+    return new pqColorSelectorPropertyWidget(smProxy, smProperty, withPalette);
     }
   else if(name == "display_representation_selector")
     {
@@ -112,14 +136,43 @@ pqStandardPropertyWidgetInterface::createWidgetForProperty(vtkSMProxy *smProxy,
     {
     return new pqDoubleRangeSliderPropertyWidget(smProxy, smProperty);
     }
+  else if (name == "image_compressor_config")
+    {
+    return new pqImageCompressorWidget(smProxy, smProperty);
+    }
+  else if (name == "camera_manipulator")
+    {
+    return new pqCameraManipulatorWidget(smProxy, smProperty);
+    }
+  else if (name == "viewtype_selector")
+    {
+    return new pqViewTypePropertyWidget(smProxy, smProperty);
+    }
+  else if (name == "glyph_scale_factor")
+    {
+    return new pqGlyphScaleFactorPropertyWidget(smProxy, smProperty);
+    }
+  else if (name == "proxy_editor")
+    {
+    return new pqProxyEditorPropertyWidget(smProxy, smProperty);
+    }
+  else if (name == "int_mask")
+    {
+    return new pqIntMaskPropertyWidget(smProxy, smProperty);
+    }
+  else if (name == "filename_widget")
+    {
+    return new pqFileNamePropertyWidget(smProxy, smProperty);
+    }
   // *** NOTE: When adding new types, please update the header documentation ***
   return NULL;
 }
 
 //-----------------------------------------------------------------------------
 pqPropertyWidget*
-pqStandardPropertyWidgetInterface::createWidgetForPropertyGroup(vtkSMProxy *proxy,
-                                                                vtkSMPropertyGroup *group)
+pqStandardPropertyWidgetInterface::createWidgetForPropertyGroup(
+  vtkSMProxy *proxy,
+  vtkSMPropertyGroup *group)
 {
   // *** NOTE: When adding new types, please update the header documentation ***
   if(QString(group->GetPanelWidget()) == "ColorEditor")
@@ -129,6 +182,16 @@ pqStandardPropertyWidgetInterface::createWidgetForPropertyGroup(vtkSMProxy *prox
   else if(QString(group->GetPanelWidget()) == "CubeAxes")
     {
     return new pqCubeAxesPropertyWidget(proxy);
+    }
+  else if(QString(group->GetPanelWidget()) == "BackgroundEditor")
+    {
+    return new pqBackgroundEditorWidget(proxy, group);
+    }
+  else if(QString(group->GetPanelWidget()) == "LightsEditor")
+    {
+    pqPropertyGroupButton * pgb = new pqPropertyGroupButton(proxy, group);
+    pgb->SetEditor (new pqLightsEditor(pgb));
+    return pgb;
     }
   else if (QString(group->GetPanelWidget()) == "ArrayStatus")
     {
@@ -146,6 +209,14 @@ pqStandardPropertyWidgetInterface::createWidgetForPropertyGroup(vtkSMProxy *prox
     {
     return new pqFontPropertyWidget(proxy, group);
     }
+  else if (QString(group->GetPanelWidget()) == "SeriesEditor")
+    {
+    return new pqSeriesEditorPropertyWidget(proxy, group);
+    }
+  else if (QString(group->GetPanelWidget()) == "TextLocationEditor")
+    {
+    return new pqTextLocationWidget(proxy, group);
+    }
   // *** NOTE: When adding new types, please update the header documentation ***
 
   return 0;
@@ -157,10 +228,6 @@ pqStandardPropertyWidgetInterface::createWidgetDecorator(
   const QString& type, vtkPVXMLElement* config, pqPropertyWidget* widget)
 {
   // *** NOTE: When adding new types, please update the header documentation ***
-  if (type == "ClipScalarsDecorator")
-    {
-    return new pqClipScalarsDecorator(config, widget);
-    }
   if (type == "CTHArraySelectionDecorator")
     {
     return new pqCTHArraySelectionDecorator(config, widget);
@@ -173,6 +240,15 @@ pqStandardPropertyWidgetInterface::createWidgetDecorator(
     {
     return new pqEnableWidgetDecorator(config, widget);
     }
+  if (type == "ShowWidgetDecorator")
+    {
+    return new pqShowWidgetDecorator(config, widget);
+    }
+  if (type == "GenericDecorator")
+    {
+    return new pqGenericPropertyWidgetDecorator(config, widget);
+    }
+
   // *** NOTE: When adding new types, please update the header documentation ***
   return NULL;
 }

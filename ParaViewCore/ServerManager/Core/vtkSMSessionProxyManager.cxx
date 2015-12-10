@@ -20,7 +20,6 @@
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkProcessModule.h"
-#include "vtkProcessModule.h"
 #include "vtkPVConfig.h" // for PARAVIEW_VERSION_*
 #include "vtkPVInstantiator.h"
 #include "vtkPVProxyDefinitionIterator.h"
@@ -29,6 +28,7 @@
 #include "vtkReservedRemoteObjectIds.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMCollaborationManager.h"
+#include "vtkSMCoreUtilities.h"
 #include "vtkSMDeserializerProtobuf.h"
 #include "vtkSMDocumentation.h"
 #include "vtkSMGlobalPropertiesLinkUndoElement.h"
@@ -53,7 +53,7 @@
 #include <map>
 #include <set>
 #include <vector>
-#include <vtksys/ios/sstream>
+#include <sstream>
 #include <vtksys/RegularExpression.hxx>
 #include <assert.h>
 
@@ -209,7 +209,7 @@ void vtkSMSessionProxyManager::InstantiateGroupPrototypes(const char* groupName)
 
   assert(this->ProxyDefinitionManager != 0);
 
-  vtksys_ios::ostringstream newgroupname;
+  std::ostringstream newgroupname;
   newgroupname << groupName << "_prototypes" << ends;
 
   // Not a huge fan of this iterator API. Need to make it more consistent with
@@ -280,7 +280,7 @@ vtkSMProxy* vtkSMSessionProxyManager::NewProxy(vtkPVXMLElement* pelement,
                                         const char* subProxyName)
 {
   vtkObject* object = 0;
-  vtksys_ios::ostringstream cname;
+  std::ostringstream cname;
   cname << "vtkSM" << pelement->GetName() << ends;
   object = vtkPVInstantiator::CreateInstance(cname.str().c_str());
 
@@ -485,7 +485,7 @@ void vtkSMSessionProxyManager::GetProxies(const char* group,
         vtkSMProxyManagerProxyListType::iterator it3 = it2->second.begin();
         for (; it3 != it2->second.end(); ++it3)
           {
-          if(ids.find(it3->GetPointer()->Proxy->GetGlobalID()) != ids.end())
+          if(ids.find(it3->GetPointer()->Proxy->GetGlobalID()) == ids.end())
             {
             ids.insert(it3->GetPointer()->Proxy->GetGlobalID());
             collection->AddItem(it3->GetPointer()->Proxy);
@@ -539,6 +539,58 @@ void vtkSMSessionProxyManager::GetProxyNames(const char* groupname,
     }
 }
 
+//---------------------------------------------------------------------------
+vtkStdString vtkSMSessionProxyManager::RegisterProxy(const char* groupname, vtkSMProxy* proxy)
+{
+  assert(proxy != NULL);
+
+  vtkStdString label = vtkSMCoreUtilities::SanitizeName(proxy->GetXMLLabel());
+  vtkStdString name = this->GetUniqueProxyName(groupname, label.c_str());
+  this->RegisterProxy(groupname, name.c_str(), proxy);
+  return groupname;
+}
+
+//---------------------------------------------------------------------------
+vtkStdString vtkSMSessionProxyManager::GetUniqueProxyName(
+  const char* groupname, const char* prefix)
+{
+  if (!groupname || !prefix)
+    {
+    return vtkStdString();
+    }
+
+  vtkSMSessionProxyManagerInternals::ProxyGroupType::iterator it =
+    this->Internals->RegisteredProxyMap.find(groupname);
+  if (it == this->Internals->RegisteredProxyMap.end())
+    {
+    int suffix = 1;
+    std::ostringstream name_stream;
+    name_stream << prefix << suffix;
+    return name_stream.str();
+    }
+
+  std::set<std::string> existingNames;
+
+  for (vtkSMProxyManagerProxyMapType::iterator it2 = it->second.begin();
+    it2 != it->second.end(); it2++)
+    {
+    existingNames.insert(it2->first);
+    }
+
+  for (int suffix=1; suffix < VTK_INT_MAX; ++suffix)
+    {
+    std::ostringstream name_stream;
+    name_stream << prefix << suffix;
+    if (existingNames.find(name_stream.str()) == existingNames.end())
+      {
+      return name_stream.str();
+      }
+    }
+
+  vtkErrorMacro("Failed to come up with a unique name!");
+  abort();
+  return vtkStdString(prefix);
+}
 
 //---------------------------------------------------------------------------
 const char* vtkSMSessionProxyManager::GetProxyName(const char* groupname,
@@ -763,6 +815,18 @@ void vtkSMSessionProxyManager::RegisterProxy(const char* groupname,
 {
   if (!proxy)
     {
+    return;
+    }
+
+  if (groupname == NULL)
+    {
+    vtkErrorMacro("'groupname' cannot be NULL.");
+    return;
+    }
+  if (name == NULL || name[0] == 0)
+    {
+    // come up with a new name and register the proxy.
+    this->RegisterProxy(groupname, proxy);
     return;
     }
 
@@ -1197,7 +1261,7 @@ vtkPVXMLElement* vtkSMSessionProxyManager::AddInternalState(vtkPVXMLElement *par
   rootElement->SetName("ServerManagerState");
 
   // Set version number on the state element.
-  vtksys_ios::ostringstream version_string;
+  std::ostringstream version_string;
   version_string << vtkSMProxyManager::GetVersionMajor() << "."
                  << vtkSMProxyManager::GetVersionMinor() << "."
                  << vtkSMProxyManager::GetVersionPatch();
@@ -1214,9 +1278,19 @@ vtkPVXMLElement* vtkSMSessionProxyManager::AddInternalState(vtkPVXMLElement *par
     vtkSMProxyManagerProxyMapType::iterator it2 =
       it->second.begin();
 
+    const char* colname = it->first.c_str();
+
+    // Do not save the state of global_properties nor settings.
+    const char* global_properties = "global_properties";
+    const char* settings = "settings";
+    if (strcmp(global_properties, colname) == 0 ||
+        strcmp(settings, colname) == 0)
+      {
+      continue;
+      }
+
     // Do not save the state of prototypes.
     const char* protstr = "_prototypes";
-    const char* colname = it->first.c_str();
     int do_group = 1;
     if (strlen(colname) > strlen(protstr))
       {
@@ -1255,11 +1329,18 @@ vtkPVXMLElement* vtkSMSessionProxyManager::AddInternalState(vtkPVXMLElement *par
       }
     }
 
-  // Save the proxy collections. This is done seprately because
+  // Save the proxy collections. This is done separately because
   // one proxy can be in more than one group.
   it = this->Internals->RegisteredProxyMap.begin();
   for (; it != this->Internals->RegisteredProxyMap.end(); it++)
     {
+    // Do not save the state of options
+    const char* options = "settings";
+    if (strcmp(options, it->first.c_str()) == 0)
+      {
+      continue;
+      }
+
     // Do not save the state of prototypes.
     const char* protstr = "_prototypes";
     int do_group = 1;
@@ -1321,15 +1402,16 @@ vtkPVXMLElement* vtkSMSessionProxyManager::AddInternalState(vtkPVXMLElement *par
   links->SetName("Links");
   this->SaveRegisteredLinks(links);
   rootElement->AddNestedElement(links);
+  
+  vtkSMProxy* globalPropertiesProxy = this->GetProxy("global_properties", "ColorPalette");
+  if (globalPropertiesProxy)
+    {
+    globalPropertiesProxy->SaveXMLState(links);
+    }
+
   links->Delete();
 
-  vtkPVXMLElement* globalProps = vtkPVXMLElement::New();
-  globalProps->SetName("GlobalPropertiesManagers");
-  this->SaveGlobalPropertiesManagers(globalProps);
-  rootElement->AddNestedElement(globalProps);
-  globalProps->Delete();
-
-  if(parentElem)
+  if (parentElem)
     {
     parentElem->AddNestedElement(rootElement);
     rootElement->FastDelete();
@@ -1418,12 +1500,6 @@ void vtkSMSessionProxyManager::SaveRegisteredLinks(vtkPVXMLElement* rootElement)
 }
 
 //---------------------------------------------------------------------------
-void vtkSMSessionProxyManager::SaveGlobalPropertiesManagers(vtkPVXMLElement* root)
-{
-  vtkSMProxyManager::GetProxyManager()->SaveGlobalPropertiesManagers(root);
-}
-
-//---------------------------------------------------------------------------
 vtkPVXMLElement* vtkSMSessionProxyManager::GetProxyHints(
   const char* groupName, const char* proxyName)
 {
@@ -1455,46 +1531,6 @@ vtkPVXMLElement* vtkSMSessionProxyManager::GetPropertyHints(
       }
     }
   return 0;
-}
-
-//---------------------------------------------------------------------------
-void vtkSMSessionProxyManager::SetGlobalPropertiesManager(const char* name,
-    vtkSMGlobalPropertiesManager* mgr)
-{
-  vtkSMProxyManager::GetProxyManager()->SetGlobalPropertiesManager(name, mgr);
-}
-
-//---------------------------------------------------------------------------
-const char* vtkSMSessionProxyManager::GetGlobalPropertiesManagerName(
-  vtkSMGlobalPropertiesManager* mgr)
-{
-  return vtkSMProxyManager::GetProxyManager()->GetGlobalPropertiesManagerName(mgr);
-}
-
-//---------------------------------------------------------------------------
-vtkSMGlobalPropertiesManager* vtkSMSessionProxyManager::GetGlobalPropertiesManager(
-  const char* name)
-{
-  return vtkSMProxyManager::GetProxyManager()->GetGlobalPropertiesManager(name);
-}
-
-//---------------------------------------------------------------------------
-void vtkSMSessionProxyManager::RemoveGlobalPropertiesManager(const char* name)
-{
-  vtkSMProxyManager::GetProxyManager()->RemoveGlobalPropertiesManager(name);
-}
-
-//---------------------------------------------------------------------------
-unsigned int vtkSMSessionProxyManager::GetNumberOfGlobalPropertiesManagers()
-{
-  return vtkSMProxyManager::GetProxyManager()->GetNumberOfGlobalPropertiesManagers();
-}
-
-//---------------------------------------------------------------------------
-vtkSMGlobalPropertiesManager* vtkSMSessionProxyManager::GetGlobalPropertiesManager(
-  unsigned int index)
-{
-  return vtkSMProxyManager::GetProxyManager()->GetGlobalPropertiesManager(index);
 }
 
 //---------------------------------------------------------------------------
@@ -1808,4 +1844,27 @@ void vtkSMSessionProxyManager::TriggerStateUpdate()
         this->Internals->UpdateProxySelectionModelState();
         this->PipelineState->ValidateState();
     }
+}
+
+//----------------------------------------------------------------------------
+vtkSMProxy* vtkSMSessionProxyManager::FindProxy(
+  const char* reggroup, const char* xmlgroup, const char* xmltype)
+{
+  vtkNew<vtkSMProxyIterator> iter;
+  iter->SetSessionProxyManager(this);
+  iter->SetModeToOneGroup();
+
+  for (iter->Begin(reggroup); !iter->IsAtEnd(); iter->Next())
+    {
+    vtkSMProxy* proxy = iter->GetProxy();
+    if (proxy != NULL &&
+      proxy->GetXMLGroup() &&
+      proxy->GetXMLName() &&
+      strcmp(proxy->GetXMLGroup(), xmlgroup) == 0 &&
+      strcmp(proxy->GetXMLName(), xmltype) == 0)
+      {
+      return proxy;
+      }
+    }
+  return NULL;
 }

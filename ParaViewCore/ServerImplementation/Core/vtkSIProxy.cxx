@@ -30,7 +30,7 @@
 #include <map>
 #include <set>
 #include <string>
-#include <vtksys/ios/sstream>
+#include <sstream>
 
 //****************************************************************************
 struct SubProxyInfo
@@ -65,6 +65,9 @@ public:
 
   typedef std::vector<SubProxyInfo> SubProxiesVectorType;
   SubProxiesVectorType SubProxyInfoVector;
+
+  typedef std::map<std::string, std::string> SubProxyCommandMapType;
+  SubProxyCommandMapType SubProxyCommands;
 };
 
 //****************************************************************************
@@ -358,18 +361,14 @@ bool vtkSIProxy::CreateVTKObjects(vtkSMMessage* message)
       }
     }
 
+  // Add hook for post_push and post_creation. This is processed before
+  // ReadXMLAttributes() is even called.
+  this->SetPostPush(element->GetAttribute("post_push"));
+  this->SetPostCreation(element->GetAttribute("post_creation"));
+
   // Allow subclasses to do some initialization if needed. Note this is called
   // before properties are created.
   this->OnCreateVTKObjects();
-
-  // Process the XML and update properties etc.
-  if (!this->ReadXMLAttributes(element))
-    {
-    this->DeleteVTKObjects();
-    return false;
-    }
-
-  this->ObjectsCreated = true;
 
   // Execute post-creation if any
   if(this->PostCreation != NULL)
@@ -381,6 +380,15 @@ bool vtkSIProxy::CreateVTKObjects(vtkSMMessage* message)
            << vtkClientServerStream::End;
     this->Interpreter->ProcessStream(stream);
     }
+
+  // Process the XML and update properties etc.
+  if (!this->ReadXMLAttributes(element))
+    {
+    this->DeleteVTKObjects();
+    return false;
+    }
+
+  this->ObjectsCreated = true;
   return true;
 }
 
@@ -404,10 +412,6 @@ vtkObjectBase* vtkSIProxy::GetVTKObject()
 //----------------------------------------------------------------------------
 bool vtkSIProxy::ReadXMLAttributes(vtkPVXMLElement* element)
 {
-  // Add hook for post_push and post_creation
-  this->SetPostPush(element->GetAttribute("post_push"));
-  this->SetPostCreation(element->GetAttribute("post_creation"));
-
   for(unsigned int i=0; i < element->GetNumberOfNestedElements(); ++i)
     {
     vtkPVXMLElement* propElement = element->GetNestedElement(i);
@@ -420,17 +424,35 @@ bool vtkSIProxy::ReadXMLAttributes(vtkPVXMLElement* element)
         return false;
         }
       }
-    else
+    }
+
+  // Process sub-proxy commands.
+  for (vtkInternals::SubProxyCommandMapType::iterator iter=this->Internals->SubProxyCommands.begin();
+    iter != this->Internals->SubProxyCommands.end(); ++iter)
+    {
+    if (vtkSIProxy* subProxy = this->GetSubSIProxy(iter->first.c_str()))
       {
-      // read property xml
-      const char* name = propElement->GetAttribute("name");
-      std::string tagName = propElement->GetName();
-      if (name && tagName.find("Property") == (tagName.size()-8))
+      vtkClientServerStream stream;
+      stream << vtkClientServerStream::Invoke
+             << this->GetVTKObject()
+             << iter->second.c_str()
+             << subProxy->GetVTKObject()
+             << vtkClientServerStream::End;
+      this->Interpreter->ProcessStream(stream);
+      }
+    }
+
+  for (unsigned int i=0; i < element->GetNumberOfNestedElements(); ++i)
+    {
+    vtkPVXMLElement* propElement = element->GetNestedElement(i);
+    // read property xml
+    const char* name = propElement->GetAttribute("name");
+    std::string tagName = propElement->GetName();
+    if (name && tagName.find("Property") == (tagName.size()-8))
+      {
+      if (!this->ReadXMLProperty(propElement))
         {
-        if (!this->ReadXMLProperty(propElement))
-          {
-          return false;
-          }
+        return false;
         }
       }
     }
@@ -439,11 +461,24 @@ bool vtkSIProxy::ReadXMLAttributes(vtkPVXMLElement* element)
 }
 
 //----------------------------------------------------------------------------
-bool vtkSIProxy::ReadXMLSubProxy(vtkPVXMLElement* )
+bool vtkSIProxy::ReadXMLSubProxy(vtkPVXMLElement* subproxyElement)
 {
-  // vtkErrorMacro("Not supported yet.");
+  // Process "command" for the sub proxy, if any. These are used in
+  // CreateVTKObjects() to pass the sub proxy's VTK object to this proxy's VTK
+  // object.
+  const char* command = subproxyElement? subproxyElement->GetAttribute("command") : NULL;
+  if (command)
+    {
+    vtkPVXMLElement* proxyElement = subproxyElement->GetNestedElement(0);
+    const char* name = proxyElement? proxyElement->GetAttribute("name") : NULL;
+    if (name)
+      {
+      this->Internals->SubProxyCommands[name] = command;
+      }
+    }
   return true;
 }
+
 //----------------------------------------------------------------------------
 bool vtkSIProxy::ReadXMLProperty(vtkPVXMLElement* propElement)
 {
@@ -463,7 +498,7 @@ bool vtkSIProxy::ReadXMLProperty(vtkPVXMLElement* propElement)
     }
   else
     {
-    vtksys_ios::ostringstream cname;
+    std::ostringstream cname;
     cname << "vtkSI" << propElement->GetName() << ends;
     classname = cname.str();
     }

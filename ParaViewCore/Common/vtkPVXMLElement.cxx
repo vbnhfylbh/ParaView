@@ -20,10 +20,10 @@
 
 vtkStandardNewMacro(vtkPVXMLElement);
 
+#include <ctype.h>
 #include <string>
 #include <vector>
-#include <vtksys/ios/sstream>
-
+#include <sstream>
 #if defined(_WIN32) && !defined(__CYGWIN__)
 # define SNPRINTF _snprintf
 #else
@@ -38,6 +38,19 @@ struct vtkPVXMLElementInternals
   VectorOfElements NestedElements;
   std::string CharacterData;
 };
+
+// Function to check if a string is full of whitespace characters.
+static bool vtkIsSpace(const std::string& str)
+{
+  for (std::string::size_type cc=0; cc< str.length(); ++cc)
+    {
+    if (!isspace(str[cc]))
+      {
+      return false;
+      }
+    }
+  return true;
+}
 
 //----------------------------------------------------------------------------
 vtkPVXMLElement::vtkPVXMLElement()
@@ -78,7 +91,7 @@ void vtkPVXMLElement::PrintSelf(ostream& os, vtkIndent indent)
 void vtkPVXMLElement::AddAttribute(const char* attrName, 
                                    unsigned int attrValue)
 {
-  vtksys_ios::ostringstream valueStr;
+  std::ostringstream valueStr;
   valueStr << attrValue << ends;
   this->AddAttribute(attrName, valueStr.str().c_str());
 }
@@ -86,7 +99,7 @@ void vtkPVXMLElement::AddAttribute(const char* attrName,
 //----------------------------------------------------------------------------
 void vtkPVXMLElement::AddAttribute(const char* attrName, int attrValue)
 {
-  vtksys_ios::ostringstream valueStr;
+  std::ostringstream valueStr;
   valueStr << attrValue << ends;
   this->AddAttribute(attrName, valueStr.str().c_str());
 }
@@ -95,7 +108,7 @@ void vtkPVXMLElement::AddAttribute(const char* attrName, int attrValue)
 //----------------------------------------------------------------------------
 void vtkPVXMLElement::AddAttribute(const char* attrName, vtkIdType attrValue)
 {
-  vtksys_ios::ostringstream valueStr;
+  std::ostringstream valueStr;
   valueStr << attrValue << ends;
   this->AddAttribute(attrName, valueStr.str().c_str());
 }
@@ -104,7 +117,7 @@ void vtkPVXMLElement::AddAttribute(const char* attrName, vtkIdType attrValue)
 //----------------------------------------------------------------------------
 void vtkPVXMLElement::AddAttribute(const char* attrName, double attrValue)
 {
-  vtksys_ios::ostringstream valueStr;
+  std::ostringstream valueStr;
   valueStr << attrValue << ends;
   this->AddAttribute(attrName, valueStr.str().c_str());
 }
@@ -119,7 +132,7 @@ void vtkPVXMLElement::AddAttribute(const char* attrName, double attrValue,
     }
   else
     {
-    vtksys_ios::ostringstream valueStr;
+    std::ostringstream valueStr;
     valueStr << setprecision(precision) << attrValue << ends;
     this->AddAttribute(attrName, valueStr.str().c_str());
     }
@@ -272,19 +285,33 @@ void vtkPVXMLElement::PrintXML(ostream& os, vtkIndent indent)
        << "=\"" << (aValue?sanitizedValue.c_str():"NoValue") << "\"";
     }
   size_t numberOfNestedElements = this->Internal->NestedElements.size();
-  if(numberOfNestedElements > 0)
+  bool hasCdata = !vtkIsSpace(this->Internal->CharacterData);
+
+  bool childlessNode = (numberOfNestedElements == 0) && (hasCdata == false);
+  if (childlessNode)
     {
-    os << ">\n";
+    os << "/>\n";
+    return;
+    }
+  os << ">";
+  if (numberOfNestedElements > 0)
+    {
+    os << "\n";
     for(i=0;i < numberOfNestedElements;++i)
       {
       vtkIndent nextIndent = indent.GetNextIndent();
       this->Internal->NestedElements[i]->PrintXML(os, nextIndent);
       }
-    os << indent << "</" << (this->Name?this->Name:"NoName") << ">\n";
+    }
+  if (hasCdata)
+    {
+    const std::string& encoded = vtkPVXMLElement::Encode(this->Internal->CharacterData.c_str());
+    os << encoded.c_str();
+    os << "</" << (this->Name?this->Name:"NoName") << ">\n";
     }
   else
     {
-    os << "/>\n";
+    os << indent << "</" << (this->Name?this->Name:"NoName") << ">\n";
     }
 }
 
@@ -443,7 +470,7 @@ template <class T>
 int vtkPVXMLVectorAttributeParse(const char* str, int length, T* data)
 {
   if(!str || !length) { return 0; }
-  vtksys_ios::stringstream vstr;
+  std::stringstream vstr;
   vstr << str << ends;
   int i;
   for(i=0;i < length;++i)
@@ -561,6 +588,7 @@ vtkStdString vtkPVXMLElement::Encode(const char* plaintext)
   const char toescape[] = { '&', '\'', '<', '>', '\"', '\r', '\n', '\t', 0};
 
   size_t pt_length = strlen(plaintext);
+  sanitized.reserve(pt_length);
   for (size_t cc = 0; cc < pt_length; cc++)
     {
     const char* escape_char = toescape;
@@ -723,8 +751,8 @@ bool vtkPVXMLElement::Equals(vtkPVXMLElement* other)
     {
     return false;
     }
-  vtksys_ios::ostringstream selfstream;
-  vtksys_ios::ostringstream otherstream;
+  std::ostringstream selfstream;
+  std::ostringstream otherstream;
   this->PrintXML(selfstream, vtkIndent());
   other->PrintXML(otherstream, vtkIndent());
   return (selfstream.str() == otherstream.str());

@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqApplicationCore.h"
 #include "pqOutputPort.h"
+#include "pqPipelineSource.h"
 #include "pqPropertiesPanel.h"
 #include "pqQueryClauseWidget.h"
 #include "pqSelectionManager.h"
@@ -74,13 +75,17 @@ public:
   Ui::FindDataCreateSelectionFrame Ui;
   QPointer<pqSelectionManager> SelectionManager;
   bool CreatingSelection;
+  bool DataChangedSinceLastUpdate;
+  pqOutputPort* CurrentPort;
 
   //---------------------------------------------------------------------------
-  pqInternals(pqFindDataCreateSelectionFrame* self) : CreatingSelection(false)
+  pqInternals(pqFindDataCreateSelectionFrame* self) :
+    CreatingSelection(false),
+    DataChangedSinceLastUpdate(true),
+    CurrentPort(NULL)
     {
     this->SelectionManager = qobject_cast<pqSelectionManager*>(
       pqApplicationCore::instance()->manager("SELECTION_MANAGER"));
-
 
     this->Ui.setupUi(self);
 
@@ -145,6 +150,14 @@ public:
       reset_clause = true;
       }
 
+    // The data is marked as changed when the port pipeline source
+    // signals it has changed.
+    if (this->DataChangedSinceLastUpdate)
+      {
+      reset_clause = true;
+      this->DataChangedSinceLastUpdate = false;
+      }
+
     int attrType = this->selectionType();
     if (ui.queryClauseWidget->attributeType() != attrType)
       {
@@ -179,13 +192,36 @@ pqFindDataCreateSelectionFrame::~pqFindDataCreateSelectionFrame()
 void pqFindDataCreateSelectionFrame::setPort(pqOutputPort* port)
 {
   Ui::FindDataCreateSelectionFrame &ui = this->Internals->Ui;
-  if (ui.source->currentPort() != port)
+  if (this->Internals->CurrentPort != port)
     {
     ui.source->setCurrentPort(port);
+    if (this->Internals->CurrentPort &&
+        this->Internals->CurrentPort->getSource())
+      {
+      QObject::disconnect(this->Internals->CurrentPort->getSource(),
+                          SIGNAL(dataUpdated(pqPipelineSource*)),
+                          this, SLOT(dataChanged()));
+      }
+    this->Internals->CurrentPort = port;
+    }
+
+  if (this->Internals->CurrentPort &&
+      this->Internals->CurrentPort->getSource())
+    {
+    QObject::connect(this->Internals->CurrentPort->getSource(),
+                     SIGNAL(dataUpdated(pqPipelineSource*)),
+                     this, SLOT(dataChanged()));
     }
 
   // Update available selection types.
   this->Internals->populateSelectionType();
+  this->refreshQuery();
+}
+
+//-----------------------------------------------------------------------------
+void pqFindDataCreateSelectionFrame::dataChanged()
+{
+  this->Internals->DataChangedSinceLastUpdate = true;
   this->refreshQuery();
 }
 
@@ -211,29 +247,9 @@ void pqFindDataCreateSelectionFrame::runQuery()
     qWarning("Failed to create a selection based on the given criteria.");
     return;
     }
-
-  switch (ui.queryClauseWidget->attributeType())
-    {
-  case vtkDataObject::CELL:
-    vtkSMPropertyHelper(selectionSource, "FieldType").Set(vtkSelectionNode::CELL);
-    break;
-
-  case vtkDataObject::POINT:
-    vtkSMPropertyHelper(selectionSource, "FieldType").Set(vtkSelectionNode::POINT);
-    break;
-
-  case vtkDataObject::EDGE:
-    vtkSMPropertyHelper(selectionSource, "FieldType").Set(vtkSelectionNode::EDGE);
-    break;
-
-  case vtkDataObject::VERTEX:
-    vtkSMPropertyHelper(selectionSource, "FieldType").Set(vtkSelectionNode::VERTEX);
-    break;
-
-  case vtkDataObject::ROW:
-    vtkSMPropertyHelper(selectionSource, "FieldType").Set(vtkSelectionNode::ROW);
-    break;
-    }
+  vtkSMPropertyHelper(selectionSource, "FieldType").Set(
+    vtkSelectionNode::ConvertAttributeTypeToSelectionField(
+      ui.queryClauseWidget->attributeType()));
   selectionSource->UpdateVTKObjects();
   port->setSelectionInput(vtkSMSourceProxy::SafeDownCast(selectionSource), 0);
 

@@ -36,6 +36,31 @@
     </widget>
    </item>
    <item>
+    <widget class="QLabel" name="pickLabel" >
+     <property name="font">
+      <font>
+        <bold>true</bold>
+      </font>
+     </property>
+     <property name="wordWrap">
+       <bool>true</bool>
+     </property>
+     <property name="text">
+      <string>Note: Use 'P' key to pick origin position on mesh</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="pickMeshPoint" >
+     <property name="text" >
+      <string>Snap Picked Point on Mesh Point</string>
+     </property>
+     <property name="toolTip">
+       <string>If checked, picked points using 'P' will be snapped on mesh points</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <layout class="QGridLayout" >
      <property name="leftMargin" >
       <number>0</number>
@@ -151,6 +176,13 @@
        </property>
       </widget>
      </item>
+      <item row="4" column="0" >
+        <widget class="QPushButton" name="resetCameraToNormal" >
+          <property name="text" >
+            <string>Reset Camera to Normal</string>
+          </property>
+        </widget>
+      </item>
     </layout>
    </item>
   </layout>
@@ -171,11 +203,12 @@
   <tabstop>normalY</tabstop>
   <tabstop>normalZ</tabstop>
   <tabstop>useXNormal</tabstop>
-  <tabstop>resetBounds</tabstop>
   <tabstop>useYNormal</tabstop>
   <tabstop>useZNormal</tabstop>
   <tabstop>useCameraNormal</tabstop>
+  <tabstop>resetBounds</tabstop>
   <tabstop>useCenterBounds</tabstop>
+  <tabstop>resetCameraToNormal</tabstop>
  </tabstops>
  <resources/>
  <connections/>

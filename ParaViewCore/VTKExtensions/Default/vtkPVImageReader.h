@@ -18,11 +18,12 @@
 #define __vtkPVImageReader_h
 
 #include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
+#include "vtkPVConfig.h" // for PARAVIEW_USE_MPI
 
 #ifdef PARAVIEW_USE_MPI
-#include "vtkMPIImageReader.h"
+#include "vtkMPIImageReader.h" // For MPI-enabled builds
 #else
-#include "vtkImageReader.h"
+#include "vtkImageReader.h" // For non-MPI builds
 #endif
 
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVImageReader : public
@@ -41,6 +42,11 @@ public:
   vtkTypeMacro(vtkPVImageReader, vtkImageReader);
 #endif
 
+  virtual int CanReadFile(const char*)
+  {
+    return 1;
+  }
+
   void PrintSelf(ostream& os, vtkIndent indent);
 
 //BTX
@@ -55,3 +61,5 @@ private:
 };
 
 #endif
+
+// VTK-HeaderTest-Exclude: vtkPVImageReader.h

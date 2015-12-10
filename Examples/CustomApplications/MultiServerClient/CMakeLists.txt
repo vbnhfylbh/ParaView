@@ -41,19 +41,33 @@ if (NOT PARAVIEW_BUILD_QT_GUI)
     "with PARAVIEW_BUILD_QT_GUI set to TRUE")
 endif()
 
+# Set a consistent MACOSX_RPATH default across all CMake versions.
+# When CMake 2.8.12 is required, change this default to 1.
+# When CMake 3.0.0 is required, remove this block (see CMP0042).
+if(NOT DEFINED CMAKE_MACOSX_RPATH)
+  set(CMAKE_MACOSX_RPATH 0)
+endif()
 
 SET (SOURCE_FILES
   MultiServerClientMainWindow.cxx
   MultiServerClientMainWindow.h
 )
 
-QT4_WRAP_CPP(MOC_SRCS
-  MultiServerClientMainWindow.h
-)
-
-QT4_WRAP_UI(UI_BUILT_SOURCES
-  MultiServerClientMainWindow.ui
-)
+if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+  QT5_WRAP_CPP(MOC_SRCS
+    MultiServerClientMainWindow.h
+  )
+  QT5_WRAP_UI(UI_BUILT_SOURCES
+    MultiServerClientMainWindow.ui
+  )
+else ()
+  QT4_WRAP_CPP(MOC_SRCS
+    MultiServerClientMainWindow.h
+  )
+  QT4_WRAP_UI(UI_BUILT_SOURCES
+    MultiServerClientMainWindow.ui
+  )
+endif ()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}

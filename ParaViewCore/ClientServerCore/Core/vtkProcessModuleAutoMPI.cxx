@@ -21,14 +21,13 @@
 #include "vtkObjectFactory.h"
 #include "vtkProcessModule.h"
 #include <vtksys/SystemTools.hxx>
-#include <vtksys/ios/sstream>
-#include "string"
-#include "vector"
+
 #include "vtksys/Process.h"
 #include "vtkSocket.h"
 
 #include <vector>
 #include <string>
+#include <sstream>
 
 bool vtkProcessModuleAutoMPI::EnableAutoMPI = 0;
 int vtkProcessModuleAutoMPI::NumberOfCores = 0;
@@ -66,8 +65,8 @@ public:
   };
   vtkStandardNewMacro(vtkGetFreePort);
 
-  void vtkCopy(vtksys_stl::vector<const char*>& dest,
-    const vtksys_stl::vector<std::string>& src)
+  void vtkCopy(std::vector<const char*>& dest,
+    const std::vector<std::string>& src)
     {
     dest.resize(src.size());
     for (size_t cc=0; cc < src.size(); cc++)
@@ -116,7 +115,7 @@ public:
                               std::vector<char>& out,
                               std::vector<char>& err);
   void PrintLine (const char* pname, const char* line);
-  void CreateCommandLine (vtksys_stl::vector<std::string>& commandLine,
+  void CreateCommandLine (std::vector<std::string>& commandLine,
                           const char* paraView,
                           const char* numProc,
                           int port);
@@ -253,8 +252,8 @@ int vtkProcessModuleAutoMPIInternals::
   serverExe = PARAVIEW_SERVER;
 #endif
 
-  vtksys_stl::vector<std::string> serverCommandStr;
-  vtksys_stl::vector<const char*> serverCommand;
+  std::vector<std::string> serverCommandStr;
+  std::vector<const char*> serverCommand;
   this->CreateCommandLine(serverCommandStr,
     serverExe.c_str(),
     this->MPIServerNumProcessFlag.c_str(),
@@ -404,7 +403,7 @@ bool vtkProcessModuleAutoMPIInternals::CollectConfiguredOptions()
  */
 void
 vtkProcessModuleAutoMPIInternals::CreateCommandLine(
-  vtksys_stl::vector<std::string>& commandLine,
+  std::vector<std::string>& commandLine,
   const char* paraView,
   const char* numProc,
   int port)
@@ -429,13 +428,8 @@ vtkProcessModuleAutoMPIInternals::CreateCommandLine(
       }
 
     }
-  char temp[100];
-  std::string portString;
-  sprintf(temp,"--server-port=%d",port);
-  portString+=temp;
-  portString+='\0';
+
   commandLine.push_back(paraView);
-  commandLine.push_back(portString.c_str());
 
   for(unsigned int i = 0; i < this->MPIPostFlags.size(); ++i)
     {
@@ -446,6 +440,18 @@ vtkProcessModuleAutoMPIInternals::CreateCommandLine(
     {
     commandLine.push_back(this->MPIServerPostFlags[i].c_str());
     }
+
+  if (vtkProcessModule::GetProcessModule()->GetOptions()->GetConnectID() != 0)
+    {
+    std::ostringstream stream;
+    stream << "--connect-id="
+           << vtkProcessModule::GetProcessModule()->GetOptions()->GetConnectID();
+    commandLine.push_back(stream.str());
+    }
+
+  std::ostringstream stream;
+  stream << "--server-port=" << port;
+  commandLine.push_back(stream.str());
 }
 
 //--------------------------------------------------------------------internal

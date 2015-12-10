@@ -14,7 +14,7 @@
 #include "vtkUnstructuredGrid.h"
 
 #include <ctype.h>
-#include <vtksys/ios/sstream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <vtkIOStream.h>
@@ -90,7 +90,9 @@ int vtkPEnSightGoldReader::ReadGeometryFile(const char* fileName, int timeStep,
     sfilename = fileName;
     }
 
-  this->IS = new ifstream(sfilename.c_str(), ios::in);
+  // Opening the text file as binary. If not, the reader fails to read
+  // files with Unix line endings on Windows machines.
+  this->IS = new ifstream(sfilename.c_str(), ios::in|ios::binary);
   if (this->IS->fail())
     {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
@@ -202,11 +204,11 @@ int vtkPEnSightGoldReader::ReadGeometryFile(const char* fileName, int timeStep,
     realId = this->InsertNewPartId(partId);
 
     this->ReadNextDataLine(line); // part description line
-    char *name = strdup(line);
     if (strncmp(line, "interface", 9) == 0)
       {
       return 1; // ignore it and move on
       }
+    char *name = strdup(line);
 
     this->ReadNextDataLine(line);
 
@@ -294,7 +296,7 @@ int vtkPEnSightGoldReader::ReadMeasuredGeometryFile(
     sfilename = fileName;
     }
 
-  this->IS = new ifstream(sfilename.c_str(), ios::in);
+  this->IS = new ifstream(sfilename.c_str(), ios::in|ios::binary);
   if (this->IS->fail())
     {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
@@ -461,7 +463,7 @@ int vtkPEnSightGoldReader::ReadScalarsPerNode(const char* fileName, const char* 
     sfilename = fileName;
     }
 
-  this->IS = new ifstream(sfilename.c_str(), ios::in);
+  this->IS = new ifstream(sfilename.c_str(), ios::in|ios::binary);
   if (this->IS->fail())
     {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
@@ -685,7 +687,7 @@ int vtkPEnSightGoldReader::ReadVectorsPerNode(const char* fileName, const char* 
     sfilename = fileName;
     }
 
-  this->IS = new ifstream(sfilename.c_str(), ios::in);
+  this->IS = new ifstream(sfilename.c_str(), ios::in|ios::binary);
   if (this->IS->fail())
     {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
@@ -866,7 +868,7 @@ int vtkPEnSightGoldReader::ReadTensorsPerNode(const char* fileName, const char* 
     sfilename = fileName;
     }
 
-  this->IS = new ifstream(sfilename.c_str(), ios::in);
+  this->IS = new ifstream(sfilename.c_str(), ios::in|ios::binary);
   if (this->IS->fail())
     {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
@@ -996,7 +998,7 @@ int vtkPEnSightGoldReader::ReadScalarsPerElement(const char* fileName,
     sfilename = fileName;
     }
 
-  this->IS = new ifstream(sfilename.c_str(), ios::in);
+  this->IS = new ifstream(sfilename.c_str(), ios::in|ios::binary);
   if (this->IS->fail())
     {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
@@ -1205,7 +1207,7 @@ int vtkPEnSightGoldReader::ReadVectorsPerElement(const char* fileName,
     sfilename = fileName;
     }
 
-  this->IS = new ifstream(sfilename.c_str(), ios::in);
+  this->IS = new ifstream(sfilename.c_str(), ios::in|ios::binary);
   if (this->IS->fail())
     {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
@@ -1376,7 +1378,7 @@ int vtkPEnSightGoldReader::ReadTensorsPerElement(const char* fileName,
     sfilename = fileName;
     }
 
-  this->IS = new ifstream(sfilename.c_str(), ios::in);
+  this->IS = new ifstream(sfilename.c_str(), ios::in|ios::binary);
   if (this->IS->fail())
     {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
@@ -1759,9 +1761,9 @@ int vtkPEnSightGoldReader::CreateUnstructuredGridOutput(int partId,
       {
       int *numNodesPerElement;
       int numNodes;
-      vtksys_ios::stringstream* lineStream = new vtksys_ios::stringstream(vtksys_ios::stringstream::out);
-      vtksys_ios::stringstream* formatStream = new vtksys_ios::stringstream(vtksys_ios::stringstream::out);
-      vtksys_ios::stringstream* tempStream = new vtksys_ios::stringstream(vtksys_ios::stringstream::out);
+      std::stringstream* lineStream = new std::stringstream(std::stringstream::out);
+      std::stringstream* formatStream = new std::stringstream(std::stringstream::out);
+      std::stringstream* tempStream = new std::stringstream(std::stringstream::out);
 
       this->ReadNextDataLine(line);
       numElements = atoi(line);
@@ -1791,22 +1793,22 @@ int vtkPEnSightGoldReader::CreateUnstructuredGridOutput(int partId,
         formatStream->str("");
         tempStream->str("");
         lineStream->str(line);
-        lineStream->seekp(0, vtksys_ios::stringstream::end);
+        lineStream->seekp(0, std::stringstream::end);
         while (! lineRead)
           {
           lineRead = this->ReadNextDataLine(line);
           lineStream->write(line, strlen(line));
-          lineStream->seekp(0, vtksys_ios::stringstream::end);
+          lineStream->seekp(0, std::stringstream::end);
           }
         for (j = 0; j < numNodes; j++)
           {
           formatStream->write(" %d", 3);
-          formatStream->seekp(0, vtksys_ios::stringstream::end);
+          formatStream->seekp(0, std::stringstream::end);
           sscanf(lineStream->str().c_str(), formatStream->str().c_str(), &intIds[numNodes-j-1]);
           tempStream->write(" %*d", 4);
-          tempStream->seekp(0, vtksys_ios::stringstream::end);
+          tempStream->seekp(0, std::stringstream::end);
           formatStream->str(tempStream->str());
-          formatStream->seekp(0, vtksys_ios::stringstream::end);
+          formatStream->seekp(0, std::stringstream::end);
           intIds[numNodes-j-1]--;
           nodeIds[numNodes-j-1] = intIds[numNodes-j-1];
           }
@@ -2074,9 +2076,9 @@ int vtkPEnSightGoldReader::CreateUnstructuredGridOutput(int partId,
       int numNodes = 0;
       int faceCount = 0;
       int elementNodeCount = 0;
-      vtksys_ios::stringstream* lineStream = new vtksys_ios::stringstream(vtksys_ios::stringstream::out);
-      vtksys_ios::stringstream* formatStream = new vtksys_ios::stringstream(vtksys_ios::stringstream::out);
-      vtksys_ios::stringstream* tempStream = new vtksys_ios::stringstream(vtksys_ios::stringstream::out);
+      std::stringstream* lineStream = new std::stringstream(std::stringstream::out);
+      std::stringstream* formatStream = new std::stringstream(std::stringstream::out);
+      std::stringstream* tempStream = new std::stringstream(std::stringstream::out);
 
       this->ReadNextDataLine(line);
       numElements = atoi(line);
@@ -2132,22 +2134,22 @@ int vtkPEnSightGoldReader::CreateUnstructuredGridOutput(int partId,
           formatStream->str("");
           tempStream->str("");
           lineStream->str(line);
-          lineStream->seekp(0, vtksys_ios::stringstream::end);
+          lineStream->seekp(0, std::stringstream::end);
           while (! lineRead)
             {
             lineRead = this->ReadNextDataLine(line);
             lineStream->write(line, strlen(line));
-            lineStream->seekp(0, vtksys_ios::stringstream::end);
+            lineStream->seekp(0, std::stringstream::end);
             }
           for (k = 0; k < numNodesPerFace[faceCount + j]; k++)
             {
             formatStream->write(" %d", 3);
-            formatStream->seekp(0, vtksys_ios::stringstream::end);
+            formatStream->seekp(0, std::stringstream::end);
             sscanf(lineStream->str().c_str(), formatStream->str().c_str(), &intIds[elementNodeCount]);
             tempStream->write(" %*d", 4);
-            tempStream->seekp(0, vtksys_ios::stringstream::end);
+            tempStream->seekp(0, std::stringstream::end);
             formatStream->str(tempStream->str());
-            formatStream->seekp(0, vtksys_ios::stringstream::end);
+            formatStream->seekp(0, std::stringstream::end);
             elementNodeCount += 1;
             }
           lineRead = this->ReadNextDataLine(line);
@@ -2731,9 +2733,9 @@ int vtkPEnSightGoldReader::CreateStructuredGridOutput(int partId,
   else
     {
     pointGhostArray = vtkUnsignedCharArray::New();
-    pointGhostArray->SetName("vtkGhostLevels");
+    pointGhostArray->SetName(vtkDataSetAttributes::GhostArrayName());
     cellGhostArray = vtkUnsignedCharArray::New();
-    cellGhostArray->SetName("vtkGhostLevels");
+    cellGhostArray->SetName(vtkDataSetAttributes::GhostArrayName());
     this->PrepareStructuredDimensionsForDistribution(partId, dimensions, newDimensions, &splitDimension, &splitDimensionBeginIndex, this->GhostLevels, pointGhostArray, cellGhostArray);
     }
 
@@ -2858,9 +2860,9 @@ int vtkPEnSightGoldReader::CreateRectilinearGridOutput(int partId,
   else
     {
     pointGhostArray = vtkUnsignedCharArray::New();
-    pointGhostArray->SetName("vtkGhostLevels");
+    pointGhostArray->SetName(vtkDataSetAttributes::GhostArrayName());
     cellGhostArray = vtkUnsignedCharArray::New();
-    cellGhostArray->SetName("vtkGhostLevels");
+    cellGhostArray->SetName(vtkDataSetAttributes::GhostArrayName());
     this->PrepareStructuredDimensionsForDistribution(partId, dimensions, newDimensions, &splitDimension, &splitDimensionBeginIndex, this->GhostLevels, pointGhostArray, cellGhostArray);
     }
 
@@ -2991,9 +2993,9 @@ int vtkPEnSightGoldReader::CreateImageDataOutput(int partId,
   else
     {
     pointGhostArray = vtkUnsignedCharArray::New();
-    pointGhostArray->SetName("vtkGhostLevels");
+    pointGhostArray->SetName(vtkDataSetAttributes::GhostArrayName());
     cellGhostArray = vtkUnsignedCharArray::New();
-    cellGhostArray->SetName("vtkGhostLevels");
+    cellGhostArray->SetName(vtkDataSetAttributes::GhostArrayName());
     this->PrepareStructuredDimensionsForDistribution(partId, dimensions, newDimensions, &splitDimension, &splitDimensionBeginIndex, this->GhostLevels, pointGhostArray, cellGhostArray);
     }
 

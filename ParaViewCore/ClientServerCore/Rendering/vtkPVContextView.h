@@ -22,13 +22,17 @@
 
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkPVView.h"
+#include "vtkSmartPointer.h" // needed for vtkSmartPointer.
+#include "vtkNew.h" // needed for vtkNew.
 
 class vtkAbstractContextItem;
 class vtkChart;
 class vtkChartRepresentation;
+class vtkContextInteractorStyle;
 class vtkContextView;
 class vtkInformationIntegerKey;
 class vtkRenderWindow;
+class vtkRenderWindowInteractor;
 class vtkSelection;
 
 class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVContextView : public vtkPVView
@@ -58,6 +62,13 @@ public:
 
   // Description:
   vtkGetObjectMacro(RenderWindow, vtkRenderWindow);
+
+  // Description:
+  // Set the interactor. Client applications must set the interactor to enable
+  // interactivity. Note this method will also change the interactor styles set
+  // on the interactor.
+  virtual void SetupInteractor(vtkRenderWindowInteractor*);
+  vtkRenderWindowInteractor* GetInteractor();
 
   // Description:
   // Initialize the view with an identifier. Unless noted otherwise, this method
@@ -97,6 +108,13 @@ public:
   virtual void SetSelection(vtkChartRepresentation* repr,
     vtkSelection* selection) = 0;
 
+  // Description:
+  // Get the current selection created in the view. This will call
+  // this->MapSelectionToInput() to transform the selection every time a new
+  // selection is available. Subclasses should override MapSelectionToInput() to
+  // convert the selection, as appropriate.
+  vtkSelection* GetSelection();
+
 //BTX
 protected:
   vtkPVContextView();
@@ -105,6 +123,17 @@ protected:
   // Description:
   // Actual rendering implementation.
   virtual void Render(bool interactive);
+
+  // Description:
+  // Called to transform the selection. This is only called on the client-side.
+  // Subclasses should transform the selection in place as needed. Default
+  // implementation simply goes to the first visible representation and asks it
+  // to transform (by calling vtkChartRepresentation::MapSelectionToInput()).
+  // We need to extend the infrastructrue to work properly when making
+  // selections in views showing multiple representations, but until that
+  // happens, this naive approach works for most cases.
+  // Return false on failure.
+  virtual bool MapSelectionToInput(vtkSelection*);
 
   // Description:
   // Callbacks called when the primary "renderer" in the vtkContextView
@@ -122,6 +151,14 @@ protected:
 private:
   vtkPVContextView(const vtkPVContextView&); // Not implemented
   void operator=(const vtkPVContextView&); // Not implemented
+
+  // Used in GetSelection to avoid modifying the selection obtained from the
+  // annotation link.
+  vtkSmartPointer<vtkSelection> SelectionClone;
+  vtkNew<vtkContextInteractorStyle> InteractorStyle;
+
+  template <class T>
+  vtkSelection* GetSelectionImplementation(T* chart);
 //ETX
 };
 

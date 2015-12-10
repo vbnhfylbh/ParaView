@@ -49,21 +49,12 @@ class PQCORE_EXPORT pqContextView : public pqView
 public:
   virtual ~pqContextView();
 
-  /// Return a widget associated with this view.
-  virtual QWidget* getWidget();
-
   /// Returns the internal vtkContextView which provides the implementation for
   /// the chart rendering.
   virtual vtkContextView* getVTKContextView() const;
 
   /// Returns the context view proxy associated with this object.
   virtual vtkSMContextViewProxy* getContextViewProxy() const;
-
-  /// Capture the view image into a new vtkImageData with the given magnification
-  /// and returns it. The caller is responsible for freeing the returned image.
-  virtual vtkImageData* captureImage(int magnification);
-  virtual vtkImageData* captureImage(const QSize& asize)
-    { return this->Superclass::captureImage(asize); }
 
   /// Returns true if selection can be done.
   virtual bool supportsSelection() const;
@@ -76,15 +67,6 @@ public:
 
   /// Resets the zoom level to 100%.
   virtual void resetDisplay();
-
-  /// Returns true if data on the given output port can be displayed by this view.
-  virtual bool canDisplay(pqOutputPort* opPort) const;
-
-protected slots:
-  virtual void initializeAfterObjectsCreated();
-
-  /// Sets up the interactors correctly.
-  virtual void initializeInteractors();
 
 protected:
   /// Constructor:
@@ -102,11 +84,8 @@ protected:
     QObject* parent=NULL);
 
   /// Creates a new instance of the QWidget subclass to be used to show this
-  /// view. Default implementation creates a QVTKWidget.
+  /// view. This will create a pqQVTKWidget for the render window.
   virtual QWidget* createWidget();
-
-  /// Overridden to set up some default signal-slot connections.
-  virtual void initialize();
 
   /// Listen for new selection events, and pass them back to ParaView
   virtual void selectionChanged();

@@ -43,10 +43,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkStdString.h"
 #include "vtkWeakPointer.h"
 
+#include <QAbstractItemView>
 #include <QInputDialog>
 #include <QStringListModel>
 #include <QTextCharFormat>
 #include <QVBoxLayout>
+
+QStringList pqPythonShell::Preamble;
 
 class pqPythonShellCompleter : public pqConsoleWidgetCompleter
 {
@@ -205,6 +208,12 @@ pqPythonShell::pqPythonShell(QWidget* parentObject, Qt::WindowFlags _flags):
   Prompted(false),
   Executing(false)
 {
+  // The default preamble loads paraview.simple:
+  if (pqPythonShell::Preamble.empty())
+    {
+    pqPythonShell::Preamble += "from paraview.simple import *";
+    }
+
   QObject::connect(this, SIGNAL(executing(bool)), this, SLOT(setExecuting(bool)));
 
   this->setObjectName("pythonShell");
@@ -249,9 +258,15 @@ void pqPythonShell::setupInterpreter()
   this->printString(
     QString("Python %1 on %2\n").arg(Py_GetVersion()).arg(Py_GetPlatform()),
     OUTPUT);
-  this->prompt();
-  this->printString("from paraview.simple import *\n");
-  this->pushScript("from paraview.simple import *");
+
+  // Note that we assume each line of the preamble is a complete statement
+  // (i.e., no multi-line statements):
+  foreach (QString line, this->Preamble)
+    {
+    this->prompt();
+    this->printString(line + "\n");
+    this->pushScript(line);
+    }
   this->prompt();
 }
 
@@ -295,6 +310,11 @@ void pqPythonShell::printString(const QString& text, pqPythonShell::PrintMode mo
     // needs to be shown.
     }
 }
+//-----------------------------------------------------------------------------
+void pqPythonShell::setPreamble(const QStringList& statements)
+{
+  pqPythonShell::Preamble = statements;
+}
 
 //-----------------------------------------------------------------------------
 bool pqPythonShell::prompt(const QString &indent)
@@ -331,8 +351,11 @@ void pqPythonShell::clear()
 //-----------------------------------------------------------------------------
 void pqPythonShell::executeScript(const QString& script)
 {
-  emit this->executing(true);  
-  this->Interpreter->RunStringWithConsoleLocals(script.toAscii().data());
+  emit this->executing(true);
+  QString command = script;
+  command.replace("\r\n", "\n");
+  command.replace("\r", "\n");
+  this->Interpreter->RunStringWithConsoleLocals(command.toLatin1().data());
   emit this->executing(false);
   CLEAR_UNDO_STACK();
 
@@ -352,7 +375,7 @@ void pqPythonShell::pushScript(const QString& script)
   emit this->executing(true);
   foreach (QString line, lines)
     {
-    bool isMultilineStatement = this->Interpreter->Push(line.toAscii().data());
+    bool isMultilineStatement = this->Interpreter->Push(line.toLatin1().data());
     this->Prompt = isMultilineStatement ? pqPythonShell::PS2() : pqPythonShell::PS1();
     }
   emit this->executing(false);
@@ -387,7 +410,7 @@ void pqPythonShell::HandleInterpreterEvents(
 
   case vtkCommand::UpdateEvent:
       {
-      vtkStdString* data = reinterpret_cast<vtkStdString*>(calldata);
+      vtkStdString* strData = reinterpret_cast<vtkStdString*>(calldata);
       bool ok;
       QString inputText = QInputDialog::getText(this,
         tr("Enter Input requested by Python"),
@@ -397,7 +420,7 @@ void pqPythonShell::HandleInterpreterEvents(
         &ok);
       if (ok)
         {
-        *data = inputText.toStdString();
+        *strData = inputText.toStdString();
         }
       }
     break;

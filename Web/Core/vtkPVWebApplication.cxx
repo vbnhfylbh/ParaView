@@ -17,26 +17,27 @@
 #include "vtkBase64Utilities.h"
 #include "vtkCamera.h"
 #include "vtkCommand.h"
+#include "vtkDataEncoder.h"
 #include "vtkImageData.h"
 #include "vtkJPEGWriter.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPNGWriter.h"
-#include "vtkDataEncoder.h"
-#include "vtkPVGenericRenderWindowInteractor.h"
-#include "vtkWebInteractionEvent.h"
 #include "vtkPointData.h"
-#include "vtkRenderWindow.h"
+#include "vtkPVRenderView.h"
 #include "vtkRendererCollection.h"
+#include "vtkRenderWindow.h"
+#include "vtkRenderWindowInteractor.h"
+#include "vtkSmartPointer.h"
 #include "vtkSMContextViewProxy.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMRenderViewProxy.h"
 #include "vtkSMViewProxy.h"
-#include "vtkSmartPointer.h"
 #include "vtkTimerLog.h"
 #include "vtkUnsignedCharArray.h"
 #include "vtkWebGLExporter.h"
 #include "vtkWebGLObject.h"
+#include "vtkWebInteractionEvent.h"
 
 #include <assert.h>
 #include <cmath>
@@ -162,7 +163,7 @@ vtkUnsignedCharArray* vtkPVWebApplication::StillRender(vtkSMViewProxy* view, int
 
   if (value.NeedsRender == false &&
     value.Data != NULL &&
-    view->HasDirtyRepresentation() == false)
+    view->GetNeedsUpdate() == false)
     {
     //cout <<  "Reusing cache" << endl;
     bool latest = this->Internals->Encoder->GetLatestOutput(view->GetGlobalID(), value.Data);
@@ -179,6 +180,7 @@ vtkUnsignedCharArray* vtkPVWebApplication::StillRender(vtkSMViewProxy* view, int
   // TODO: We should add logic to check if a new rendering needs to be done and
   // then alone do a new rendering otherwise use the cached image.
   vtkImageData* image = view->CaptureWindow(1);
+  image->GetDimensions(this->LastStillRenderImageSize);
   //vtkTimerLog::MarkEndEvent("CaptureWindow");
 
   //vtkTimerLog::MarkEndEvent("StillRenderToString");
@@ -299,23 +301,20 @@ const char* vtkPVWebApplication::GetWebGLSceneMetaData(vtkSMViewProxy* view)
     }
 
   vtkRenderWindow* renWin = view->GetRenderWindow();
+  vtkPVRenderView* pvRenderView =
+      vtkPVRenderView::SafeDownCast(view->GetClientSideView());
 
-  if(renWin == NULL)
+  if(renWin == NULL || pvRenderView == NULL)
     {
     vtkErrorMacro("The view is supported for WebGL export: " << view);
     return NULL;
     }
-/*
+
   // We use the camera focal point to be the center of rotation
   double centerOfRotation[3];
-  vtkRenderer *ren = renWin->GetRenderers()->GetFirstRenderer();
-  vtkCamera *cam = ren->GetActiveCamera();
+  vtkCamera *cam = pvRenderView->GetActiveCamera();
   cam->GetFocalPoint(centerOfRotation);
-  this->Internals->WebGLExporter->SetCenterOfRotation(
-                                 static_cast<float>(centerOfRotation[0]),
-                                 static_cast<float>(centerOfRotation[1]),
-                                 static_cast<float>(centerOfRotation[2]));
-*/
+
   if(this->Internals->ViewWebGLMap.find(view) ==
     this->Internals->ViewWebGLMap.end())
     {
@@ -343,6 +342,10 @@ const char* vtkPVWebApplication::GetWebGLSceneMetaData(vtkSMViewProxy* view)
       }
     }
   this->Internals->WebGLExporterObjIdMap[webglExporter] = webglMap;
+  webglExporter->SetCenterOfRotation(
+        static_cast<float>(centerOfRotation[0]),
+      static_cast<float>(centerOfRotation[1]),
+      static_cast<float>(centerOfRotation[2]));
   return webglExporter->GenerateMetadata();
 }
 
@@ -400,7 +403,6 @@ const char* vtkPVWebApplication::GetWebGLBinaryData(
 
   return NULL;
 }
-
 //----------------------------------------------------------------------------
 void vtkPVWebApplication::PrintSelf(ostream& os, vtkIndent indent)
 {

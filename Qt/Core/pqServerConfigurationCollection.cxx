@@ -31,6 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ========================================================================*/
 #include "pqServerConfigurationCollection.h"
 
+#include "pqCoreUtilities.h"
 #include "pqOptions.h"
 #include "pqServerConfiguration.h"
 #include "pqServerResource.h"
@@ -43,26 +44,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QTextStream>
 #include <QDir>
 #include <QApplication>
-#include <vtksys/ios/sstream>
+#include <sstream>
 
 namespace
 {
   // get path to user-servers
   static QString userServers()
     {
-    QString settingsRoot;
-#if defined(Q_OS_WIN)
-    settingsRoot = QString::fromLocal8Bit(getenv("APPDATA"));
-#else
-    settingsRoot = QString::fromLocal8Bit(getenv("HOME")) +
-      QDir::separator() + QString::fromLocal8Bit(".config");
-#endif
-    QString settingsPath = QString("%2%1%3%1%4");
-    settingsPath = settingsPath.arg(QDir::separator());
-    settingsPath = settingsPath.arg(settingsRoot);
-    settingsPath = settingsPath.arg(QApplication::organizationName());
-    settingsPath = settingsPath.arg("servers.pvsc");
-    return settingsPath;
+    return  pqCoreUtilities::getParaViewUserDirectory() + "/servers.pvsc";
     }
 
   // get path to shared system servers.
@@ -147,7 +136,7 @@ bool pqServerConfigurationCollection::save(const QString& filename, bool only_mu
   QFile file(filename);
   if (!contents.isEmpty() && file.open(QIODevice::WriteOnly))
     {
-    file.write(contents.toAscii().data());
+    file.write(contents.toLatin1().data());
     file.close();
     return true;
     }
@@ -159,7 +148,7 @@ bool pqServerConfigurationCollection::loadContents(
   const QString& contents, bool mutable_configs)
 {
   vtkNew<vtkPVXMLParser> parser;
-  if (!parser->Parse(contents.toAscii().data()))
+  if (!parser->Parse(contents.toLatin1().data()))
     {
     qWarning() << "Configuration not a valid xml.";
     return false;

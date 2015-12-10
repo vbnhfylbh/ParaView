@@ -50,23 +50,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqServer.h"
 
 #include "vtkEventQtSlotConnect.h"
+#include "vtkPVServerInformation.h"
+#include "vtkRenderWindowInteractor.h"
 #include "vtkSMCollaborationManager.h"
 #include "vtkSMMessage.h"
-#include "vtkSMSession.h"
 #include "vtkSMProxy.h"
 #include "vtkSMProxyLocator.h"
 #include "vtkSMProxyManager.h"
-#include "vtkSMRenderViewProxy.h"
 #include "vtkSMProxySelectionModel.h"
+#include "vtkSMRenderViewProxy.h"
+#include "vtkSMSession.h"
 #include "vtkSMSessionProxyManager.h"
-#include "vtkPVGenericRenderWindowInteractor.h"
-#include "vtkPVServerInformation.h"
 
 #include "vtkCommand.h"
 #include <vtkNew.h>
 #include <map>
 #include <string>
-#include <vtksys/ios/sstream>
+#include <sstream>
 
 //*****************************************************************************
 #include "ui_pqCollaborationPanel.h"
@@ -85,8 +85,13 @@ pqCollaborationPanel::pqCollaborationPanel(QWidget* p):Superclass(p)
 {
   this->Internal = new pqInternal();
   this->Internal->setupUi(this);
+#if QT_VERSION >= 0x050000
+  this->Internal->members->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+  this->Internal->members->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+#else
   this->Internal->members->horizontalHeader()->setResizeMode(0, QHeaderView::Stretch);
   this->Internal->members->horizontalHeader()->setResizeMode(1, QHeaderView::ResizeToContents);
+#endif
   this->Internal->CameraToFollowOfUserId = -1;
   this->Internal->NeedToConnectToCollaborationManager = true;
 
@@ -218,7 +223,7 @@ void pqCollaborationPanel::itemChanged(QTableWidgetItem* item)
         QString userName = item->text();
         if(userName != collab->GetUserLabel(id))
           {
-          collab->SetUserLabel(id, userName.toAscii().data());
+          collab->SetUserLabel(id, userName.toLatin1().data());
           }
         }
       }

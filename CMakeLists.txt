@@ -29,6 +29,19 @@
 #
 #==========================================================================
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
+
+# Link to Qt5's WinMain automatically (in executables).
+if (POLICY CMP0020)
+  cmake_policy(SET CMP0020 NEW)
+endif ()
+
+# Set a consistent MACOSX_RPATH default across all CMake versions.
+# When CMake 2.8.12 is required, change this default to 1.
+# When CMake 3.0.0 is required, remove this block (see CMP0042).
+if(NOT DEFINED CMAKE_MACOSX_RPATH)
+  set(CMAKE_MACOSX_RPATH 0)
+endif()
+
 project(ParaView)
 
 # Disallow in-source build
@@ -54,22 +67,12 @@ option(BUILD_SHARED_LIBS "Build VTK with shared libraries." ON)
 set(VTK_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 
 #------------------------------------------------------------------------------
-# Setup CMake Environment
-#------------------------------------------------------------------------------
-# Setup cmake policies.
-# TODO: We need to verify that these are still applicable after
-# VTK-modularization changes.
-foreach(policy CMP0012 CMP0013 CMP0014)
-  if(POLICY ${policy})
-    CMAKE_POLICY(SET ${policy} NEW)
-  endif()
-endforeach()
-
-foreach(policy CMP0017)
-  IF(POLICY ${policy})
-    CMAKE_POLICY(SET ${policy} OLD)
-  endif()
-endforeach()
+# Protect against a stampede of static links at the same time.
+if (NOT BUILD_SHARED_LIBS)
+  set(PV_EXE_JOB_LINK_POOL static_exe_link)
+  set_property(GLOBAL APPEND PROPERTY
+    JOB_POOLS static_exe_link=1)
+endif ()
 
 #-------------------------------------------------------------------------------
 set (ParaView_CMAKE_DIR "${ParaView_SOURCE_DIR}/CMake")
@@ -91,11 +94,11 @@ include(CMakeDependentOption)
 #------------------------------------------------------------------------------
 # Determine ParaView Source Version
 set (PARAVIEW_VERSION_MAJOR 4)
-set (PARAVIEW_VERSION_MINOR 1)
+set (PARAVIEW_VERSION_MINOR 4)
 set (PARAVIEW_VERSION_PATCH 0)
 set (PARAVIEW_VERSION_PATCH_EXTRA)
-set (PARAVIEW_VERSION "4.1")
-set (PARAVIEW_VERSION_FULL "4.1.0")
+set (PARAVIEW_VERSION "4.4")
+set (PARAVIEW_VERSION_FULL "4.4.0")
 
 determine_version(${ParaView_SOURCE_DIR} ${GIT_EXECUTABLE} "PARAVIEW")
 
@@ -122,7 +125,7 @@ if(NOT VTK_INSTALL_PYTHON_MODULE_DIR)
 endif()
 if(NOT VTK_BUILD_PYTHON_MODULE_DIR)
   set (VTK_BUILD_PYTHON_MODULE_DIR "${CMAKE_BINARY_DIR}/lib/site-packages" CACHE
-    INTERNAL "Directory where python modules will be installed")
+    INTERNAL "Directory where python modules will be built")
 endif()
 if(NOT VTK_INSTALL_ARCHIVE_DIR)
   set(VTK_INSTALL_ARCHIVE_DIR lib/paraview-${PARAVIEW_VERSION})
@@ -187,28 +190,39 @@ set (PV_INSTALL_EXPORT_NAME ${VTK_INSTALL_EXPORT_NAME})
 # Setting this ensures that "make install" will leave rpaths to external
 # libraries (not part of the build-tree e.g. Qt, ffmpeg, etc.) intact on
 # "make install". This ensures that one can install a version of ParaView on the
-# build machine without any issues. If this not desired, simply comment the
-# following line and "make install" will strip all rpaths, which is default
-# behavior.
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+# build machine without any issues. If this not desired, simply specify
+# CMAKE_INSTALL_RPATH_USE_LINK_PATH when configuring Paraview and
+# "make install" will strip all rpaths, which is default behavior.
+if(NOT CMAKE_INSTALL_RPATH_USE_LINK_PATH )
+  set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 # Define ParaView specific options.
 #------------------------------------------------------------------------------
-option(BUILD_TESTING "Build ParaView Testing" ON)
+set(default_testing ON)
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.ExternalData/README.rst")
+  # Source tarball without the data, so turn off testing.
+  set(default_testing OFF)
+endif ()
+option(BUILD_TESTING "Build ParaView Testing" ${default_testing})
 option(BUILD_EXAMPLES "Build ParaView examples" OFF)
 option(BUILD_SHARED_LIBS "Build ParaView using shared libraries" ON)
 option(PARAVIEW_BUILD_QT_GUI "Enable ParaView Qt-based client" ON)
+option(PARAVIEW_USE_DAX "Build ParaView with Dax many-core filters" OFF)
 option(PARAVIEW_USE_MPI "Enable MPI support for parallel computing" OFF)
 option(PARAVIEW_USE_PISTON "Build ParaView with Piston GPGPU filters" OFF)
 option(PARAVIEW_USE_VISITBRIDGE "Build ParaView with VisIt readers." OFF)
+
+# Xdmf3 is not ON by default since it depends on Boost.
+option(PARAVIEW_ENABLE_XDMF3 "Enable Xdmf3 support (requires Boost)." OFF)
 
 if (UNIX)
   option(PARAVIEW_ENABLE_FFMPEG "Enable FFMPEG Support." OFF)
 endif()
 
-if (UNIX AND NOT APPLE)
+if (UNIX)
   # Since development installs are currently being tested only on linuxes. We
   # can support these for other platforms if time permits.
   option(PARAVIEW_INSTALL_DEVELOPMENT_FILES
@@ -234,10 +248,24 @@ cmake_dependent_option(PARAVIEW_ENABLE_QT_SUPPORT
   "Build ParaView with Qt support (without GUI)" OFF
   "NOT PARAVIEW_BUILD_QT_GUI" ON)
 
+# Add an option to enable using Qt Webkit for widgets, as needed.
+# Default is OFF. We don't want to depend on WebKit unless absolutely needed.
+cmake_dependent_option(PARAVIEW_USE_QTWEBKIT
+  "Use Qt WebKit components as needed." OFF
+  "PARAVIEW_ENABLE_QT_SUPPORT" OFF)
+mark_as_advanced(PARAVIEW_USE_QTWEBKIT)
+
+# If PARAVIEW_BUILD_QT_GUI is OFF, provide an option to the user to turn other command line
+# executables ON/OFF.
+cmake_dependent_option(PARAVIEW_ENABLE_COMMANDLINE_TOOLS
+  "Build ParaView command-line tools" ON
+  "NOT PARAVIEW_BUILD_QT_GUI" ON)
+
 option(PARAVIEW_ENABLE_PYTHON "Enable/Disable Python scripting support" OFF)
 cmake_dependent_option(PARAVIEW_USE_UNIFIED_BINDINGS "If enabled, Python bindings will back the ClientServer wrapping implementation" OFF
   PARAVIEW_ENABLE_PYTHON OFF)
-option(PARAVIEW_ENABLE_MATPLOTLIB "Enable/Disable Python scripting support" ON)
+cmake_dependent_option(PARAVIEW_ENABLE_MATPLOTLIB "Enable/Disable Python scripting support" ON
+  "PARAVIEW_ENABLE_PYTHON" OFF)
 mark_as_advanced(PARAVIEW_ENABLE_MATPLOTLIB)
 
 # If building on Unix with MPI enabled, we will present another option to
@@ -248,6 +276,12 @@ if (UNIX)
     "Build ParaView with CosmoTools VTK Extensions" OFF
     "PARAVIEW_USE_MPI" OFF)
   mark_as_advanced(PARAVIEW_ENABLE_COSMOTOOLS)
+
+  cmake_dependent_option(PARAVIEW_ENABLE_CGNS
+  "Enable the CGNS file reader" OFF
+  "PARAVIEW_USE_MPI" OFF)
+  mark_as_advanced(PARAVIEW_ENABLE_CGNS)
+
 endif()
 
 # Is this a 32 bit or 64bit build. Display this in about dialog.
@@ -257,10 +291,17 @@ else()
   set(PARAVIEW_BUILD_ARCHITECTURE "32")
 endif()
 
-FIND_PATH(PARAVIEW_DATA_ROOT ParaViewData.readme
-  ${ParaView_SOURCE_DIR}/../ParaViewData
-  ${ParaView_BINARY_DIR}/../ParaViewData
-  $ENV{PARAVIEW_DATA_ROOT})
+# setup external data. this will automatically download the test
+# data and baseline files to the build tree and set PARAVIEW_DATA_ROOT.
+include(ParaViewExternalData)
+set(ExternalData_LINK_CONTENT MD5)
+set(ExternalData_BINARY_ROOT          "${CMAKE_BINARY_DIR}/ExternalData")
+set(PARAVIEW_TEST_DATA_DIR            "${CMAKE_CURRENT_SOURCE_DIR}/Testing/Data")
+set(PARAVIEW_TEST_BASELINE_DIR        "${PARAVIEW_TEST_DATA_DIR}/Baseline")
+set(PARAVIEW_TEST_OUTPUT_DATA_DIR     "${ExternalData_BINARY_ROOT}/Testing/Data")
+set(PARAVIEW_TEST_OUTPUT_BASELINE_DIR "${PARAVIEW_TEST_OUTPUT_DATA_DIR}/Baseline")
+set(PARAVIEW_TEST_OUTPUT_DIR          "${CMAKE_BINARY_DIR}/Testing/Temporary")
+set(PARAVIEW_DATA_ROOT "${PARAVIEW_TEST_OUTPUT_DATA_DIR}")
 
 if (APPLE)
   option(PARAVIEW_DO_UNIX_STYLE_INSTALLS
@@ -284,9 +325,16 @@ if (APPLE AND PARAVIEW_DO_UNIX_STYLE_INSTALLS)
   endif()
   unset(MACOSX_APP_INSTALL_PREFIX CACHE)
 
-  # Set CMAKE_INSTALL_NAME_DIR to point to the libraries directory relative to
-  # the executable.
-  set(CMAKE_INSTALL_NAME_DIR "@executable_path/../${VTK_INSTALL_LIBRARY_DIR}")
+  if (PARAVIEW_CUSTOM_INSTALL_NAME_DIR)
+    # Allow the user to set a custom install_name directory. This is useful for
+    # using ParaView as an SDK where the binaries are not necessarily in the
+    # same place as ParaView's binaries.
+    set(CMAKE_INSTALL_NAME_DIR "${PARAVIEW_CUSTOM_INSTALL_NAME_DIR}/${VTK_INSTALL_LIBRARY_DIR}")
+  else ()
+    # Set CMAKE_INSTALL_NAME_DIR to point to the libraries directory relative
+    # to the executable.
+    set(CMAKE_INSTALL_NAME_DIR "@executable_path/../${VTK_INSTALL_LIBRARY_DIR}")
+  endif ()
 
   # ensure that we don't build forwarding executables on apple.
   set(VTK_BUILD_FORWARDING_EXECUTABLES FALSE)
@@ -344,32 +392,43 @@ if (UNIX AND NOT APPLE)
   set(VTK_BUILD_FORWARDING_EXECUTABLES TRUE)
 endif()
 
-cmake_dependent_option(PARAVIEW_ENABLE_WEB "Enable/Disable web support" ON
+# ParaViewWeb on Windows needs win32api which is not provided by default
+# For now the default behavior would be to disable it on Windows build
+if (WIN32)
+  set(PARAVIEW_ENABLE_WEB OFF CACHE BOOL "" FORCE)
+else()
+  cmake_dependent_option(PARAVIEW_ENABLE_WEB "Enable/Disable web support" ON
     "PARAVIEW_ENABLE_PYTHON" OFF)
-
+endif()
 mark_as_advanced(PARAVIEW_ENABLE_WEB)
 
-set(Module_vtkParaViewWeb ${PARAVIEW_ENABLE_WEB} CACHE BOOL "" FORCE)
-mark_as_advanced(Module_vtkParaViewWeb)
+if (PARAVIEW_ENABLE_WEB)
+  # Request vtkParaViewWeb module
+  list(APPEND vtkParaViewWeb_REQUEST_BY "Option PARAVIEW_ENABLE_WEB")
+endif()
 
 option(PARAVIEW_BUILD_WEB_DOCUMENTATION "Enable/Disable web documentation" OFF)
 mark_as_advanced(PARAVIEW_BUILD_WEB_DOCUMENTATION)
 
-set(Module_vtkParaViewWebDocumentation ${PARAVIEW_BUILD_WEB_DOCUMENTATION}
-  CACHE BOOL "" FORCE)
-mark_as_advanced(Module_vtkParaViewWebDocumentation)
+if (PARAVIEW_BUILD_WEB_DOCUMENTATION)
+  # Request vtkParaViewWebDocumentation module.
+  list(APPEND vtkParaViewWebDocumentation_REQUEST_BY "Option PARAVIEW_BUILD_WEB_DOCUMENTATION")
+endif()
 
 option(PARAVIEW_ENABLE_CATALYST "Enable Catalyst CoProcessing modules" ON)
 cmake_dependent_option(PARAVIEW_BUILD_CATALYST_ADAPTORS
-  "Build Adaptors for various simulation codes" ON
+  "Build Adaptors for various simulation codes" OFF
   "PARAVIEW_ENABLE_CATALYST" OFF)
 mark_as_advanced(PARAVIEW_BUILD_CATALYST_ADAPTORS)
 
-set (Module_vtkPVCatalyst ${PARAVIEW_ENABLE_CATALYST} CACHE BOOL "" FORCE)
-mark_as_advanced(Module_vtkPVCatalyst)
-
 if (PARAVIEW_ENABLE_CATALYST)
-  set (Module_vtkPVCatalystTestDriver ${BUILD_TESTING} CACHE BOOL "" FORCE)
+  # Request vtkPVCatalyst module.
+  list(APPEND vtkPVCatalyst_REQUEST_BY "Option PARAVIEW_ENABLE_CATALYST")
+
+  if (BUILD_TESTING)
+    # Request vtkPVCatalystTestDriver module for testing.
+    list(APPEND vtkPVCatalystTestDriver_REQUEST_BY "Option PARAVIEW_ENABLE_CATALYST, BUILD_TESTING")
+  endif()
   # When Catalyst is enabled, Fortran is optionally needed. Hence we enable
   # Fortran at the top level itself. When individual module called
   # enable_language(...), it failed during first cmake configure but worked o
@@ -383,10 +442,7 @@ if (PARAVIEW_ENABLE_CATALYST)
       enable_language(Fortran OPTIONAL)
     endif()
   endif()
-else()
-  set (Module_vtkPVCatalystTestDriver OFF CACHE BOOL "" FORCE)
 endif()
-mark_as_advanced(Module_vtkPVCatalystTestDriver)
 
 # Add ability to freeze Python modules.
 cmake_dependent_option(PARAVIEW_FREEZE_PYTHON
@@ -410,31 +466,49 @@ if (PARAVIEW_ENABLE_QT_SUPPORT)
   # need to set up Qt stuff here because there are Qt dependencies before
   # ParaView requires this minimum version of Qt, and let's do it here before
   # our first call to FindQt4.cmake
-  set(QT_MIN_VERSION "4.7.0")
-  set(QT_OFFICIAL_VERSION "4.8")
-  set(QT_REQUIRED TRUE)
-  find_package(Qt4)
-  if (NOT QT4_FOUND)
-    message(SEND_ERROR "Qt ${QT_MIN_VERSION} or greater not found.  "
-      "Please check the QT_QMAKE_EXECUTABLE variable.")
-  else()
-    # check is Qtversion  is 4.8.*. If so, we are good. Otherwise we will post a
-    # warning of versions (>= 4.7 && < 4.8). However we report errors for any
-    # version less than 4.7
-    string(REGEX MATCH "^4\\.[8]\\.[0-9]+" qt_version_match "${QTVERSION}")
-    if (NOT qt_version_match)
-      string(REGEX MATCH "^4\\.[0-6]+\\.[0-9]+" qt_version46_x_tmp "${QTVERSION}")
-      if (qt_version46_x_tmp)
-        message(SEND_ERROR "Qt ${QTVERSION} not supported. "
-          "Please use ${QT_OFFICIAL_VERSION} (you may need to clean your dirtied cache)."
-          "Minium required version is ${QT_MIN_VERSION}.")
-      else (qt_version46_x_tmp)
-        message(WARNING "Warning: You are using Qt ${QTVERSION}. "
-          "Officially supported version is Qt ${QT_OFFICIAL_VERSION}")
-      endif (qt_version46_x_tmp)
-    endif (NOT qt_version_match)
-  endif (NOT QT4_FOUND)
-endif()
+  set (QT_REQUIRED TRUE)
+
+  include (ParaViewQtVersion)
+  if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    set (Qt5_FIND_COMPONENTS
+      Help
+      Network
+      Test
+      UiTools
+      Widgets
+      Xml)
+    if(PARAVIEW_USE_QTWEBKIT)
+      list(APPEND Qt5_FIND_COMPONENTS WebKitWidgets)
+    endif()
+    include (ParaViewQt5)
+    if (NOT QT5_FOUND)
+      message( SEND_ERROR "Qt ${QT_MIN_VERSION} or greater not found. "
+        "Please set the Qt5Core_DIR variable." )
+    endif ()
+  else ()
+    find_package (Qt4)
+    if (NOT QT4_FOUND)
+      message (SEND_ERROR "Qt ${QT_MIN_VERSION} or greater not found. "
+        "Please set the QT_QMAKE_EXECUTABLE variable.")
+    else ()
+      # check is Qtversion  is 4.8.*. If so, we are good. Otherwise we will post a
+      # warning of versions (>= 4.7 && < 4.8). However we report errors for any
+      # version less than 4.7
+      string(REGEX MATCH "^4\\.[8]\\.[0-9]+" qt_version_match "${QTVERSION}")
+      if (NOT qt_version_match)
+        string(REGEX MATCH "^4\\.[0-6]+\\.[0-9]+" qt_version46_x_tmp "${QTVERSION}")
+        if (qt_version46_x_tmp)
+          message(SEND_ERROR "Qt ${QTVERSION} not supported. "
+            "Please use ${QT_OFFICIAL_VERSION} (you may need to clean your dirtied cache)."
+            "Minium required version is ${QT_MIN_VERSION}.")
+        else ()
+          message(WARNING "Warning: You are using Qt ${QTVERSION}. "
+            "Officially supported version is Qt ${QT_OFFICIAL_VERSION}")
+        endif ()
+      endif ()
+    endif ()
+  endif ()
+endif ()
 SET(PARAVIEW_QT_QMAKE_EXECUTABLE ${QT_QMAKE_EXECUTABLE})
 
 # Setup testing.
@@ -448,8 +522,17 @@ endif()
 # Setup default state for ParaView module groups.
 set (VTK_Group_ParaViewCore ON CACHE BOOL "")
 set (VTK_Group_ParaViewRendering ON CACHE BOOL "")
-set (VTK_Group_ParaViewQt ${PARAVIEW_BUILD_QT_GUI} CACHE BOOL "" FORCE)
-set (VTK_Group_ParaViewPython ${PARAVIEW_ENABLE_PYTHON} CACHE BOOL "" FORCE)
+
+if (PARAVIEW_ENABLE_COMMANDLINE_TOOLS)
+  # Request the vtkPVServerManagerApplication module.
+  list (APPEND vtkPVServerManagerApplication_REQUEST_BY
+    "Option PARAVIEW_ENABLE_COMMANDLINE_TOOLS")
+endif()
+
+if (PARAVIEW_BUILD_QT_GUI)
+  # Request the pqApplicationComponents module.
+  list (APPEND pqApplicationComponents_REQUEST_BY "Option PARAVIEW_BUILD_QT_GUI")
+endif()
 
 #------------------------------------------------------------------------------
 # Test to check install tree
@@ -463,7 +546,9 @@ if (BUILD_TESTING AND PARAVIEW_INSTALL_DEVELOPMENT_FILES)
     -DPARAVIEW_TEST_DIR:PATH=${PARAVIEW_TEST_DIR}
     -DPARAVIEW_VERSION:STRING=${PARAVIEW_VERSION}
     -P ${CMAKE_CURRENT_SOURCE_DIR}/CMake/ParaViewTestInstall.cmake)
-  set_tests_properties(pv.TestDevelopmentInstall PROPERTIES LABELS "PARAVIEW")
+  set_tests_properties(pv.TestDevelopmentInstall PROPERTIES
+    LABELS "PARAVIEW"
+    ENVIRONMENT "DESTDIR=${CMAKE_BINARY_DIR}/test-install")
 endif()
 #------------------------------------------------------------------------------
 
@@ -528,6 +613,9 @@ else()
   # needed.
   set(VTK_Group_StandAlone OFF CACHE BOOL "" FORCE)
   set(VTK_Group_Rendering OFF CACHE BOOL "" FORCE)
+
+  # set the default backend for PV to be OpenGL
+  set(VTK_RENDERING_BACKEND_DEFAULT "OpenGL")
 
 endif()
 
@@ -627,6 +715,7 @@ if (PARAVIEW_ENABLE_PYTHON)
 endif()
 
 if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_ENABLE_CATALYST)
+  find_package(PythonLibs REQUIRED)
   vtk_add_module(${CMAKE_CURRENT_SOURCE_DIR}/CoProcessing/PythonCatalyst
                 module.cmake
                 ${CMAKE_CURRENT_BINARY_DIR}/CoProcessing/PythonCatalyst
@@ -653,13 +742,27 @@ if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_ENABLE_CATALYST)
   endif()
 
   set_property(TARGET vtkPVPythonCatalystPythonD PROPERTY INCLUDE_DIRECTORIES
-    ${VTK_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIR}
+    ${VTK_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}
     ${vtkPVPythonCatalyst_INCLUDE_DIRS}
     ${ParaView_BINARY_DIR}/CoProcessing/Catalyst)
   set_property(TARGET vtkPVPythonCatalystPython PROPERTY INCLUDE_DIRECTORIES
-    ${VTK_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIR}
+    ${VTK_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}
     ${vtkPVPythonCatalyst_INCLUDE_DIRS}
     ${ParaView_BINARY_DIR}/CoProcessing/Catalyst)
+
+  # All the ${vtk-module}Python files are installed by VTK/Wrapping/Python/CMakeLists.txt
+  # outside the module subsystem. Hence, we need to install the vtkPVPythonCatalystPython
+  # library explicitly here (BUG #15085).
+  # This code mirrors the code in VTK/Wrapping/Python/CMakeLists.txt
+  if (NOT VTK_INSTALL_NO_RUNTIME AND BUILD_SHARED_LIBS AND NOT VTK_INSTALL_NO_LIBRARIES)
+    install(TARGETS ${vtk-module}Python
+      EXPORT ${VTK_INSTALL_EXPORT_NAME}
+      RUNTIME DESTINATION ${VTK_INSTALL_RUNTIME_DIR} COMPONENT RuntimeLibraries
+      LIBRARY DESTINATION ${VTK_INSTALL_PYTHON_MODULE_DIR}/vtk COMPONENT RuntimeLibraries
+      ARCHIVE DESTINATION ${VTK_INSTALL_ARCHIVE_DIR} COMPONENT Development
+      )
+  endif()
+  unset(vtk-module)
 endif()
 
 #------------------------------------------------------------------------------
@@ -672,7 +775,9 @@ pv_process_plugins(
   ${CMAKE_CURRENT_SOURCE_DIR}/Plugins
   ${CMAKE_CURRENT_BINARY_DIR}/Plugins)
 
-add_subdirectory(CommandLineExecutables)
+if (PARAVIEW_ENABLE_COMMANDLINE_TOOLS)
+  add_subdirectory(CommandLineExecutables)
+endif()
 add_subdirectory(Applications)
 
 #------------------------------------------------------------------------------
@@ -683,8 +788,8 @@ foreach(rule_file ${PARAVIEW_EXTRA_INSTALL_RULES_FILE})
     message (STATUS "***** Incorporating custom cmake file : ${rule_file} ****")
     include("${rule_file}")
     message (STATUS "*********************************************************")
-  endif (EXISTS "${rule_file}")
-endforeach(rule_file ${PARAVIEW_EXTRA_INSTALL_RULES_FILE})
+  endif ()
+endforeach()
 
 #------------------------------------------------------------------------------
 # Lastly generate the ParaViewConfig.cmake so that other projects can depend on
@@ -715,6 +820,17 @@ if (NOT VTK_INSTALL_NO_DEVELOPMENT)
     DESTINATION ${VTK_INSTALL_PACKAGE_DIR}
     COMPONENT Development
   )
+
+  #we depend on a couple VTK CMake files that aren't installed but we need
+  #installed
+  install(
+    FILES ${CMAKE_CURRENT_SOURCE_DIR}/VTK/CMake/TopologicalSort.cmake
+          ${CMAKE_CURRENT_SOURCE_DIR}/VTK/CMake/vtkMakeInstantiator.h.in
+          ${CMAKE_CURRENT_SOURCE_DIR}/VTK/CMake/vtkMakeInstantiator.cxx.in
+    DESTINATION ${VTK_INSTALL_PACKAGE_DIR}
+    COMPONENT Development
+  )
+
 endif()
 
 #-----------------------------------------------------------------------------
@@ -770,7 +886,47 @@ endif()
 
 #-----------------------------------------------------------------------------
 # Configure the CTestCustom.cmake file for exclusions.
-if (BUILD_TESTING)
-  configure_file("${ParaView_CMAKE_DIR}/CTestCustom.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake" @ONLY)
+configure_file("${ParaView_CMAKE_DIR}/CTestCustom.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake" @ONLY)
+
+#-----------------------------------------------------------------------------
+# Create target to download data from the ParaViewData group.  This must come
+# after all tests have been added that reference the group, so we put it last.
+ExternalData_Add_Target(ParaViewData)
+if(PARAVIEW_DATA_EXCLUDE_FROM_ALL)
+  set_property(TARGET ParaViewData PROPERTY EXCLUDE_FROM_ALL 1)
+  if(BUILD_TESTING)
+    message(WARNING "PARAVIEW_DATA_EXCLUDE_FROM_ALL is ON so test data "
+      "(needed because BUILD_TESTING is ON) may not be available "
+      "without manually building the 'ParaViewData' target.")
+  endif()
+  if(TARGET VTKData)
+    add_dependencies(ParaViewData VTKData)
+  endif()
 endif()
+
+set(is_git FALSE)
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+  set(is_git TRUE)
+endif ()
+
+if (NOT WIN32 AND is_git)
+  set(source_all)
+  if (PARAVIEW_SOURCE_TARBALL_TARGETS)
+    set(source_all ALL)
+  endif ()
+
+  add_custom_target(paraview-source ${source_all})
+  foreach (format tgz txz zip)
+    add_custom_target("paraview-source-${format}" ${source_all}
+      COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/Maintenance/create_tarballs.bash"
+              "--${format}"
+      WORKING_DIRECTORY
+              "${CMAKE_CURRENT_BINARY_DIR}"
+      COMMENT "Creating source tarball in ${format} format")
+    add_dependencies("paraview-source-${format}"
+      ParaViewData)
+    add_dependencies(paraview-source
+      "paraview-source-${format}")
+  endforeach ()
+endif ()

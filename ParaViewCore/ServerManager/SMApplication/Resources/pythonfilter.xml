@@ -70,6 +70,17 @@
     <SourceProxy class="vtkAnnotateGlobalDataFilter"
                  label="Annotate Global Data"
                  name="AnnotateGlobalData">
+      <Documentation short_help="Filter for annotating with global data (designed for ExodusII reader)">
+Annotate Global Data provides a simpler API for creating text
+annotations using vtkPythonAnnotationFilter. Instead of users
+specifying the annotation expression, this filter determines the
+expression based on the array selected by limiting the scope of the
+functionality. This filter only allows the user to annotate using
+"global-data" aka field data and specify the string prefix to use.  If
+the field array chosen has as many elements as number of timesteps,
+the array is assumed to be "temporal" and indexed using the current
+timestep.
+      </Documentation>
       <InputProperty clean_command="RemoveAllInputs"
                      command="AddInputConnection"
                      multiple_input="1"
@@ -105,6 +116,13 @@
         <Documentation>Text that is used as a prefix to the field
         value</Documentation>
       </StringVectorProperty>
+      <StringVectorProperty command="SetPostfix"
+                            default_values=""
+                            name="Suffix"
+                            number_of_elements="1">
+        <Documentation>Text that is used as a suffix to the field
+        value</Documentation>
+      </StringVectorProperty>
       <Hints>
         <Visibility replace_input="0" />
         <OutputPort index="0"
@@ -112,6 +130,94 @@
                     type="text" />
       </Hints>
       <!-- End AnnotateGlobalData -->
+    </SourceProxy>
+    <SourceProxy class="vtkAnnotateAttributeDataFilter"
+                 label="Annotate Attribute Data"
+                 name="AnnotateAttributeData">
+      <Documentation short_help="Adds a text annotation to a Rander View">
+This filter can be used to add a text annotation to a Render View (or
+similar) using a tuple from any attribute array (point/cell/field/row
+etc.) from a specific rank (when running in parallel). Use **ArrayName**
+property to select the array association and array name. Use
+**ElementId* property to set the element number to extract the value to
+label with. When running on multiple ranks, use **ProcessId** property
+to select the rank of interest.  The **Prefix** property can be used to
+specify a string that will be used as the prefix to the generated
+annotation text.
+      </Documentation>
+      <InputProperty clean_command="RemoveAllInputs"
+                     command="AddInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups" >
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type" composite_data_supported="0">
+          <DataType value="vtkDataSet" />
+          <DataType value="vtkTable" />
+        </DataTypeDomain>
+        <InputArrayDomain attribute_type="any"
+                          name="input_array"
+                          number_of_components="1" />
+           <Documentation>
+             Set the input of the filter. To avoid the complications/confusion when identifying
+             elements in a composite dataset, this filter doesn't support composite datasets
+             currently.
+           </Documentation>
+      </InputProperty>
+      <IntVectorProperty command="SetArrayAssociation"
+                         default_values="2"
+                         name="ArrayAssociation"
+                         number_of_elements="1">
+        <Documentation>Select the attribute to use to popular array names from.</Documentation>
+        <EnumerationDomain name="enum">
+          <Entry text="Point Data" value="0" />
+          <Entry text="Cell Data" value="1" />
+          <Entry text="Field Data" value="2" />
+          <Entry text="Row Data" value="6" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+      <StringVectorProperty command="SetArrayName"
+                            name="ArrayName"
+                            number_of_elements="1">
+        <ArrayListDomain name="array_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>Choose arrays that is going to be displayed</Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty name="ElementId"
+                         command="SetElementId"
+                         number_of_elements="1"
+                         default_values="0">
+        <!-- this should really be an IdTypeVectorProperty, but the UI doesn't
+             support those yet -->
+        <IntRangeDomain name="range"/>
+        <Documentation>
+          Set the element index to annotate with.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty name="ProcessId"
+                         command="SetProcessId"
+                         number_of_elements="1"
+                         default_values="0">
+        <IntRangeDomain name="range" min="0" />
+        <Documentation>
+            Set the process rank to extract element from.
+        </Documentation>
+      </IntVectorProperty>
+      <StringVectorProperty command="SetPrefix"
+                            default_values="Value is: "
+                            name="Prefix"
+                            number_of_elements="1">
+        <Documentation>Text that is used as a prefix to the field value</Documentation>
+      </StringVectorProperty>
+      <Hints>
+        <Visibility replace_input="0" />
+        <OutputPort index="0" name="Output-0" type="text" />
+      </Hints>
     </SourceProxy>
     <SourceProxy class="vtkPythonAnnotationFilter"
                  label="Python Annotation"
@@ -139,11 +245,23 @@
           <Group name="filters" />
         </ProxyGroupDomain>
         <DataTypeDomain name="input_type">
-          <DataType value="vtkDataSet" />
+          <DataType value="vtkDataObject" />
         </DataTypeDomain>
         <Documentation>Set the input of the filter.</Documentation>
       </InputProperty>
-      <StringVectorProperty command="SetPythonExpression"
+      <IntVectorProperty command="SetArrayAssociation"
+                         default_values="2"
+                         name="ArrayAssociation"
+                         number_of_elements="1">
+        <Documentation>Select the attribute to use to popular array names from.</Documentation>
+        <EnumerationDomain name="enum">
+          <Entry text="Point Data" value="0" />
+          <Entry text="Cell Data" value="1" />
+          <Entry text="Field Data" value="2" />
+          <Entry text="Row Data" value="6" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+      <StringVectorProperty command="SetExpression"
                             name="Expression"
                             number_of_elements="1">
         <Documentation>The Python expression evaluated during execution.
@@ -152,7 +270,7 @@
         FieldData, PointData, CellData] (i.e.: "Momentum: (%f, %f, %f)" %
         (XMOM[t_index,0], YMOM[t_index,0], ZMOM[t_index,0]) )</Documentation>
       </StringVectorProperty>
-      <StringVectorProperty command="GetAnnotationValue"
+      <StringVectorProperty command="GetComputedAnnotationValue"
                             information_only="1"
                             name="AnnotationValue">
         <Documentation>Text that is used as annotation</Documentation>
@@ -236,7 +354,7 @@
                             number_of_elements="1"
                             panel_visibility="default">
         <Hints>
-          <Widget type="multi_line" />
+          <Widget type="multi_line" syntax="python" />
         </Hints>
         <Documentation>This property contains the text of a python program that
         the programmable filter runs.</Documentation>
@@ -247,7 +365,7 @@
                             number_of_elements="1"
                             panel_visibility="advanced">
         <Hints>
-          <Widget type="multi_line" />
+          <Widget type="multi_line" syntax="python" />
         </Hints>
         <Documentation>This property is a python script that is executed during
         the RequestInformation pipeline pass. Use this to provide information
@@ -259,7 +377,7 @@
                             number_of_elements="1"
                             panel_visibility="advanced">
         <Hints>
-          <Widget type="multi_line" />
+          <Widget type="multi_line" syntax="python" />
         </Hints>
         <Documentation>This property is a python script that is executed during
         the RequestUpdateExtent pipeline pass. Use this to modify the update
@@ -288,6 +406,13 @@
         <Documentation>A semi-colon (;) separated list of directories to add to
         the python library search path.</Documentation>
       </StringVectorProperty>
+      <DoubleVectorProperty information_only="1"
+                            name="TimestepValues"
+                            repeatable="1">
+        <TimeStepsInformationHelper />
+        <Documentation>Available timestep values.</Documentation>
+      </DoubleVectorProperty>
+
       <!-- End ProgrammableFilter -->
     </SourceProxy>
   </ProxyGroup>
@@ -350,7 +475,7 @@
                             number_of_elements="1"
                             panel_visibility="default">
         <Hints>
-          <Widget type="multi_line" />
+          <Widget type="multi_line" syntax="python" />
         </Hints>
         <Documentation>This property contains the text of a python program that
         the programmable source runs.</Documentation>
@@ -361,7 +486,7 @@
                             number_of_elements="1"
                             panel_visibility="advanced">
         <Hints>
-          <Widget type="multi_line" />
+          <Widget type="multi_line" syntax="python" />
         </Hints>
         <Documentation>This property is a python script that is executed during
         the RequestInformation pipeline pass. Use this to provide information
@@ -381,6 +506,12 @@
         <Documentation>A semi-colon (;) separated list of directories to add to
         the python library search path.</Documentation>
       </StringVectorProperty>
+      <DoubleVectorProperty information_only="1"
+                            name="TimestepValues"
+                            repeatable="1">
+        <TimeStepsInformationHelper />
+        <Documentation>Available timestep values.</Documentation>
+      </DoubleVectorProperty>
       <!-- End ProgrammableSource -->
     </SourceProxy>
   </ProxyGroup>

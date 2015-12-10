@@ -79,6 +79,7 @@ public:
   // to minimize communications since data is available on all process. Off by
   // default.
   void SetDataReplicatedOnAllProcesses(bool);
+  vtkGetMacro(DataReplicatedOnAllProcesses, bool);
   vtkBooleanMacro(DataReplicatedOnAllProcesses, bool);
 
   // Description:
@@ -113,6 +114,19 @@ public:
   void SetRenderEmptyImages(bool);
 
 //BTX
+  // Description:
+  // Not for the faint hearted. This internal vtkSynchronizedRenderers instances
+  // are exposed for advanced users that want to do advanced tricks with
+  // rendering. These will change without notice. Do not use them unless you
+  // know what you are doing.
+  // ParallelSynchronizer is the vtkSynchronizedRenderers used to synchronize
+  // rendering between processes in an MPI group -- typically
+  // vtkIceTSynchronizedRenderers when available.
+  // CSSynchronizer is the client-server vtkSynchronizedRenderers used in
+  // client-server configurations.
+  vtkGetObjectMacro(ParallelSynchronizer, vtkSynchronizedRenderers);
+  vtkGetObjectMacro(CSSynchronizer, vtkSynchronizedRenderers);
+
 protected:
   vtkPVSynchronizedRenderer();
   ~vtkPVSynchronizedRenderer();
@@ -145,6 +159,7 @@ protected:
 
   bool UseDepthBuffer;
   bool RenderEmptyImages;
+  bool DataReplicatedOnAllProcesses;
 private:
   vtkPVSynchronizedRenderer(const vtkPVSynchronizedRenderer&); // Not implemented
   void operator=(const vtkPVSynchronizedRenderer&); // Not implemented

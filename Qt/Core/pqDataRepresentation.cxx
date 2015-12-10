@@ -31,16 +31,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =========================================================================*/
 #include "pqDataRepresentation.h"
 
+#include "vtkDataObject.h"
 #include "vtkEventQtSlotConnect.h"
+#include "vtkNew.h"
 #include "vtkPVArrayInformation.h"
+#include "vtkPVGeneralSettings.h"
 #include "vtkPVProminentValuesInformation.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVDataSetAttributesInformation.h"
 #include "vtkSMInputProperty.h"
+#include "vtkSMPropertyHelper.h"
 #include "vtkSMRepresentationProxy.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMStringVectorProperty.h"
-#include "vtkDataObject.h"
+#include "vtkSMTransferFunctionManager.h"
 
 #include <QtDebug>
 #include <QPointer>
@@ -50,6 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqOutputPort.h"
 #include "pqPipelineFilter.h"
 #include "pqScalarsToColors.h"
+#include "pqServer.h"
 #include "pqServerManagerModel.h"
 #include "pqSMAdaptor.h"
 
@@ -57,19 +62,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class pqDataRepresentationInternal
 {
 public:
-  vtkEventQtSlotConnect* VTKConnect;
   QPointer<pqOutputPort> InputPort;
-
-  pqDataRepresentationInternal()
-    {
-    this->VTKConnect = vtkEventQtSlotConnect::New();;
-    }
-  ~pqDataRepresentationInternal()
-    {
-    this->VTKConnect->Delete();
-    }
+  bool VisibilityChangedSinceLastUpdate;
 };
-
 
 //-----------------------------------------------------------------------------
 pqDataRepresentation::pqDataRepresentation(const QString& group,
@@ -78,10 +73,25 @@ pqDataRepresentation::pqDataRepresentation(const QString& group,
 : pqRepresentation(group, name, repr, server, _p)
 {
   this->Internal = new pqDataRepresentationInternal;
-  this->Internal->VTKConnect->Connect(repr->GetProperty("Input"),
+  this->Internal->VisibilityChangedSinceLastUpdate = false;
+  vtkEventQtSlotConnect* vtkconnector = this->getConnector();
+
+  vtkconnector->Connect(repr->GetProperty("Input"),
     vtkCommand::ModifiedEvent, this, SLOT(onInputChanged()));
-  this->Internal->VTKConnect->Connect(repr, vtkCommand::UpdateDataEvent,
+  vtkconnector->Connect(repr, vtkCommand::UpdateDataEvent,
     this, SIGNAL(dataUpdated()));
+
+  // fire signals when LUT changes.
+  if (vtkSMProperty* prop = repr->GetProperty("LookupTable"))
+    {
+    vtkconnector->Connect(prop, vtkCommand::ModifiedEvent,
+      this, SIGNAL(colorTransferFunctionModified()));
+    }
+  if (vtkSMProperty* prop = repr->GetProperty("ColorArrayName"))
+    {
+    vtkconnector->Connect(prop, vtkCommand::ModifiedEvent,
+      this, SIGNAL(colorArrayNameModified()));
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -159,21 +169,6 @@ void pqDataRepresentation::onInputChanged()
       this->Internal->InputPort->addRepresentation(this);
       }
     }
-}
-
-//-----------------------------------------------------------------------------
-void pqDataRepresentation::setDefaultPropertyValues()
-{
-  if (!this->isVisible())
-    {
-    // For any non-visible representation, we don't set its defaults.
-    return;
-    }
-
-  // this used to call proxy->UpdatePipeline(), however that's totally
-  // unnecessary. It gets called already e.g. by pqDisplayPolicy or by
-  // vtkSMRenderViewProxy::CreateDefaultRepresentation etc.
-  this->Superclass::setDefaultPropertyValues();
 }
 
 //-----------------------------------------------------------------------------
@@ -272,147 +267,41 @@ pqDataRepresentation* pqDataRepresentation::getRepresentationForUpstreamSource()
 }
 
 //-----------------------------------------------------------------------------
-QString pqDataRepresentation::getProxyColorArrayName()
+void pqDataRepresentation::onVisibilityChanged()
 {
-  QVariant colorArrayName = pqSMAdaptor::getElementProperty(
-    this->getProxy()->GetProperty( "ColorArrayName" ) );
+  this->Superclass::onVisibilityChanged();
 
-  return colorArrayName.toString();
+  this->Internal->VisibilityChangedSinceLastUpdate = true;
 }
 
 //-----------------------------------------------------------------------------
-int pqDataRepresentation::getProxyScalarMode()
+void pqDataRepresentation::updateLookupTable()
 {
-  vtkSMRepresentationProxy* repr = vtkSMRepresentationProxy::SafeDownCast( this->getProxy() );
-  if (!repr)
+  // Only update the LookupTable when the setting tells us to
+  vtkSMProxy* representationProxy = this->getProxy();
+  vtkSMProxy* lut = vtkSMPropertyHelper(representationProxy, "LookupTable").GetAsProxy();
+  if (!lut)
     {
-    return 0;
+    return;
     }
 
-  // we check on if there is a color array name first since
-  // color attribute type may still be POINT_DATA or CELL_DATA even though
-  // the object isn't colored by field data
-  QVariant colorArrayName = pqSMAdaptor::getElementProperty(
-    repr->GetProperty("ColorArrayName"));
-
-  if(colorArrayName.isValid() == false || colorArrayName.isNull() == true ||
-     colorArrayName == "")
+  int rescaleOnVisibilityChange = vtkSMPropertyHelper(lut, "RescaleOnVisibilityChange", 1).GetAsInt(0);
+  if (rescaleOnVisibilityChange && this->Internal->VisibilityChangedSinceLastUpdate)
     {
-    return vtkDataObject::FIELD_ASSOCIATION_NONE;
+    this->resetAllTransferFunctionRangesUsingCurrentData();
     }
-
-  QVariant scalarMode = pqSMAdaptor::getEnumerationProperty(
-    repr->GetProperty("ColorAttributeType"));
-
-  if(scalarMode == "CELL_DATA")
-    {
-    return vtkDataObject::FIELD_ASSOCIATION_CELLS;
-    }
-  else if(scalarMode == "POINT_DATA")
-    {
-    return vtkDataObject::FIELD_ASSOCIATION_POINTS;
-    }
-
-  return vtkDataObject::FIELD_ASSOCIATION_NONE;
-}
-
-
-//-----------------------------------------------------------------------------
-vtkPVArrayInformation* pqDataRepresentation::getProxyColorArrayInfo()
-{
-  const char* colorArray = 0;
-  vtkSMStringVectorProperty* caProp =
-    vtkSMStringVectorProperty::SafeDownCast(
-      this->getProxy()->GetProperty( "ColorArrayName" ));
-  if ( caProp )
-    {
-    colorArray = caProp->GetElement( 0 );
-    }
-  int fieldType = this->getProxyScalarMode();
-  vtkPVArrayInformation* retval = colorArray ?
-    this->getArrayInformation( colorArray, fieldType ) : 0;
-  return retval;
+  this->Internal->VisibilityChangedSinceLastUpdate = false;
 }
 
 //-----------------------------------------------------------------------------
-vtkPVArrayInformation* pqDataRepresentation::getArrayInformation(
-  const char* arrayname, const int &fieldType )
+void pqDataRepresentation::resetAllTransferFunctionRangesUsingCurrentData()
 {
-
-  vtkPVDataInformation* dataInfo = this->getRepresentedDataInformation(true);
-  vtkPVArrayInformation* info = NULL;
-  if(fieldType == vtkDataObject::FIELD_ASSOCIATION_CELLS)
+  vtkSMProxy* representationProxy = this->getProxy();
+  vtkSMProxy* lut = vtkSMPropertyHelper(representationProxy, "LookupTable").GetAsProxy();
+  if (lut)
     {
-    vtkPVDataSetAttributesInformation* cellinfo =
-      dataInfo->GetCellDataInformation();
-    info = cellinfo->GetArrayInformation(arrayname);
+    vtkNew<vtkSMTransferFunctionManager> tfmgr;
+    tfmgr->ResetAllTransferFunctionRangesUsingCurrentData(
+      this->getServer()->proxyManager(), false);
     }
-  else if ( fieldType == vtkDataObject::FIELD_ASSOCIATION_POINTS)
-    {
-    vtkPVDataSetAttributesInformation* pointinfo =
-      dataInfo->GetPointDataInformation();
-    info = pointinfo->GetArrayInformation(arrayname);
-    }
-  return info;
-}
-
-//-----------------------------------------------------------------------------
-vtkPVProminentValuesInformation*
-pqDataRepresentation::getProxyColorProminentValuesInfo(
-  double uncertainty, double fraction)
-{
-  const char* colorArray = 0;
-  vtkSMStringVectorProperty* caProp =
-    vtkSMStringVectorProperty::SafeDownCast(
-      this->getProxy()->GetProperty( "ColorArrayName" ));
-  if ( caProp )
-    {
-    colorArray = caProp->GetElement( 0 );
-    }
-  int fieldType = this->getProxyScalarMode();
-  vtkPVProminentValuesInformation* retval = colorArray ?
-    this->getProminentValuesInformation(
-      colorArray, fieldType, uncertainty, fraction ) :
-    0;
-  return retval;
-}
-
-//-----------------------------------------------------------------------------
-vtkPVProminentValuesInformation*
-pqDataRepresentation::getProminentValuesInformation(
-  const char* arrayName, const int &fieldType,
-  double uncertainty, double minFraction )
-{
-  vtkPVArrayInformation* ainfo =
-    this->getArrayInformation(arrayName, fieldType);
-  if (!ainfo)
-    {
-    return 0;
-    }
-  vtkSMRepresentationProxy* repr = vtkSMRepresentationProxy::SafeDownCast(
-    this->getProxy());
-  // repr == 0 can't happen since (ainfo != 0) => (repr != 0)
-  vtkPVProminentValuesInformation* pvinfo =
-    repr->GetProminentValuesInformation(
-      arrayName, fieldType, ainfo->GetNumberOfComponents(),
-      uncertainty, minFraction );
-  return pvinfo;
-}
-
-//-----------------------------------------------------------------------------
-int pqDataRepresentation::getNumberOfComponents(const char* arrayname, int fieldType)
-{
-  vtkPVArrayInformation *info = this->getArrayInformation( arrayname, fieldType );
-  return ( info ) ? info->GetNumberOfComponents() : 0;
-}
-
-//-----------------------------------------------------------------------------
-QString pqDataRepresentation::getComponentName( const char* arrayname, int fieldType, int component)
-{
-  vtkPVArrayInformation *info = this->getArrayInformation( arrayname, fieldType );
-  if ( info )
-     {
-     return QString(info->GetComponentName( component ));
-     }
-  return QString();
 }

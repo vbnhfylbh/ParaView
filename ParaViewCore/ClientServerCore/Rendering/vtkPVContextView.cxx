@@ -14,7 +14,10 @@
 =========================================================================*/
 #include "vtkPVContextView.h"
 
+#include "vtkAnnotationLink.h"
 #include "vtkCamera.h"
+#include "vtkChart.h"
+#include "vtkChartRepresentation.h"
 #include "vtkCommand.h"
 #include "vtkContextInteractorStyle.h"
 #include "vtkContextView.h"
@@ -29,13 +32,15 @@
 #include "vtkRenderer.h"
 #include "vtkRenderWindow.h"
 #include "vtkRenderWindowInteractor.h"
-#include "vtkSmartPointer.h"
+#include "vtkScatterPlotMatrix.h"
+#include "vtkSelection.h"
 #include "vtkTileDisplayHelper.h"
 #include "vtkTilesHelper.h"
 #include "vtkTimerLog.h"
 
 //----------------------------------------------------------------------------
 vtkPVContextView::vtkPVContextView()
+  : InteractorStyle()
 {
   vtkPVOptions* options = vtkProcessModule::GetProcessModule()?
     vtkProcessModule::GetProcessModule()->GetOptions() : NULL;
@@ -47,25 +52,14 @@ vtkPVContextView::vtkPVContextView()
   this->RenderWindow = this->SynchronizedWindows->NewRenderWindow();
   this->RenderWindow->SetOffScreenRendering(this->UseOffscreenRendering? 1 : 0);
   this->ContextView = vtkContextView::New();
+
+  // Let the application setup the interactor.
   this->ContextView->SetRenderWindow(this->RenderWindow);
-
-  // Disable interactor on server processes (or batch processes), since
-  // otherwise the vtkContextInteractorStyle triggers renders on changes to the
-  // vtkContextView which is bad and can cause deadlock (BUG #122651).
-  if (this->SynchronizedWindows->GetMode() !=
-    vtkPVSynchronizedRenderWindows::BUILTIN &&
-    this->SynchronizedWindows->GetMode() !=
-    vtkPVSynchronizedRenderWindows::CLIENT)
+  if (this->ContextView->GetInteractor())
     {
-    vtkContextInteractorStyle* style = vtkContextInteractorStyle::SafeDownCast(
-      this->ContextView->GetInteractor()->GetInteractorStyle());
-    if (style)
-      {
-      style->SetScene(NULL);
-      }
-    this->ContextView->SetInteractor(NULL);
+    this->ContextView->GetInteractor()->SetInteractorStyle(NULL);
     }
-
+  this->ContextView->SetInteractor(NULL);
   this->ContextView->GetRenderer()->AddObserver(
     vtkCommand::StartEvent, this, &vtkPVContextView::OnStartRender);
   this->ContextView->GetRenderer()->AddObserver(
@@ -92,6 +86,31 @@ void vtkPVContextView::Initialize(unsigned int id)
   this->SynchronizedWindows->AddRenderWindow(id, this->RenderWindow);
   this->SynchronizedWindows->AddRenderer(id, this->ContextView->GetRenderer());
   this->Superclass::Initialize(id);
+}
+
+//----------------------------------------------------------------------------
+void vtkPVContextView::SetupInteractor(vtkRenderWindowInteractor* iren)
+{
+  // Disable interactor on server processes (or batch processes), since
+  // otherwise the vtkContextInteractorStyle triggers renders on changes to the
+  // vtkContextView which is bad and can cause deadlock (BUG #122651).
+  if (this->GetLocalProcessSupportsInteraction() == false)
+    {
+    // We don't setup interactor on non-driver processes.
+    return;
+    }
+  this->ContextView->SetInteractor(iren);
+  this->InteractorStyle->SetScene(this->ContextView->GetScene());
+  if (iren)
+    {
+    iren->SetInteractorStyle(this->InteractorStyle.GetPointer());
+    }
+}
+
+//----------------------------------------------------------------------------
+vtkRenderWindowInteractor* vtkPVContextView::GetInteractor()
+{
+  return this->ContextView->GetInteractor();
 }
 
 //----------------------------------------------------------------------------
@@ -141,11 +160,11 @@ void vtkPVContextView::Update()
 
     if (s_controller)
       {
-      s_controller->Send(stream, 1, 9998878);
+      s_controller->Send(stream, 1, 998878);
       }
     if (d_controller)
       {
-      d_controller->Send(stream, 1, 9998878);
+      d_controller->Send(stream, 1, 998878);
       }
     if (p_controller)
       {
@@ -156,11 +175,11 @@ void vtkPVContextView::Update()
     {
     if (s_controller)
       {
-      s_controller->Receive(stream, 1, 9998878);
+      s_controller->Receive(stream, 1, 998878);
       }
     if (d_controller)
       {
-      d_controller->Receive(stream, 1, 9998878);
+      d_controller->Receive(stream, 1, 998878);
       }
     if (p_controller)
       {
@@ -211,6 +230,13 @@ void vtkPVContextView::Render(bool vtkNotUsed(interactive))
  if (this->SynchronizedWindows->GetLocalProcessIsDriver() ||
    this->InTileDisplayMode())
    {
+   vtkTimerLog::MarkStartEvent("vtkPVContextView::PrepareForRender");
+   // on rendering-nodes call Render-pass so that representations can update the
+   // vtk-charts as needed.
+   this->CallProcessViewRequest(vtkPVView::REQUEST_RENDER(),
+     this->RequestInformation, this->ReplyInformationVector);
+   vtkTimerLog::MarkEndEvent("vtkPVContextView::PrepareForRender");
+
    this->ContextView->Render();
    }
  this->SynchronizedWindows->SetEnabled(false);
@@ -269,6 +295,69 @@ void vtkPVContextView::OnEndRender()
 
   vtkTileDisplayHelper::GetInstance()->FlushTiles(this->Identifier,
     this->ContextView->GetRenderer()->GetActiveCamera()->GetLeftEye());
+}
+
+//----------------------------------------------------------------------------
+template <class T>
+vtkSelection* vtkPVContextView::GetSelectionImplementation(T* chart)
+{
+  if (vtkSelection* selection = chart->GetAnnotationLink()->GetCurrentSelection())
+    {
+    if (this->SelectionClone == NULL ||
+      this->SelectionClone->GetMTime() < selection->GetMTime() ||
+      this->SelectionClone->GetMTime() < chart->GetAnnotationLink()->GetMTime())
+      {
+      // we need to treat vtkSelection obtained from vtkAnnotationLink as
+      // constant and not modify it. Hence, we create a clone.
+      this->SelectionClone = vtkSmartPointer<vtkSelection>::New();
+      this->SelectionClone->ShallowCopy(selection);
+
+      // Allow the view to transform the selection as appropriate since the raw
+      // selection created by the VTK view is on the "transformed" data put in
+      // the view and not original input data.
+      if (this->MapSelectionToInput(this->SelectionClone) == false)
+        {
+        this->SelectionClone->Initialize();
+        }
+      }
+    return this->SelectionClone;
+    }
+  this->SelectionClone = NULL;
+  return NULL;
+}
+
+//----------------------------------------------------------------------------
+vtkSelection* vtkPVContextView::GetSelection()
+{
+  if (vtkChart *chart = vtkChart::SafeDownCast(this->GetContextItem()))
+    {
+    return this->GetSelectionImplementation(chart);
+    }
+  else if (vtkScatterPlotMatrix* schart = vtkScatterPlotMatrix::SafeDownCast(this->GetContextItem()))
+    {
+    return this->GetSelectionImplementation(schart);
+    }
+
+  vtkWarningMacro("Unsupported context item type.");
+  this->SelectionClone = NULL;
+  return NULL;
+}
+
+//----------------------------------------------------------------------------
+bool vtkPVContextView::MapSelectionToInput(vtkSelection* sel)
+{
+  for (int cc = 0, max = this->GetNumberOfRepresentations(); cc < max; cc++)
+    {
+    vtkChartRepresentation* repr = vtkChartRepresentation::SafeDownCast(
+      this->GetRepresentation(cc));
+    if (repr && repr->GetVisibility() && repr->MapSelectionToInput(sel))
+      {
+      return true;
+      }
+    }
+  // error! we cannot have  a selection created in the view, there's no visible
+  // representation!
+  return false;
 }
 
 //----------------------------------------------------------------------------

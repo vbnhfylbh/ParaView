@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -34,14 +34,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqActiveObjects.h"
 #include "pqAnimationManager.h"
+#include "pqApplicationComponentsInit.h"
 #include "pqApplicationCore.h"
-#include "pqApplyPropertiesManager.h"
-#include "pqComponentsInit.h"
 #include "pqComponentsTestUtility.h"
 #include "pqCoreUtilities.h"
 #include "pqItemViewSearchWidget.h"
 #include "pqOptions.h"
-#include "pqPQLookupTableManager.h"
 #include "pqQuickLaunchDialog.h"
 #include "pqSelectionManager.h"
 #include "pqSetName.h"
@@ -68,9 +66,8 @@ pqPVApplicationCore::pqPVApplicationCore(
 : Superclass(argc, argv, options)
 {
   // Initialize pqComponents resources.
-  pqComponentsInit();
+  pqApplicationComponentsInit();
 
-  this->ApplyPropertiesManger = new pqApplyPropertiesManager(this);
   this->AnimationManager = new pqAnimationManager(this);
   this->SelectionManager = new pqSelectionManager(this);
 
@@ -84,9 +81,6 @@ pqPVApplicationCore::pqPVApplicationCore(
   // Ensure that whenever Python is initialized, we tell paraview.servermanager
   // that is being done from the GUI.
 #endif
-  
-  // Lookuptable management will soon enough move to the server manager.
-  this->setLookupTableManager(new pqPQLookupTableManager(this));
 
   QObject::connect(&pqActiveObjects::instance(),
     SIGNAL(serverChanged(pqServer*)),
@@ -115,6 +109,7 @@ void pqPVApplicationCore::registerForQuicklaunch(QWidget* menu)
 //-----------------------------------------------------------------------------
 void pqPVApplicationCore::quickLaunch()
 {
+  emit this->aboutToShowQuickLaunch();
   if (this->QuickLaunchMenus.size() > 0)
     {
     pqQuickLaunchDialog dialog(pqCoreUtilities::mainWidget());
@@ -165,11 +160,6 @@ void pqPVApplicationCore::startSearch()
   searchDialog->setAttribute(Qt::WA_DeleteOnClose, true);
   searchDialog->showSearchWidget();
 }
-//-----------------------------------------------------------------------------
-pqApplyPropertiesManager* pqPVApplicationCore::applyPropertiesManager() const
-{
-  return this->ApplyPropertiesManger;
-}
 
 //-----------------------------------------------------------------------------
 pqSelectionManager* pqPVApplicationCore::selectionManager() const
@@ -215,7 +205,7 @@ bool pqPVApplicationCore::eventFilter ( QObject * obj, QEvent * event_ )
       files.append(fileEvent->file());
 
       // By default we always update the options
-      this->Options->SetParaViewDataName(files[0].toAscii().data());
+      this->Options->SetParaViewDataName(files[0].toLatin1().data());
 
       // If the application is already started just load the data
       if(vtkProcessModule::GetProcessModule()->GetSession())

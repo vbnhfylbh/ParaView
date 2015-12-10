@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqProxy.h"
 #include <QSize> // needed for QSize.
+#include "vtkSetGet.h" // needed for VTK_LEGACY.
 
 class pqOutputPort;
 class pqPipelineSource;
@@ -65,8 +66,17 @@ public:
   /// or return NULL.
   virtual vtkView* getClientSideView() const;
 
-  /// Return a widget associated with this view
-  virtual QWidget* getWidget() = 0;
+  /// Return a widget associated with this view. Every view in ParaView Qt
+  /// application must be able to render itself in a QWidget. The first time
+  /// this method is called, this will call pqView::createWidget(). Subclasses
+  /// createWidget() to create a QWidget for the view.
+  /// This may return NULL if the view doesn't have QWidget associated with it
+  /// (which is rare, if impossible) or the QWidget was previously created but
+  /// since has been destroyed due to Qt cleanup.
+  QWidget* widget();
+
+  /// @deprecated Replaced by pqView::widget() as of ParaView 4.4.
+  VTK_LEGACY(QWidget* getWidget());
 
   /// Returns if this view module can support 
   /// undo/redo. Returns false by default. Subclassess must override
@@ -82,6 +92,7 @@ public:
   /// Computes the magnification and view size given the current view size for
   /// the full size for the view.
   static int computeMagnification(const QSize& fullsize, QSize& viewsize);
+
 public slots:
   /// Request a StillRender on idle. Multiple calls are collapsed into one. 
   virtual void render();
@@ -118,9 +129,21 @@ public:
   virtual QSize getSize();
 
   /// Capture the view image into a new vtkImageData with the given magnification
-  /// and returns it.
-  virtual vtkImageData* captureImage(int magnification) =0;
+  /// and returns it. Default implementation forwards to
+  /// vtkSMViewProxy::CaptureWindow(). Generally, it's not necessary to override
+  /// this method. If you need to override it, be aware that the capture code
+  /// will no work on other non-Qt based ParaView clients and hence it's not
+  /// recommended. You should instead subclass vtkSMViewProxy and override the
+  /// appropriate image capture method(s).
+  virtual vtkImageData* captureImage(int magnification);
+
+  /// Capture an image with the given size. This will internally resize the
+  /// widget to come up with a valid magnification factor and then simply calls
+  /// captureImage(int).
   virtual vtkImageData* captureImage(const QSize& size);
+
+  /// Capture an image and saves it out to a file.
+  bool writeImage(const QString& filename, const QSize&, int quality=-1);
 
   /// This method checks if the representation is shown in this view.
   bool hasRepresentation(pqRepresentation* repr) const;
@@ -130,6 +153,7 @@ public:
 
   // Returns the number of representations currently visible in the view.
   int getNumberOfVisibleRepresentations() const;
+  int getNumberOfVisibleDataRepresentations() const;
 
   /// Returns the representation for the specified index where
   /// (index < getNumberOfRepresentations()).
@@ -139,18 +163,18 @@ public:
   QList<pqRepresentation*> getRepresentations() const;
 
   /// This method returns is any pqPipelineSource can be dislayed in this
-  /// view. This is a convenience method, it gets
-  /// the pqDisplayPolicy object from the pqApplicationCore
-  /// are queries it.
-  virtual bool canDisplay(pqOutputPort* opPort) const;
+  /// view. NOTE: This is no longer virtual. Simply forwards to
+  //vtkSMViewProxy::CanDisplayData().
+  bool canDisplay(pqOutputPort* opPort) const;
 
-  /// The annotation link used on representations to share the selection
-  /// and annotations. This is only used in views aware of this link.
-  virtual void setAnnotationLink(vtkSMSourceProxy* link);
-  vtkSMSourceProxy* getAnnotationLink();
+  /// Called when a selection is made, passing in the mode as the sole
+  /// argument.
+  virtual void emitSelectionSignals(bool frustum);
 
 signals:
-  /// Fired when the vtkSMViewProxy fire the vtkCommand::UpdateDataEvent
+  /// Fired when the vtkSMViewProxy fires the vtkCommand::UpdateDataEvent
+  /// The view proxy fires this event at the end of vtkSMViewProxy::Update()
+  /// when the update executes, not just when the method is called.
   void updateDataEvent();
 
   /// Fired after a representation has been added to this view.
@@ -183,6 +207,10 @@ signals:
   ///    the selection input on the source proxy for the opport must already
   ///    have been initialized to a selection source.
   void selected(pqOutputPort* opport);
+
+  /// Fired when the selection changes.
+  /// \c frustum is a boolean indicating whether the selection is frustum-based.
+  void selectionModeChanged(bool frustum);
 
   /// Fired when a port is picked.
   /// \c opport is the port that got picked.
@@ -226,6 +254,13 @@ private slots:
   /// moment as not a "reasonable moment" to render and defer the render again.
   void tryRender();
 
+  /// These slots help use avoid the undo stack being modified during rendering.
+  /// A few views (e.g. vtkSMContextViewProxy) may change some of its properties
+  /// during a render. We don't want those to get captured in the undo/redo
+  /// stack.
+  void onBeginRender();
+  void onEndRender();
+
 protected:
   /// Constructor:
   /// \c type  :- view type.
@@ -246,6 +281,9 @@ protected:
   /// after the object has been created. 
   /// Overridden to update the list of representations currently available.
   virtual void initialize();
+
+  /// Subclasses must override this method to create a widget for the view.
+  virtual QWidget* createWidget() = 0;
 
 private:
   pqView(const pqView&); // Not implemented.

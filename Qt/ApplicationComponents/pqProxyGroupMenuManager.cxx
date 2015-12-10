@@ -38,7 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqSetData.h"
 #include "pqSetName.h"
 #include "pqSettings.h"
-#include "vtkCollection.h"
 #include "vtkPVProxyDefinitionIterator.h"
 #include "vtkPVXMLElement.h"
 #include "vtkSMProxy.h"
@@ -55,23 +54,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QPair>
 #include <QSet>
 #include <QStringList>
-
-namespace
-{
-  bool findFileNameProperty(vtkPVXMLElement* proxyXML)
-    {
-    for (unsigned int cc=0; cc < proxyXML->GetNumberOfNestedElements(); cc++)
-      {
-      vtkPVXMLElement* child = proxyXML->GetNestedElement(cc);
-      if (child && child->GetAttribute("name") &&
-        strcmp(child->GetAttribute("name"), "FileName") == 0)
-        {
-        return true;
-        }
-      }
-    return false;
-    }
-}
 
 class pqProxyGroupMenuManager::pqInternal
 {
@@ -192,16 +174,16 @@ pqProxyGroupMenuManager::~pqProxyGroupMenuManager()
 void pqProxyGroupMenuManager::addProxy(
   const QString& xmlgroup, const QString& xmlname)
 {
-  this->Internal->addProxy(xmlgroup.toAscii().data(),
-    xmlname.toAscii().data(), QString());
+  this->Internal->addProxy(xmlgroup.toLatin1().data(),
+    xmlname.toLatin1().data(), QString());
 }
 
 //-----------------------------------------------------------------------------
 void pqProxyGroupMenuManager::removeProxy(
   const QString& xmlgroup, const QString& xmlname)
 {
-  this->Internal->removeProxy(xmlgroup.toAscii().data(),
-    xmlname.toAscii().data());
+  this->Internal->removeProxy(xmlgroup.toLatin1().data(),
+    xmlname.toLatin1().data());
 }
 
 //-----------------------------------------------------------------------------
@@ -250,7 +232,7 @@ void pqProxyGroupMenuManager::loadConfiguration(vtkPVXMLElement* root)
   if (this->ResourceTagName != root->GetName())
     {
     this->loadConfiguration(root->FindNestedElementByName(
-        this->ResourceTagName.toAscii().data()));
+        this->ResourceTagName.toLatin1().data()));
     return;
     }
 
@@ -505,7 +487,7 @@ QAction* pqProxyGroupMenuManager::getAction(
   vtkSMSessionProxyManager* pxm =
       vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
   vtkSMProxy* prototype = pxm->GetPrototypeProxy(
-    pgroup.toAscii().data(), pname.toAscii().data());
+    pgroup.toLatin1().data(), pname.toLatin1().data());
   if (prototype)
     {
     QString label = prototype->GetXMLLabel()? prototype->GetXMLLabel() : pname;
@@ -629,7 +611,7 @@ vtkSMProxy* pqProxyGroupMenuManager::getPrototype(QAction* action) const
   vtkSMSessionProxyManager* pxm =
       vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
   return pxm->GetPrototypeProxy(
-    key.first.toAscii().data(), key.second.toAscii().data());
+    key.first.toLatin1().data(), key.second.toLatin1().data());
 }
 
 //-----------------------------------------------------------------------------
@@ -680,15 +662,50 @@ QList<QAction*> pqProxyGroupMenuManager::actions(const QString& category)
   return category_actions;
 }
 
+QList<QAction*> pqProxyGroupMenuManager::actionsInToolbars()
+{
+  QList<QAction*> actions_in_toolbars;
+  for (pqInternal::CategoryInfoMap::iterator categoryIter =
+    this->Internal->Categories.begin();
+    categoryIter != this->Internal->Categories.end(); ++categoryIter)
+    {
+    const QString &categoryName = categoryIter.key();
+    pqInternal::CategoryInfo &category = categoryIter.value();
+    if (category.ShowInToolbar)
+      {
+      QPair<QString, QString> pname;
+      foreach (pname, category.Proxies)
+        {
+        QAction* action = this->getAction(pname.first,pname.second);
+        if (action)
+          {
+          QVariant v = action->property("OmitFromToolbar");
+          if (!v.isValid() || !v.toStringList().contains(categoryName))
+            {
+            if (!actions_in_toolbars.contains(action))
+              {
+              actions_in_toolbars.push_back(action);
+              }
+            }
+          }
+        }
+      }
+    }
+
+  return actions_in_toolbars;
+}
+
 //-----------------------------------------------------------------------------
 void pqProxyGroupMenuManager::setEnabled(bool enable)
 {
   this->Enabled = enable;
-#ifndef Q_OS_MAC
   // on Mac, with Qt 4.8.1, the enabling/disabling of the menu itself causes
   // issues; the menu never re-enables itself after being disabled (BUG #13184).
-  this->menu()->setEnabled(enable);
-#endif
+
+  // Furthermore, with the change to recomputing the enabled state when the menu
+  // is shown using the aboutToShow signal, disabling the menu itself causes the
+  // signal not to be sent resulting in the menu never being re-enabled.
+//  this->menu()->setEnabled(enable);
 }
 //-----------------------------------------------------------------------------
 void pqProxyGroupMenuManager::addProxyDefinitionUpdateListener(const QString& proxyGroupName)
@@ -755,7 +772,7 @@ void pqProxyGroupMenuManager::lookForNewDefinitions()
   iter.TakeReference(pxdm->NewIterator());
   foreach(QString groupName, this->Internal->ProxyDefinitionGroupToListen)
     {
-    iter->AddTraversalGroupName(groupName.toAscii().data());
+    iter->AddTraversalGroupName(groupName.toLatin1().data());
     }
 
   // Loop over proxy that should be inserted inside the UI
@@ -772,26 +789,19 @@ void pqProxyGroupMenuManager::lookForNewDefinitions()
         // skip readers.
         continue;
         }
-
-      // Old readers don't have ReaderFactory hints. To handle those, we check
-      // for existence of "FileName" property.
-      if (findFileNameProperty(iter->GetProxyDefinition()))
+      for (unsigned int cc=0; cc < hints->GetNumberOfNestedElements(); cc++)
         {
-        continue;
-        }
-
-      vtkNew<vtkCollection> collection;
-      hints->FindNestedElementByName("ShowInMenu", collection.GetPointer());
-      int size = collection->GetNumberOfItems();
-      vtkPVXMLElement* hint = NULL;
-      for(int i=0; i<size; i++)
-        {
-        hint = vtkPVXMLElement::SafeDownCast(collection->GetItemAsObject(i));
-        const char* categoryName = hint->GetAttribute("category");
+        vtkPVXMLElement* showInMenu = hints->GetNestedElement(cc);
+        if (showInMenu == NULL ||
+          showInMenu->GetName() == NULL ||
+          strcmp(showInMenu->GetName(), "ShowInMenu") != 0)
+          {
+          continue;
+          }
 
         definitionSet.insert(QPair<QString, QString>(group, name));
-        this->Internal->addProxy(group, name, NULL);
-        if(categoryName != NULL)
+        this->Internal->addProxy(group, name, showInMenu->GetAttribute("icon"));
+        if (const char* categoryName = showInMenu->GetAttribute("category"))
           {
           pqInternal::CategoryInfo& category = this->Internal->Categories[categoryName];
           // If no label just make it up
@@ -799,7 +809,11 @@ void pqProxyGroupMenuManager::lookForNewDefinitions()
             {
             category.Label = categoryName;
             }
-
+          int show_in_toolbar = 0;
+          if (showInMenu->GetScalarAttribute("show_in_toolbar", &show_in_toolbar))
+            {
+            category.ShowInToolbar = category.ShowInToolbar || (show_in_toolbar == 1);
+            }
           if(!category.Proxies.contains(QPair<QString, QString>(group, name)))
             {
             category.Proxies.push_back(QPair<QString, QString>(group, name));
@@ -817,8 +831,8 @@ void pqProxyGroupMenuManager::lookForNewDefinitions()
     {
     // This extra test should be removed once the main definition has been updated
     // with the Hints/ShowInMenu...
-    if(!pxdm->HasDefinition( key.first.toAscii().data(),
-                             key.second.toAscii().data()))
+    if(!pxdm->HasDefinition( key.first.toLatin1().data(),
+                             key.second.toLatin1().data()))
       {
       this->Internal->removeProxy(key.first, key.second);
       }

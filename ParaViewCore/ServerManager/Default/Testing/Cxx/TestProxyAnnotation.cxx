@@ -16,7 +16,6 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkMultiProcessController.h"
 #include "vtkNetworkAccessManager.h"
 #include "vtkProcessModule.h"
-#include "vtkPVFileInformation.h"
 #include "vtkPVServerOptions.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
@@ -27,10 +26,10 @@ PURPOSE.  See the above copyright notice for more information.
 
 #include "vtkPVXMLElement.h"
 #include "vtkNew.h"
-#include "vtksys/ios/sstream"
+#include <sstream>
 
 //----------------------------------------------------------------------------
-int main(int argc, char* argv[])
+int TestProxyAnnotation(int argc, char* argv[])
 {
   int ret_val = EXIT_SUCCESS;
   vtkPVServerOptions* options = vtkPVServerOptions::New();
@@ -91,7 +90,7 @@ int main(int argc, char* argv[])
   // -----------------------------------------------------------------------
   vtkNew<vtkPVXMLElement> withAnnotationXML;
   proxy->SaveXMLState(withAnnotationXML.GetPointer());
-  vtksys_ios::ostringstream withAnnotationStr;
+  std::ostringstream withAnnotationStr;
   withAnnotationXML->PrintXML(withAnnotationStr, vtkIndent());
   // -----------------------------------------------------------------------
 
@@ -190,7 +189,7 @@ int main(int argc, char* argv[])
   // -----------------------------------------------------------------------
   vtkNew<vtkPVXMLElement> withoutAnnotationXML;
   proxy->SaveXMLState(withoutAnnotationXML.GetPointer());
-  vtksys_ios::ostringstream withoutAnnotationStr;
+  std::ostringstream withoutAnnotationStr;
   withoutAnnotationXML->PrintXML(withoutAnnotationStr, vtkIndent());
   // -----------------------------------------------------------------------
 

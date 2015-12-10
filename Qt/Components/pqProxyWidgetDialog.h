@@ -35,28 +35,64 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QDialog>
 #include "pqComponentsModule.h"
 
-class QAbstractButton;
 class vtkSMProxy;
 
 /// pqProxyWidgetDialog is used to show properties of any proxy in a dialog. It
 /// simply wraps the pqProxyWidget for the proxy in a dialog with Apply,
-/// Cancel, and Ok buttons.
+/// Cancel, and Ok buttons. Tool buttons (QPushButtons with only icons) are
+/// also provided to save the currently applied settings as default properties
+/// as well as to reset the defaults to the application defaults.
 class PQCOMPONENTS_EXPORT pqProxyWidgetDialog : public QDialog
 {
   Q_OBJECT
   typedef QDialog Superclass;
 public:
-  pqProxyWidgetDialog(vtkSMProxy* proxy, QWidget* parent=0);
-  pqProxyWidgetDialog(vtkSMProxy* proxy, const QStringList& properties, QWidget* parent=0);
+  pqProxyWidgetDialog(vtkSMProxy* proxy, QWidget* parent=0, Qt::WindowFlags f = 0);
+  pqProxyWidgetDialog(vtkSMProxy* proxy, const QStringList& properties, QWidget* parent=0,
+    Qt::WindowFlags f = 0);
   virtual ~pqProxyWidgetDialog();
 
-protected slots:
-  /// slot to handle "Apply".
-  void buttonClicked(QAbstractButton*);
+  /// Returns whether that dialog has any visible widgets.
+  bool hasVisibleWidgets() const;
+
+  /// Returns the proxy.
+  vtkSMProxy* proxy() const;
+
+  /// Get/set whether the search-bar should be shown on the dialog.
+  /// Default is false. If search-bar is not show, the dialog cannot support
+  /// default/advanced viewing modes either and hence it will simply show all
+  /// property widgets.
+  void setEnableSearchBar(bool val);
+  bool enableSearchBar() const;
+
+  /// Set the new setting key that will be used to restore/save the advanced
+  /// button check state. If the given key is valid (i.e. not empty), the
+  /// button state will be restored from the key value.
+  /// The old key is left unchanged in the setting to whatever its last value
+  /// was. Although returned, removing (or not) the old key is up to the user.
+  /// \sa settingKey property
+  QString setSettingsKey(const QString& key);
+
+protected:
+  /// Overridden to resize widget before showing it the first time.
+  virtual void showEvent(QShowEvent * event);
+  virtual void hideEvent(QHideEvent *event);
+  virtual void done(int r);
+
+private slots:
+  void filterWidgets();
+  void onChangeAvailable();
+
+  /// Callbacks for buttons on the UI.
+  void onApply();
+  void onReset();
+  void onRestoreDefaults();
+  void onSaveAsDefaults();
 
 private:
   Q_DISABLE_COPY(pqProxyWidgetDialog)
 
+  friend class pqInternals;
   class pqInternals;
   pqInternals* Internals;
 };

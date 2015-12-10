@@ -38,8 +38,16 @@ endif()
 set(PV_PYTHON_MODULE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/paraview")
 set(PV_PYTHON_MODULE_BINARY_DIR "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/site-packages/paraview")
 
+
 # Copy generated module files from VTK into place in the build tree
-set(_vtkpy_modules vtkpython_pyc)
+set(_vtkpy_modules
+  # Ninja BUG 760: In past this depended on vtkpython_pyc. However, due to Ninja
+  # bug, the dependency wasn't being setup properly. Hence we directly depend on
+  # the generated file. Once Ninja or Cmake is fixed, we can remove this file
+  # depedency and leave the target dependecy.
+  ${CMAKE_BINARY_DIR}/VTK/Wrapping/Python/vtk_compile_complete
+  vtkpython_pyc
+  )
 if (TARGET vtkWebPython)
   list(APPEND _vtkpy_modules vtkWebPython)
 endif()
@@ -67,7 +75,9 @@ add_custom_command(
   # Touch the OUTPUT file, otherwise this command will always be dirty.
   COMMAND ${CMAKE_COMMAND} ARGS -E touch "${CMAKE_CURRENT_BINARY_DIR}/vtk_py_copy_completed"
 
-  DEPENDS ${_vtkpy_modules}
+  DEPENDS
+    ${_vtkpy_modules}
+    "${VTK_BINARY_DIR}/Wrapping/Python/vtk/__init__.py"
 )
 
 add_custom_target(copy_vtk_py_files ALL
@@ -81,21 +91,27 @@ file (COPY ${CMAKE_CURRENT_SOURCE_DIR}/paraview
       FILES_MATCHING
       PATTERN *.py)
 
+# Copy obsolete ColorMaps.xml for now.
+file (COPY ${CMAKE_CURRENT_SOURCE_DIR}/ColorMaps.xml
+      DESTINATION ${PV_PYTHON_MODULE_BINARY_DIR}
+      USE_SOURCE_PERMISSIONS)
+
 # Add a couple of vtk python files to "paraview" module.
 file (COPY "${ParaView_SOURCE_DIR}/VTK/Wrapping/Python/vtk/util/numpy_support.py"
            "${ParaView_SOURCE_DIR}/VTK/Wrapping/Python/vtk/util/vtkConstants.py"
       DESTINATION ${PV_PYTHON_MODULE_BINARY_DIR}
       USE_SOURCE_PERMISSIONS)
 
-# copy ParaView's default lookup tables
-file(COPY "${CMAKE_SOURCE_DIR}/Qt/Components/Resources/XML/ColorMaps.xml"
-  DESTINATION "${PV_PYTHON_MODULE_BINARY_DIR}"
-  USE_SOURCE_PERMISSIONS)
-
 # Byte compile the paraview Python files.
 configure_file(${PV_PYTHON_MODULE_SOURCE_DIR}/compile_all_pv.py.in
   ${PV_PYTHON_MODULE_BINARY_DIR}/compile_all_pv.py
   @ONLY IMMEDIATE)
+
+configure_file(${PV_PYTHON_MODULE_SOURCE_DIR}/cpexport.py.in
+  ${PV_PYTHON_MODULE_BINARY_DIR}/cpexport.py
+  @ONLY IMMEDIATE)
+
+
 
 add_custom_command(
   WORKING_DIRECTORY ${PV_PYTHON_MODULE_BINARY_DIR}

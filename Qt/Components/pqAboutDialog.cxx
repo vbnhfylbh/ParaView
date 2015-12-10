@@ -39,17 +39,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqServerManagerModel.h"
 #include "pqServerResource.h"
 #include "QtTestingConfigure.h"
+#include "vtkNew.h"
 #include "vtkProcessModule.h"
 #include "vtkPVConfig.h"
+#include "vtkPVPythonInformation.h"
+#include "vtkPVOpenGLInformation.h"
 #include "vtkPVServerInformation.h"
 #include "vtkSMProxyManager.h"
+#include "vtkSMSession.h"
 #include "vtkSMViewProxy.h"
 
 #include <QHeaderView>
 #include <QApplication>
 #include <QFile>
 
-#include <vtksys/ios/sstream>
+#include <sstream>
 
 //-----------------------------------------------------------------------------
 pqAboutDialog::pqAboutDialog(QWidget* Parent) :
@@ -70,7 +74,7 @@ pqAboutDialog::pqAboutDialog(QWidget* Parent) :
   vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
   pqOptions* opts = pqOptions::SafeDownCast(pm->GetOptions());
 
-  vtksys_ios::ostringstream str;
+  std::ostringstream str;
   vtkIndent indent;
   opts->PrintSelf(str, indent.GetNextIndent());
   str << ends;
@@ -131,11 +135,38 @@ void pqAboutDialog::AddClientInformation()
   ::addItem(tree, "Architecture", PARAVIEW_BUILD_ARCHITECTURE);
 #endif
 
-#if defined(PARAVIEW_ENABLE_PYTHON)
-  ::addItem(tree, "Embedded Python", "On");
-#else
-  ::addItem(tree, "Embedded Python", "Off");
-#endif
+  vtkNew<vtkPVPythonInformation> pythonInfo;
+  pythonInfo->CopyFromObject(NULL);
+
+  ::addItem(tree, "Embedded Python",
+            pythonInfo->GetPythonSupport() ? "On" : "Off");
+  if (pythonInfo->GetPythonSupport())
+    {
+    ::addItem(tree, "Python Library Path",
+              QString::fromStdString(pythonInfo->GetPythonPath()));
+    ::addItem(tree, "Python Library Version",
+              QString::fromStdString(pythonInfo->GetPythonVersion()));
+
+    ::addItem(tree, "Python Numpy Support",
+              pythonInfo->GetNumpySupport() ? "On" : "Off");
+    if (pythonInfo->GetNumpySupport())
+      {
+      ::addItem(tree, "Python Numpy Path",
+                QString::fromStdString(pythonInfo->GetNumpyPath()));
+      ::addItem(tree, "Python Numpy Version",
+                QString::fromStdString(pythonInfo->GetNumpyVersion()));
+      }
+
+    ::addItem(tree, "Python Matplotlib Support",
+              pythonInfo->GetMatplotlibSupport() ? "On" : "Off");
+    if (pythonInfo->GetMatplotlibSupport())
+      {
+      ::addItem(tree, "Python Matplotlib Path",
+                QString::fromStdString(pythonInfo->GetMatplotlibPath()));
+      ::addItem(tree, "Python Matplotlib Version",
+                QString::fromStdString(pythonInfo->GetMatplotlibVersion()));
+      }
+    }
 
 #if defined(QT_TESTING_WITH_PYTHON)
   ::addItem(tree, "Python Testing", "On");
@@ -152,7 +183,18 @@ void pqAboutDialog::AddClientInformation()
   ::addItem(tree, "Disable Registry", opts->GetDisableRegistry()? "On" : "Off");
   ::addItem(tree, "Test Directory", opts->GetTestDirectory());
   ::addItem(tree, "Data Directory", opts->GetDataDirectory());
+
+  vtkNew<vtkPVOpenGLInformation> OpenGLInfo;
+  OpenGLInfo->CopyFromObject(NULL);
+  
+  ::addItem(tree, "OpenGL Vendor", QString::fromStdString(OpenGLInfo->GetVendor()));
+  ::addItem(tree, "OpenGL Version", QString::fromStdString(OpenGLInfo->GetVersion()));
+  ::addItem(tree, "OpenGL Renderer", QString::fromStdString(OpenGLInfo->GetRenderer()));
+#if QT_VERSION >= 0x050000
+  tree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+#else
   tree->header()->setResizeMode(QHeaderView::ResizeToContents);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -164,7 +206,11 @@ void pqAboutDialog::AddServerInformation()
   if (servers.size() > 0)
     {
     this->AddServerInformation(servers[0], tree);
+#if QT_VERSION >= 0x050000
+    tree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+#else
     tree->header()->setResizeMode(QHeaderView::ResizeToContents);
+#endif
     }
 }
 
@@ -213,5 +259,45 @@ void pqAboutDialog::AddServerInformation(pqServer* server, QTreeWidget* tree)
     serverInfo->GetOGVSupport()? "On": "Off");
   ::addItem(tree, "Write AVI Animations",
     serverInfo->GetAVISupport()? "On": "Off");
-}
 
+  vtkSMSession *session = server->session();
+  vtkNew<vtkPVPythonInformation> pythonInfo;
+  session->GatherInformation(vtkPVSession::SERVERS, pythonInfo.GetPointer(), 0);
+  ::addItem(tree, "Embedded Python",
+            pythonInfo->GetPythonSupport() ? "On" : "Off");
+  if (pythonInfo->GetPythonSupport())
+    {
+    ::addItem(tree, "Python Library Path",
+              QString::fromStdString(pythonInfo->GetPythonPath()));
+    ::addItem(tree, "Python Library Version",
+              QString::fromStdString(pythonInfo->GetPythonVersion()));
+
+    ::addItem(tree, "Python Numpy Support",
+              pythonInfo->GetNumpySupport() ? "On" : "Off");
+    if (pythonInfo->GetNumpySupport())
+      {
+      ::addItem(tree, "Python Numpy Path",
+                QString::fromStdString(pythonInfo->GetNumpyPath()));
+      ::addItem(tree, "Python Numpy Version",
+                QString::fromStdString(pythonInfo->GetNumpyVersion()));
+      }
+
+    ::addItem(tree, "Python Matplotlib Support",
+              pythonInfo->GetMatplotlibSupport() ? "On" : "Off");
+    if (pythonInfo->GetMatplotlibSupport())
+      {
+      ::addItem(tree, "Python Matplotlib Path",
+                QString::fromStdString(pythonInfo->GetMatplotlibPath()));
+      ::addItem(tree, "Python Matplotlib Version",
+                QString::fromStdString(pythonInfo->GetMatplotlibVersion()));
+      }
+    }
+
+  vtkNew<vtkPVOpenGLInformation> OpenGLInfo;
+  session->GatherInformation(vtkPVSession::RENDER_SERVER, OpenGLInfo.GetPointer(), 0);
+  ::addItem(tree, "OpenGL Vendor", QString::fromStdString(OpenGLInfo->GetVendor()));
+  ::addItem(tree, "OpenGL Version", QString::fromStdString(OpenGLInfo->GetVersion()));
+  ::addItem(tree, "OpenGL Renderer", QString::fromStdString(OpenGLInfo->GetRenderer()));
+
+
+}

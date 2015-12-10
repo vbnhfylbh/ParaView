@@ -23,10 +23,11 @@
 #include <vector>
 #include <algorithm>
 #include <string>
-#include <vtksys/ios/sstream>
+#include <sstream>
 #include "vtkCommand.h"
 #include <vtkPVXMLElement.h>
 #include "vtkSMProperty.h"
+#include "vtkSMProxy.h"
 #include <typeinfo>
 #include <limits>
 
@@ -44,6 +45,7 @@ namespace
       }
 
   template <>
+  vtkMaybeUnused("not used in non-string specializations")
     vtkStdString vtkSMVPConvertFromString<vtkStdString>(
       const std::string& string_representation)
       { return string_representation; }
@@ -305,7 +307,7 @@ public:
     }
 
   //---------------------------------------------------------------------------
-  void ResetToDefaultInternal()
+  void ResetToXMLDefaults()
     {
     if (this->DefaultsValid && this->DefaultValues != this->Values)
       {
@@ -367,7 +369,7 @@ public:
       }
     for (unsigned int i=0; i<size; i++)
       {
-      vtksys_ios::ostringstream valueAsString;
+      std::ostringstream valueAsString;
 
       // set the stream precision to the maximum precision for the data type
       valueAsString.precision(std::numeric_limits<T>::digits10);

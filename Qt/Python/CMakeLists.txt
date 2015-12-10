@@ -41,6 +41,8 @@ set(Module_SRCS
   pqPythonScriptEditor.h
   pqPythonShell.cxx
   pqPythonShell.h
+  pqPythonSyntaxHighlighter.cxx
+  pqPythonSyntaxHighlighter.h
 )
 
 set (Module_MOC_HDRS
@@ -50,23 +52,31 @@ set (Module_MOC_HDRS
   pqPythonManager.h
   pqPythonScriptEditor.h
   pqPythonShell.h
+  pqPythonSyntaxHighlighter.h
 )
 
 set (Module_UI_FILES
   pqPythonDialog.ui
 )
 
+find_package(PythonLibs REQUIRED)
+
 include_directories(
   "${VTK_SOURCE_DIR}/Wrapping/Python"
   "${VTK_BINARY_DIR}/Wrapping/Python"
-  "${PYTHON_INCLUDE_PATH}"
+  ${PYTHON_INCLUDE_DIRS}
   )
 
 #-------------------------------------------------------------------------
 set(${vtk-module}_NO_HeaderTest 1)
 
-qt4_wrap_cpp(__Module_MOC_SRCS ${Module_MOC_HDRS})
-qt4_wrap_ui(__Module_UI_SRCS ${Module_UI_FILES})
+if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+  qt5_wrap_cpp(__Module_MOC_SRCS ${Module_MOC_HDRS})
+  qt5_wrap_ui(__Module_UI_SRCS ${Module_UI_FILES})
+else ()
+  qt4_wrap_cpp(__Module_MOC_SRCS ${Module_MOC_HDRS})
+  qt4_wrap_ui(__Module_UI_SRCS ${Module_UI_FILES})
+endif ()
 
 SOURCE_GROUP("Resources" FILES
   ${Module_UI_FILES}
@@ -93,7 +103,7 @@ vtk_module_library(${vtk-module}
 #    RUNTIME DESTINATION ${PV_INSTALL_BIN_DIR} COMPONENT Runtime
 #    LIBRARY DESTINATION ${PV_INSTALL_LIB_DIR} COMPONENT Runtime
 #    ARCHIVE DESTINATION ${PV_INSTALL_LIB_DIR} COMPONENT Development)
-#ENDIF(NOT PV_INSTALL_NO_LIBRARIES)
+#ENDIF()
 ## Development
 #IF (NOT PV_INSTALL_NO_DEVELOPMENT)
 #  # Headers
@@ -110,4 +120,4 @@ vtk_module_library(${vtk-module}
 #    ${CMAKE_CURRENT_SOURCE_DIR}
 #    ${PV_INSTALL_INCLUDE_DIR}/Qt/Python/Resources
 #    "*.ui;*.ico;*.png;*.svg;*.xpm;*.rc;*.qrc")
-#ENDIF (NOT PV_INSTALL_NO_DEVELOPMENT)
+#ENDIF ()

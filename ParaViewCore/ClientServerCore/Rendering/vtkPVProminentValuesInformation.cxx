@@ -43,7 +43,7 @@
 #include <map>
 #include <set>
 #include <vector>
-#include <vtksys/ios/sstream>
+#include <sstream>
 
 #define VTK_MAX_CATEGORICAL_VALS (32)
 
@@ -334,6 +334,9 @@ void vtkPVProminentValuesInformation::CopyFromLeafDataObject(
     break;
   case vtkDataObject::FIELD_ASSOCIATION_CELLS:
     fieldData = dset ? dset->GetCellData() : 0;
+    break;
+  case vtkDataObject::FIELD_ASSOCIATION_NONE:
+    fieldData = dset ? dset->GetFieldData() : 0;
     break;
   case vtkDataObject::FIELD_ASSOCIATION_POINTS_THEN_CELLS:
     fieldData = dset ? dset->GetPointData() : 0;

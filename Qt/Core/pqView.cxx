@@ -35,13 +35,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkEventQtSlotConnect.h"
 #include "vtkImageData.h"
 #include "vtkMath.h"
+#include "vtkNew.h"
 #include "vtkProcessModule.h"
+#include "vtkPVXMLElement.h"
 #include "vtkSmartPointer.h"
+#include "vtkSMParaViewPipelineControllerWithRendering.h"
 #include "vtkSMProxyProperty.h"
 #include "vtkSMSession.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
-#include "vtkPVXMLElement.h"
 
 // Qt includes.
 #include <QList>
@@ -51,23 +53,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // ParaView includes.
 #include "pqApplicationCore.h"
+#include "pqDataRepresentation.h"
 #include "pqOutputPort.h"
 #include "pqPipelineSource.h"
 #include "pqProgressManager.h"
-#include "pqRepresentation.h"
 #include "pqServer.h"
 #include "pqServerManagerModel.h"
 #include "pqTimeKeeper.h"
 #include "pqTimer.h"
+#include "pqUndoStack.h"
 
-inline int pqCeil(double val)
-{
-  if (static_cast<int>(val) == val)
-    {
-    return static_cast<int>(val);
-    }
-  return static_cast<int>(vtkMath::Round(val+0.5));
-}
+#include <cmath>
 
 template<class T>
 inline uint qHash(QPointer<T> p)
@@ -79,26 +75,21 @@ class pqViewInternal
 {
 public:
   vtkSmartPointer<vtkEventQtSlotConnect> VTKConnect;
+  QPointer<QWidget> Widget;
+  bool WidgetCreated;
 
   // List of representation shown by this view.
   QList<QPointer<pqRepresentation> > Representations;
 
-  // The annotation link for linking selections and annotations
-  // between views.
-  vtkSMSourceProxy* AnnotationLink;
-
-  pqViewInternal()
+  pqViewInternal() :
+    WidgetCreated(false)
     {
     this->VTKConnect = vtkSmartPointer<vtkEventQtSlotConnect>::New();
-    this->AnnotationLink = 0;
     }
 
   ~pqViewInternal()
     {
-    if (this->AnnotationLink)
-      {
-      this->AnnotationLink->Delete();
-      }
+    delete this->Widget;
     }
 
   pqTimer RenderTimer;
@@ -124,9 +115,9 @@ pqView::pqView( const QString& type,
   // Fire start/end render signals when the underlying proxy
   // fires appropriate events.
   this->Internal->VTKConnect->Connect(view,
-    vtkCommand::StartEvent, this, SIGNAL(beginRender()));
+    vtkCommand::StartEvent, this, SLOT(onBeginRender()));
   this->Internal->VTKConnect->Connect(view,
-    vtkCommand::EndEvent, this, SIGNAL(endRender()));
+    vtkCommand::EndEvent, this, SLOT(onEndRender()));
 
   // Fire updateDataEvent
   this->Internal->VTKConnect->Connect(view,
@@ -172,6 +163,7 @@ vtkSMViewProxy* pqView::getViewProxy() const
   return vtkSMViewProxy::SafeDownCast(this->getProxy());
 }
 
+//-----------------------------------------------------------------------------
 vtkView* pqView::getClientSideView() const
 {
   return 0;
@@ -186,12 +178,39 @@ void pqView::initialize()
   // registered, this method will detect them and sync the GUI state with the 
   // SM state.
   this->onRepresentationsChanged();
+
+  // Create the widget.
+  if (this->widget() == NULL)
+    {
+    qWarning("This view doesn't have a QWidget. May not work as expected.");
+    }
+}
+
+//-----------------------------------------------------------------------------
+QWidget* pqView::widget()
+{
+  if (this->Internal->WidgetCreated == false)
+    {
+    this->Internal->Widget = this->createWidget();
+    this->Internal->WidgetCreated = true;
+    if (this->Internal->Widget)
+      {
+      this->Internal->Widget->setObjectName("Viewport");
+      }
+    }
+  return this->Internal->Widget;
 }
 
 //-----------------------------------------------------------------------------
 void pqView::cancelPendingRenders()
 {
   this->Internal->RenderTimer.stop();
+}
+
+//-----------------------------------------------------------------------------
+void pqView::emitSelectionSignals(bool frustum)
+{
+  emit selectionModeChanged(frustum);
 }
 
 //-----------------------------------------------------------------------------
@@ -217,6 +236,8 @@ void pqView::tryRender()
 //-----------------------------------------------------------------------------
 void pqView::forceRender()
 {
+  // cancel any pending renders, if this method is called directly.
+  this->cancelPendingRenders();
   vtkSMViewProxy* view = this->getViewProxy();
   if (view)
     {
@@ -250,6 +271,23 @@ int pqView::getNumberOfVisibleRepresentations() const
       count++;
       }
     }
+  return count;
+}
+
+//-----------------------------------------------------------------------------
+int pqView::getNumberOfVisibleDataRepresentations() const
+{
+  int count = 0;
+  for (int i=0; i<this->Internal->Representations.size(); i++)
+    {
+    pqDataRepresentation* repr=qobject_cast<pqDataRepresentation*>(
+      this->Internal->Representations[i]);
+    if (repr && repr->isVisible())
+      {
+      count++;
+      }
+    }
+
   return count;
 }
 
@@ -365,8 +403,8 @@ void pqView::onRepresentationVisibilityChanged(bool visible)
 //-----------------------------------------------------------------------------
 QSize pqView::getSize()
 {
-  QWidget* widget = this->getWidget();
-  return widget? widget->size(): QSize(0, 0);
+  QWidget* wdg = this->widget();
+  return wdg? wdg->size(): QSize(0, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -375,10 +413,10 @@ int pqView::computeMagnification(const QSize& fullsize, QSize& viewsize)
   int magnification = 1;
 
   // If fullsize > viewsize, then magnification is involved.
-  int temp = ::pqCeil(fullsize.width()/static_cast<double>(viewsize.width()));
+  int temp = std::ceil(fullsize.width()/static_cast<double>(viewsize.width()));
   magnification = (temp> magnification)? temp: magnification;
 
-  temp = ::pqCeil(fullsize.height()/static_cast<double>(viewsize.height()));
+  temp = std::ceil(fullsize.height()/static_cast<double>(viewsize.height()));
   magnification = (temp > magnification)? temp : magnification;
 
   viewsize = fullsize/magnification;
@@ -386,9 +424,46 @@ int pqView::computeMagnification(const QSize& fullsize, QSize& viewsize)
 }
 
 //-----------------------------------------------------------------------------
+bool pqView::writeImage(const QString& filename, const QSize& fullsize, int quality)
+{
+  // FIXME: code duplicated with pqView::captureImage(). Fix it :).
+  if (!this->widget()->isVisible())
+    {
+    return false;
+    }
+
+  QWidget* vtkwidget = this->widget();
+  QSize cursize = vtkwidget->size();
+  QSize newsize = cursize;
+  int magnification = 1;
+  if (fullsize.isValid())
+    {
+    magnification = pqView::computeMagnification(fullsize, newsize);
+    vtkwidget->resize(newsize);
+    }
+  this->render();
+
+  vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+  bool status = controller->WriteImage(this->getViewProxy(),
+    filename.toLatin1().data(), magnification, quality);
+  if (fullsize.isValid())
+    {
+    vtkwidget->resize(newsize);
+    vtkwidget->resize(cursize);
+    this->render();
+    }
+  return status;
+}
+
+//-----------------------------------------------------------------------------
 vtkImageData* pqView::captureImage(const QSize& fullsize)
 {
-  QWidget* vtkwidget = this->getWidget();
+  if (!this->widget()->isVisible())
+    {
+    return NULL;
+    }
+
+  QWidget* vtkwidget = this->widget();
   QSize cursize = vtkwidget->size();
   QSize newsize = cursize;
   int magnification = 1;
@@ -410,66 +485,49 @@ vtkImageData* pqView::captureImage(const QSize& fullsize)
 }
 
 //-----------------------------------------------------------------------------
+vtkImageData* pqView::captureImage(int magnification)
+{
+  if (this->widget() && this->widget()->isVisible())
+    {
+    vtkSMViewProxy *view = this->getViewProxy();
+    Q_ASSERT(view);
+      return view->CaptureWindow(magnification);
+    }
+  return NULL;
+}
+
+//-----------------------------------------------------------------------------
 bool pqView::canDisplay(pqOutputPort* opPort) const
 {
   pqPipelineSource* source = opPort ? opPort->getSource() : 0;
   vtkSMSourceProxy* sourceProxy = source ? vtkSMSourceProxy::SafeDownCast(source->getProxy()) : 0;
-  if(!opPort||
-     !source ||
-     opPort->getServer()->GetConnectionID() != this->getServer()->GetConnectionID() ||
-     !sourceProxy ||
-     sourceProxy->GetOutputPortsCreated() == 0)
+  if (!opPort|| !sourceProxy ||
+    opPort->getServer()->getResource().scheme() == "catalyst")
     {
     return false;
     }
 
-  vtkPVXMLElement* hints = sourceProxy->GetHints();
-  if (hints)
-    {
-    unsigned int elementCount = hints->GetNumberOfNestedElements();
-    for(unsigned int i = 0; i < elementCount; i++)
-      {
-      vtkPVXMLElement* child = hints->GetNestedElement(i);
-      const char *childName = child->GetName();
-
-      if(childName && strcmp(childName, "DefaultRepresentations") == 0)
-        {
-        unsigned int defaultRepsCount = child->GetNumberOfNestedElements();
-        for(unsigned int j = 0; j < defaultRepsCount; j++)
-          {
-          vtkPVXMLElement *defaultRep = child->GetNestedElement(j);
-
-          const char *defaultRepViewType = defaultRep->GetAttribute("view");
-          if(defaultRepViewType &&
-             this->ViewType == defaultRepViewType)
-            {
-            return true;
-            }
-          }
-        }
-      }
-    }
-
-  return false;
+  return this->getViewProxy()->CanDisplayData(sourceProxy, opPort->getPortNumber());
 }
 
 //-----------------------------------------------------------------------------
-void pqView::setAnnotationLink(vtkSMSourceProxy* link)
+void pqView::onBeginRender()
 {
-  if (this->Internal->AnnotationLink != link)
-    {
-    vtkSMSourceProxy* tempSGMacroVar = this->Internal->AnnotationLink;
-    this->Internal->AnnotationLink = link;
-    if (this->Internal->AnnotationLink != NULL) { this->Internal->AnnotationLink->Register(0); }
-    if (tempSGMacroVar != NULL)
-      {
-      tempSGMacroVar->UnRegister(0);
-      }
-    }
+  BEGIN_UNDO_EXCLUDE();
+  emit this->beginRender();
 }
 
 //-----------------------------------------------------------------------------
-vtkSMSourceProxy* pqView::getAnnotationLink()
+void pqView::onEndRender()
 {
-  return this->Internal->AnnotationLink;
+  emit this->endRender();
+  END_UNDO_EXCLUDE();
 }
+
+//-----------------------------------------------------------------------------
+#ifndef VTK_LEGACY_REMOVE
+QWidget* pqView::getWidget()
+{
+  return this->widget();
+}
+#endif

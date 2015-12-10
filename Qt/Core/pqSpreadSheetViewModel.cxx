@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -130,6 +130,8 @@ namespace
       return "Quadratic Wedge";
     case VTK_QUADRATIC_PYRAMID:
       return "Quadratic Pyramid";
+    case VTK_QUADRATIC_POLYGON:
+      return "Quadratic Polygon";
     case VTK_BIQUADRATIC_QUAD:
       return "Bi-Quadratic-Quad";
     case VTK_TRIQUADRATIC_HEXAHEDRON:
@@ -329,9 +331,10 @@ void pqSpreadSheetViewModel::forceUpdate()
   // clicks on the view or apply a filter change etc.
   if (this->rowCount() != rows || this->columnCount() != columns)
     {
+    this->beginResetModel();
     rows = this->rowCount();
     columns = this->columnCount();
-    this->reset();
+    this->endResetModel();
     }
   else
     {
@@ -520,6 +523,7 @@ void pqSpreadSheetViewModel::sortSection (int section, Qt::SortOrder order)
   vtkSpreadSheetView* view = this->GetView();
   if (view->GetNumberOfColumns() > section)
     {
+    this->beginResetModel();
     vtkSMPropertyHelper(this->ViewProxy, "ColumnToSort").Set(
       view->GetColumnName(section));
     switch(order)
@@ -532,7 +536,7 @@ void pqSpreadSheetViewModel::sortSection (int section, Qt::SortOrder order)
       break;
       }
     this->ViewProxy->UpdateVTKObjects();
-    this->reset();
+    this->endResetModel();
     }
 }
 
@@ -598,6 +602,11 @@ QVariant pqSpreadSheetViewModel::headerData (
         view->GetShowExtractedSelection())
         {
         title = "Point ID";
+        }
+      else if (title == "vtkOriginalRowIds" &&
+        view->GetShowExtractedSelection())
+        {
+        title = "Row ID";
         }
       else if (title == "vtkCompositeIndexArray")
         {

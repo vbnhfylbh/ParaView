@@ -41,12 +41,6 @@ public:
   virtual void Update();
 
   // Description:
-  // Create a default representation for the given source proxy.
-  // Returns a new proxy.
-  // Overridden to forward the call to the internal root view proxy.
-  virtual vtkSMRepresentationProxy* CreateDefaultRepresentation(vtkSMProxy*, int);
-
-  // Description:
   // Get all the internal views. The views should only be used to be layed out
   // by the GUI. It's not recommended to directly change the properties of the
   // views.
@@ -70,12 +64,35 @@ public:
   // This all marks all consumers as dirty.
   virtual void MarkDirty(vtkSMProxy* modifiedProxy);
 
+  // Description:
+  // Overridden to forward the call to the internal root view proxy.
+  virtual const char* GetRepresentationType(
+    vtkSMSourceProxy* producer, int outputPort);
+
+  // Description:
+  // Returns the render-window used by the root view, if any.
+  virtual vtkRenderWindow* GetRenderWindow()
+    { return this->GetRootView()? this->GetRootView()->GetRenderWindow() : NULL; }
+  virtual vtkRenderWindowInteractor* GetInteractor()
+    { return this->GetRootView()? this->GetRootView()->GetInteractor() : NULL; }
+
+  // Description:
+  // To avoid misuse of this method for comparative views, this method will
+  // raise an error. Client code should set up interactor for each of the
+  // internal views explicitly.
+  virtual void SetupInteractor(vtkRenderWindowInteractor* iren);
+
+  // Description:
+  // Overridden to call MakeRenderWindowInteractor() on each of the internal
+  // views.
+  virtual bool MakeRenderWindowInteractor(bool quiet=false);
+
 protected:
   vtkSMComparativeViewProxy();
   ~vtkSMComparativeViewProxy();
 
-  void InvokeConfigureEvent();
 
+  void InvokeConfigureEvent();
 
   // Description:
   virtual void CreateVTKObjects();

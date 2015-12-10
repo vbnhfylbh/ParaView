@@ -1117,8 +1117,8 @@ int main(int argc, char *argv[])
     /* Block inclusion of full streams. */
     fprintf(fp,"#define VTK_STREAMS_FWD_ONLY\n");
     }
-  fprintf(fp,"#include \"vtkSystemIncludes.h\"\n");
   fprintf(fp,"#include \"%s.h\"\n",data->Name);
+  fprintf(fp,"#include \"vtkSystemIncludes.h\"\n");
   if (classUsesStdString(data))
     {
     fprintf(fp,"#include \"vtkStdString.h\"\n");
@@ -1133,7 +1133,7 @@ int main(int argc, char *argv[])
 #endif
   if (!strcmp("vtkObjectBase",data->Name))
     {
-    fprintf(fp,"#include <vtksys/ios/sstream>\n");
+    fprintf(fp,"#include <sstream>\n");
     }
   if (!data->IsAbstract)
     {
@@ -1202,7 +1202,7 @@ int main(int argc, char *argv[])
     fprintf(fp,
             "  if (!strcmp(\"Print\",method) && msg.GetNumberOfArguments(0) == 2)\n"
             "    {\n"
-            "    vtksys_ios::ostringstream buf_with_warning_C4701;\n"
+            "    std::ostringstream buf_with_warning_C4701;\n"
             "    op->Print(buf_with_warning_C4701);\n"
             "    resultStream.Reset();\n"
             "    resultStream << vtkClientServerStream::Reply\n"
@@ -1251,5 +1251,6 @@ int main(int argc, char *argv[])
   free(classData);
 
   vtkParse_Free(fileInfo);
+  fclose(fp);
   return 0;
 }

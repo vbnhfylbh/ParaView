@@ -63,8 +63,8 @@ set(jsduck_stamp "${CMAKE_CURRENT_BINARY_DIR}/jsduck.stamp")
 
 add_custom_command(OUTPUT ${jsduck_stamp}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${docs_tmp_dir}
-  COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/jsduck.stamp"
   COMMAND ${JSDUCK_EXECUTABLE} ${args}
+  COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/jsduck.stamp"
   DEPENDS ${doc_input_files})
 
 add_custom_target(ParaViewWebDoc
@@ -73,7 +73,6 @@ add_custom_target(ParaViewWebDoc
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${docs_binary_dir} "${PARAVIEW_WWW_DIR}/js-doc"
 )
 
-add_dependencies(ParaViewWebDoc ParaViewWWW)
 add_dependencies(ParaViewDoc ParaViewWebDoc)
 
 set_directory_properties(PROPERTIES

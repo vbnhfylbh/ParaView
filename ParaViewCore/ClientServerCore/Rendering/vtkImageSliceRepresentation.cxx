@@ -21,6 +21,7 @@
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMultiProcessController.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkProperty.h"
 #include "vtkPVCacheKeeper.h"
@@ -29,6 +30,7 @@
 #include "vtkPVRenderView.h"
 #include "vtkRenderer.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
+#include "vtkStructuredExtent.h"
 
 vtkStandardNewMacro(vtkImageSliceRepresentation);
 //----------------------------------------------------------------------------
@@ -57,24 +59,6 @@ vtkImageSliceRepresentation::~vtkImageSliceRepresentation()
 }
 
 //----------------------------------------------------------------------------
-void vtkImageSliceRepresentation::SetColorAttributeType(int type)
-{
-  switch (type)
-    {
-  case POINT_DATA:
-    this->SliceMapper->SetScalarMode(VTK_SCALAR_MODE_USE_POINT_FIELD_DATA);
-    break;
-
-  case CELL_DATA:
-    this->SliceMapper->SetScalarMode(VTK_SCALAR_MODE_USE_CELL_FIELD_DATA);
-    break;
-
-  default:
-    vtkErrorMacro("Attribute type not supported: " << type);
-    }
-}
-
-//----------------------------------------------------------------------------
 void vtkImageSliceRepresentation::SetSliceMode(int mode)
 {
   if (this->SliceMode != mode)
@@ -95,15 +79,28 @@ void vtkImageSliceRepresentation::SetSlice(unsigned int val)
 }
 
 //----------------------------------------------------------------------------
-void vtkImageSliceRepresentation::SetColorArrayName(const char* name)
+void vtkImageSliceRepresentation::SetInputArrayToProcess(
+  int idx, int port, int connection, int fieldAssociation, const char *name)
 {
-  if (name && name[0])
+  this->Superclass::SetInputArrayToProcess(
+    idx, port, connection, fieldAssociation, name);
+  this->SliceMapper->SelectColorArray(name);
+  switch (fieldAssociation)
     {
-    this->SliceMapper->SelectColorArray(name);
-    }
-  else
-    {
-    this->SliceMapper->SelectColorArray(static_cast<const char*>(NULL));
+  case vtkDataObject::FIELD_ASSOCIATION_CELLS:
+    this->SliceMapper->SetScalarMode(VTK_SCALAR_MODE_USE_CELL_FIELD_DATA);
+    break;
+
+  case vtkDataObject::FIELD_ASSOCIATION_NONE:
+    this->SliceMapper->SetScalarMode(VTK_SCALAR_MODE_USE_FIELD_DATA);
+    // Color entire block by zeroth tuple in the field data
+    this->SliceMapper->SetFieldDataTupleId(0);
+    break;
+
+  case vtkDataObject::FIELD_ASSOCIATION_POINTS:
+  default:
+    this->SliceMapper->SetScalarMode(VTK_SCALAR_MODE_USE_POINT_FIELD_DATA);
+    break;
     }
 }
 
@@ -247,21 +244,28 @@ void vtkImageSliceRepresentation::UpdateSliceData(
     break;
     }
 
-  vtkImageData* clone= vtkImageData::New();
-  clone->ShallowCopy(input);
+  // Now, clamp the extent for the slice to the extent available on this rank.
+  vtkNew<vtkStructuredExtent> helper;
+  helper->Clamp(outExt, input->GetExtent());
+  if (outExt[0] <= outExt[1] && outExt[2] <= outExt[3] && outExt[4] <= outExt[5])
+    {
+    vtkExtractVOI* voi = vtkExtractVOI::New();
+    voi->SetVOI(outExt);
+    voi->SetInputData(input);
+    voi->Update();
 
-  vtkExtractVOI* voi = vtkExtractVOI::New();
-  voi->SetVOI(outExt);
-  voi->SetInputData(clone);
-  voi->Update();
+    this->SliceData->ShallowCopy(voi->GetOutput());
+    voi->Delete();
+    }
+  else
+    {
+    this->SliceData->Initialize();
+    }
 
-  this->SliceData->ShallowCopy(voi->GetOutput());
   // vtkExtractVOI is not passing correct origin. Until that's fixed, I
   // will just use the input origin/spacing to compute the bounds.
   this->SliceData->SetOrigin(input->GetOrigin());
 
-  voi->Delete();
-  clone->Delete();
 }
 
 //----------------------------------------------------------------------------

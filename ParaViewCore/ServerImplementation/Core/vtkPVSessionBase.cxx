@@ -24,7 +24,7 @@
 #include "vtkPVSessionCore.h"
 #include "vtkWeakPointer.h"
 
-#include <vtksys/ios/sstream>
+#include <sstream>
 #include <assert.h>
 
 //----------------------------------------------------------------------------
@@ -79,11 +79,6 @@ vtkPVSessionBase::~vtkPVSessionBase()
     {
     controller->RemoveObserver(this->ActivateObserverTag);
     controller->RemoveObserver(this->DesactivateObserverTag);
-    }
-
-  if(vtkProcessModule::GetProcessModule())
-    {
-    vtkProcessModule::GetProcessModule()->InvokeEvent(vtkCommand::ExitEvent);
     }
 
   if (this->SessionCore)

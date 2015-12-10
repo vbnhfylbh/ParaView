@@ -23,14 +23,15 @@
 
 #include "vtkPVServerManagerRenderingModule.h" //needed for exports
 #include "vtkSMViewProxy.h"
-
+#include "vtkNew.h" // needed for vtkInteractorObserver.
 class vtkCamera;
 class vtkCollection;
 class vtkIntArray;
-class vtkPVGenericRenderWindowInteractor;
 class vtkRenderer;
 class vtkRenderWindow;
+class vtkRenderWindowInteractor;
 class vtkSMDataDeliveryManager;
+class vtkSMViewProxyInteractorHelper;
 
 class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMRenderViewProxy : public vtkSMViewProxy
 {
@@ -41,19 +42,19 @@ public:
 
   // Description:
   // Makes a new selection source proxy.
-  bool SelectSurfaceCells(int region[4],
+  bool SelectSurfaceCells(const int region[4],
     vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources,
     bool multiple_selections=false);
-  bool SelectSurfacePoints(int region[4],
+  bool SelectSurfacePoints(const int region[4],
     vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources,
     bool multiple_selections=false);
-  bool SelectFrustumCells(int region[4],
+  bool SelectFrustumCells(const int region[4],
     vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources,
     bool multiple_selections=false);
-  bool SelectFrustumPoints(int region[4],
+  bool SelectFrustumPoints(const int region[4],
     vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources,
     bool multiple_selections=false);
@@ -65,6 +66,15 @@ public:
     vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources,
     bool multiple_selections=false);
+
+  // Description:
+  // Returns the range for visible elements in the current view.
+  bool ComputeVisibleScalarRange(const int region[4],
+    int fieldAssociation, const char* scalarName,
+    int component, double range[]);
+  bool ComputeVisibleScalarRange(
+    int fieldAssociation, const char* scalarName,
+    int component, double range[]);
 
   // Description:
   // Convenience method to pick a location. Internally uses SelectSurfaceCells
@@ -81,8 +91,9 @@ public:
   // Given a location is display coordinates (pixels), tries to compute and
   // return the world location on a surface, if possible. Returns true if the
   // conversion was successful, else returns false.
+  // If Snap on mesh point is true, it will return a point from the mesh only
   bool ConvertDisplayToPointOnSurface(
-    const int display_position[2], double world_position[3]);
+    const int display_position[2], double world_position[3], bool snapOnMeshPoint = false);
 
   // Description:
   // Checks if color depth is sufficient to support selection.
@@ -92,9 +103,12 @@ public:
 
   // Description:
   // For backwards compatibility in Python scripts.
-  void ResetCamera()
-    { this->InvokeCommand("ResetCamera"); }
+  void ResetCamera();
   void ResetCamera(double bounds[6]);
+  void ResetCamera(
+    double xmin, double xmax,
+    double ymin, double ymax,
+    double zmin, double zmax);
 
   // Description:
   // Convenience method for zooming to a representation.
@@ -107,8 +121,15 @@ public:
   virtual const char* IsSelectVisiblePointsAvailable();
 
   // Description:
+  // A client process need to set the interactor to enable interactivity. Use
+  // this method to set the interactor and initialize it as needed by the
+  // RenderView. This include changing the interactor style as well as
+  // overriding VTK rendering to use the Proxy/ViewProxy API instead.
+  virtual void SetupInteractor(vtkRenderWindowInteractor* iren);
+
+  // Description:
   // Returns the interactor.
-  vtkPVGenericRenderWindowInteractor* GetInteractor();
+  virtual vtkRenderWindowInteractor* GetInteractor();
 
   // Description:
   // Returns the client-side renderer (composited or 3D).
@@ -117,12 +138,6 @@ public:
   // Description:
   // Returns the client-side camera object.
   vtkCamera* GetActiveCamera();
-
-  // Description:
-  // Create a default representation for the given source proxy.
-  // Returns a new proxy.
-  virtual vtkSMRepresentationProxy* CreateDefaultRepresentation(
-    vtkSMProxy*, int);
 
   // Description:
   // This method calls UpdateInformation on the Camera Proxy
@@ -147,14 +162,35 @@ public:
   virtual void Update();
 
   // Description:
+  // We override that method to handle LOD and non-LOD NeedsUpdate in transparent manner.
+  virtual bool GetNeedsUpdate();
+
+  // Description:
   // Called to render a streaming pass. Returns true if the view "streamed" some
   // geometry.
   bool StreamingUpdate(bool render_if_needed);
+
+  // Description:
+  // Overridden to check through the various representations that this view can
+  // create.
+  virtual const char* GetRepresentationType(
+    vtkSMSourceProxy* producer, int outputPort);
+
+  // Description:
+  // Returns the render window used by this view.
+  virtual vtkRenderWindow* GetRenderWindow();
+
+  // Description:
+  // Provides access to the vtkSMViewProxyInteractorHelper object that handles
+  // the interaction/view sync. We provide access to it for applications to
+  // monitor timer events etc.
+  vtkSMViewProxyInteractorHelper* GetInteractorHelper();
 
 //BTX
 protected:
   vtkSMRenderViewProxy();
   ~vtkSMRenderViewProxy();
+
 
   // Description:
   // Calls UpdateLOD() on the vtkPVRenderView.
@@ -170,7 +206,7 @@ protected:
   virtual vtkImageData* CaptureWindowInternal(int magnification);
   virtual void CaptureWindowInternalRender();
 
-  bool SelectFrustumInternal(int region[4],
+  bool SelectFrustumInternal(const int region[4],
     vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources,
     bool multiple_selections,
@@ -195,6 +231,12 @@ protected:
   // Called at the end of CreateVTKObjects().
   virtual void CreateVTKObjects();
 
+  // Description:
+  // Returns true if the proxy is in interaction mode that corresponds to making
+  // a selection i.e. vtkPVRenderView::INTERACTION_MODE_POLYGON or
+  // vtkPVRenderView::INTERACTION_MODE_SELECTION.
+  bool IsInSelectionMode();
+
   bool IsSelectionCached;
   void ClearSelectionCache(bool force = false);
 
@@ -209,6 +251,8 @@ protected:
 private:
   vtkSMRenderViewProxy(const vtkSMRenderViewProxy&); // Not implemented
   void operator=(const vtkSMRenderViewProxy&); // Not implemented
+
+  vtkNew<vtkSMViewProxyInteractorHelper> InteractorHelper;
 //ETX
 };
 

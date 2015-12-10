@@ -38,6 +38,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QApplication>
 #include "pq@BPC_NAME@Initializer.h"
+#include "vtkPVConfig.h"
+// See Applications/ParaView/CMakeLists.txt for why this is necessary.
+#cmakedefine SUPPORT_STATIC_PLUGINS
+#ifdef SUPPORT_STATIC_PLUGINS
+#ifndef BUILD_SHARED_LIBS
+#include "pvStaticPluginsInit.h"
+#endif
+#endif
 
 #ifdef Q_WS_X11
 #include <QPlastiqueStyle>
@@ -87,14 +95,25 @@ int main(int argc, char* argv[])
   QApplication::setApplicationVersion("@BPC_VERSION_MAJOR@.@BPC_VERSION_MINOR@.@BPC_VERSION_PATCH@");
   QApplication::setOrganizationName("@BPC_ORGANIZATION@");
 
+#ifdef SUPPORT_STATIC_PLUGINS
+#ifndef BUILD_SHARED_LIBS
+  paraview_static_plugins_init();
+#endif
+#endif
+
   QApplication qtapp(argc, argv);
   setlocale(LC_NUMERIC,"C");
   pq@BPC_NAME@Initializer pvInitializer;
-  if (!pvInitializer.Initialize(argc, argv))
+  pq@BPC_NAME@Initializer::Status status = pvInitializer.Initialize(argc, argv);
+  switch (status)
     {
-    return 1;
+    case pq@BPC_NAME@Initializer::ExitSuccess:
+      return 0;
+    case pq@BPC_NAME@Initializer::ExitFailure:
+      return 1;
+    case pq@BPC_NAME@Initializer::RunApplication:
+      return qtapp.exec();
     }
 
-  return qtapp.exec();
 }
 // ***************** DO NOT EDIT ***********************************

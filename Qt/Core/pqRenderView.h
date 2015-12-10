@@ -48,9 +48,15 @@ class PQCORE_EXPORT pqRenderView : public pqRenderViewBase
 {
   Q_OBJECT
   typedef pqRenderViewBase Superclass;
+
 public:
+  typedef enum pqSelectionOperator {
+    PV_SELECTION_NEW = 0,
+    PV_SELECTION_MERGE = 1,
+    PV_SELECTION_SUBTRACT = -1
+  } pqSelectionOperator;
+
   static QString renderViewType() { return "RenderView"; }
-  static QString renderViewTypeName() { return "3D View"; }
 
   // Constructor:
   // \c group :- SManager registration group name.
@@ -85,22 +91,6 @@ public:
 
   /// Resets the center of rotation to the focal point.
   void resetCenterOfRotation();
-
-  /// Capture the view image into a new vtkImageData with the given magnification
-  /// and returns it.
-  virtual vtkImageData* captureImage(int magnification);
-  virtual vtkImageData* captureImage(const QSize& asize)
-    { return this->Superclass::captureImage(asize); }
-
-  /// Sets default values for the underlying proxy.
-  /// This is during the initialization stage of the pqProxy
-  /// for proxies created by the GUI itself i.e.
-  /// for proxies loaded through state or created by python client
-  /// this method won't be called.
-  virtual void setDefaultPropertyValues();
-
-  /// restore the default background color
-  virtual const int* defaultBackgroundColor() const;
 
   /// Get if the orientation axes is visible.
   bool getOrientationAxesVisibility() const;
@@ -154,19 +144,6 @@ public:
     double look_x, double look_y, double look_z,
     double up_x, double up_y, double up_z);
 
-  /// Save the settings of this render module with QSettings.
-  /// We  only save non-global settings in this method.
-  /// Global settings are saved by the dialog itself.
-  /// Overridden to save axes specific settings.
-  virtual void saveSettings();
-
-  /// Apply the settings from QSettings to this render module
-  /// Overridden to load axes specific settings.
-  virtual void restoreSettings(bool only_global);
-
-  /// restore the default light parameters
-  virtual void restoreDefaultLightSettings();
-
   /// Let internal class handle which internal widget should change its cursor
   /// This is usually used for selection and in case of QuadView/SliceView
   /// which contains an aggregation of QWidget, we don't necessary want all of
@@ -174,21 +151,10 @@ public:
   virtual void setCursor(const QCursor &);
 
 public:
-  /// Return 9 default 3D manipulators (Used inside settings)
-  static ManipulatorType* getDefault3DManipulatorTypes()
-  { return & pqRenderView::DefaultManipulatorTypes[0]; }
-
-  /// Return 9 default 2D manipulators (Used inside settings)
-  static ManipulatorType* getDefault2DManipulatorTypes()
-  { return & pqRenderView::DefaultManipulatorTypes[9]; }
-
-  /// Return all possible manipulators
-  virtual ManipulatorType* getManipulatorTypes(int &numberOfManipulatorType);
-
   /// Creates a new surface selection given the rectangle in display
   /// coordinates.
-  void selectOnSurface(int rectangle[4], bool expand=false);
-  void selectPointsOnSurface(int rectangle[4], bool expand=false);
+  void selectOnSurface(int rectangle[4], pqSelectionOperator selOp = PV_SELECTION_NEW);
+  void selectPointsOnSurface(int rectangle[4], pqSelectionOperator selOp = PV_SELECTION_NEW);
 
   /// Picks the representation at the given position.
   /// This will result in firing the picked(pqOutputPort*) signal on successful
@@ -207,15 +173,15 @@ public:
 
   /// Creates a "block" selection given the rectangle in display coordinates.
   /// block selection is selection of a block in a composite dataset.
-  void selectBlock(int rectangle[4], bool expand=false);
+  void selectBlock(int rectangle[4], pqSelectionOperator selOp = PV_SELECTION_NEW);
 
   /// Creates a new surface points selection given the polygon in display
   /// coordinates.
-  void selectPolygonPoints(vtkIntArray* polygon, bool expand=false);
+  void selectPolygonPoints(vtkIntArray* polygon, pqSelectionOperator selOp = PV_SELECTION_NEW);
 
   /// Creates a new surface cells selection given the polygon in display
   /// coordinates.
-  void selectPolygonCells(vtkIntArray* polygon, bool expand=false);
+  void selectPolygonCells(vtkIntArray* polygon, pqSelectionOperator selOp = PV_SELECTION_NEW);
 
 signals:
   // Triggered when interaction mode change underneath
@@ -283,18 +249,10 @@ private slots:
   /// undo signals as required by pqView.
   void onUndoStackChanged();
 
-  /// When the default text annotation color changes, we need to update the
-  /// orientation text actor.
-  void textAnnotationColorChanged();
-
   /// Called when VTK event get trigger to notify that the interaction mode has changed
   void onInteractionModeChange();
 
 protected:
-  /// Restores the visibility etc. for the annotations added by this view such
-  /// as center axis, orientation axis.
-  void restoreAnnotationSettings();
-
   // When true, the camera center of rotation will be reset when the
   // user reset the camera.
   bool ResetCenterWithCamera;
@@ -314,39 +272,20 @@ protected:
   /// view. Default implementation creates a QVTKWidget.
   virtual QWidget* createWidget();
 
-  /// Return the name of the group used for global settings (except interactor
-  /// style).
-  virtual const char* globalSettingsGroup() const
-    { return "renderModule"; }
-
-  /// Return the name of the group used for view-sepecific settings such as
-  /// background color, lighting.
-  virtual const char* viewSettingsGroup() const
-    { return "renderModule"; }
-
-  /// Returns the name of the group in which to save the interactor style
-  /// settings with the corresponding CameraManipulator name.
-  virtual QMap<QString, QString> interactorStyleSettingsGroupToCameraManipulatorName() const;
-
-  /// Setups up RenderModule and QVTKWidget binding.
-  /// This method is called for all pqRenderView objects irrespective
-  /// of whether it is created from state/undo-redo/python or by the GUI. Hence
-  /// don't change any render module properties here.
-  virtual void initializeWidgets();
+  /// Overridden to initialize the interaction undo/redo stack.
+  virtual void initialize();
 private:
   class pqInternal;
   pqInternal* Internal;
   void selectOnSurfaceInternal(int rect[4], QList<pqOutputPort*>&,
-    bool select_points, bool expand, bool select_blocks);
+    bool select_points, pqSelectionOperator selOp, bool select_blocks);
   void selectPolygonInternal(vtkIntArray* polygon, QList<pqOutputPort*>&,
-    bool select_points, bool expand, bool select_blocks);
+    bool select_points, pqSelectionOperator selOp, bool select_blocks);
 
   void emitSelectionSignal(QList<pqOutputPort*>);
   void collectSelectionPorts(vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources, QList<pqOutputPort*> &pqPorts,
-    bool expand, bool select_blocks);
-
-  static ManipulatorType DefaultManipulatorTypes[18];
+    pqSelectionOperator selOp, bool select_blocks);
 
   void InternalConstructor(vtkSMViewProxy *renModule);
 };

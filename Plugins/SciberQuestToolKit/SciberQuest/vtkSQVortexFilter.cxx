@@ -28,6 +28,7 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkPointData.h"
 #include "vtkCellData.h"
 #include "vtkPVXMLElement.h"
+#include "vtkUnsignedCharArray.h"
 
 #include <string>
 #include <utility>
@@ -410,10 +411,10 @@ int vtkSQVortexFilter::RequestData(
   (void)req;
 
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
-  vtkDataObject *inData=inInfo->Get(vtkDataObject::DATA_OBJECT());
+  vtkDataSet *inData=vtkDataSet::GetData(inInfo);
 
   vtkInformation *outInfo=outInfoVec->GetInformationObject(0);
-  vtkDataObject *outData=outInfo->Get(vtkDataObject::DATA_OBJECT());
+  vtkDataSet *outData=vtkDataSet::GetData(outInfo);
 
   // Guard against empty input.
   if (!inData || !outData)
@@ -433,35 +434,32 @@ int vtkSQVortexFilter::RequestData(
     return 1;
     }
 
+  int nGhost = 1;
+
   // Get the input and output extents.
   CartesianExtent inputExt;
-  inInfo->Get(
-        vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
-        inputExt.GetData());
-  CartesianExtent outputExt;
-  outInfo->Get(
-        vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
-        outputExt.GetData());
+  inData->GetInformation()->Get(vtkDataObject::DATA_EXTENT(),
+                                inputExt.GetData());
+
+
+  CartesianExtent outputExt = CartesianExtent::Grow(
+          inputExt,
+          -nGhost,
+          this->Mode);
+
   CartesianExtent domainExt;
   outInfo->Get(
         vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
         domainExt.GetData());
 
-  // Check that we have the ghost cells that we need (more is OK).
-  int nGhost = 1;
-  CartesianExtent inputBox(inputExt);
-  CartesianExtent outputBox
-    = CartesianExtent::Grow(outputExt, nGhost, this->Mode);
-
-  if (!inputBox.Contains(outputBox))
+  if (outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES()) > 1)
     {
-    vtkErrorMacro(
-      << "This filter requires ghost cells to function correctly. "
-      << "The input must conatin the output plus " << nGhost
-      << " layers of ghosts. The input is " << inputBox
-      << ", but it must be at least "
-      << outputBox << ".");
-    return 1;
+    vtkUnsignedCharArray* gl = inData->GetCellGhostArray();
+    if (! gl)
+      {
+      vtkErrorMacro("Did not receive ghost levels. Cannot execute.");
+      return 0;
+      }
     }
 
   // NOTE You can't do a shallow copy because the array dimensions are

@@ -36,8 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkEventQtSlotConnect.h"
 #include "vtkMemberFunctionCommand.h"
 #include "vtkPVDataInformation.h"
-#include "vtkPVGenericRenderWindowInteractor.h"
 #include "vtkPVXMLElement.h"
+#include "vtkRenderWindowInteractor.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMInputProperty.h"
 #include "vtkSMIntVectorProperty.h"
@@ -50,6 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMSession.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMTrace.h"
 
 // Qt includes.
 #include <QtDebug>
@@ -62,6 +63,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
 #include "pqBoxWidget.h"
+#include "pqCoreUtilities.h"
 #include "pqDistanceWidget.h"
 #include "pqImplicitPlaneWidget.h"
 #include "pqInterfaceTracker.h"
@@ -69,18 +71,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqPipelineFilter.h"
 #include "pqPipelineSource.h"
 #include "pqPointSourceWidget.h"
+#include "pqPolyLineWidget.h"
 #include "pqRenderView.h"
 #include "pqServer.h"
 #include "pqSMAdaptor.h"
 #include "pqSphereWidget.h"
 #include "pqSplineWidget.h"
-
-#include "vtkPVConfig.h"
-#ifdef PARAVIEW_ENABLE_PYTHON
-#include "pqPythonManager.h"
-#include "pqPythonDialog.h"
-#include "pqPythonShell.h"
-#endif
 
 namespace
 {
@@ -125,6 +121,10 @@ public:
       {
       widget = new pqLineWidget(referenceProxy, controlledProxy, 0);
       }
+    else if (name == "PolyLineSource")
+      {
+      widget = new pqPolyLineWidget(referenceProxy, controlledProxy, 0);
+      }
     else if (name == "Distance")
       {
       widget = new pqDistanceWidget(referenceProxy, controlledProxy, 0);
@@ -150,7 +150,8 @@ public:
     WidgetVisible(true),
     Selected(false),
     LastWidgetVisibilityGoal(true),
-    InDeleteCall(false)
+    InDeleteCall(false),
+    PickOnMeshPoint(false)
   {
   this->VTKConnect = vtkSmartPointer<vtkEventQtSlotConnect>::New();
   this->IsMaster = pqApplicationCore::instance()->getActiveServer()->isMaster();
@@ -176,6 +177,7 @@ public:
   bool IsMaster;
   bool LastWidgetVisibilityGoal;
   bool InDeleteCall;
+  bool PickOnMeshPoint;
 };
 
 //-----------------------------------------------------------------------------
@@ -196,11 +198,14 @@ pq3DWidget::pq3DWidget(vtkSMProxy* refProxy, vtkSMProxy* pxy, QWidget* _p) :
   QObject::connect( pqApplicationCore::instance(),
                     SIGNAL(updateMasterEnableState(bool)),
                     this, SLOT(updateMasterEnableState(bool)));
-
-  QObject::connect( &pqActiveObjects::instance(),
-                    SIGNAL(sourceNotification(pqPipelineSource*,char*)),
-                    this,
-                    SLOT(handleSourceNotification(pqPipelineSource*,char*)));
+  if (refProxy)
+    {
+    // Listen to UserEvent to allow Python to toggle widget visibility.
+    // Leaving the current "core" design intact for this. When we refactor
+    // 3DWidgets, we should revisit this design.
+    pqCoreUtilities::connect(refProxy, vtkCommand::UserEvent,
+      this, SLOT(handleReferenceProxyUserEvent(vtkObject*, unsigned long, void*)));
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -318,7 +323,7 @@ void pq3DWidget::setView(pqView* pqview)
   if (rview && !this->Internal->PickSequence.isEmpty())
     {
     this->Internal->PickShortcut = new QShortcut(
-      this->Internal->PickSequence, pqview->getWidget());
+      this->Internal->PickSequence, pqview->widget());
     QObject::connect(this->Internal->PickShortcut, SIGNAL(activated()),
       this, SLOT(pickPoint()));
     }
@@ -351,6 +356,12 @@ void pq3DWidget::render()
 }
 
 //-----------------------------------------------------------------------------
+void pq3DWidget::setPickOnMeshPoint(bool enable)
+{
+  this->Internal->PickOnMeshPoint = enable;
+}
+
+//-----------------------------------------------------------------------------
 void pq3DWidget::pickPoint()
 {
   pqRenderView* rview = qobject_cast<pqRenderView*>(this->renderView());
@@ -366,7 +377,7 @@ void pq3DWidget::pickPoint()
     const int* eventpos = rwi->GetEventPosition();
     double position[3];
     if (rview->getRenderViewProxy()->ConvertDisplayToPointOnSurface(eventpos,
-      position))
+      position, this->Internal->PickOnMeshPoint))
       {
       this->pick(position[0], position[1], position[2]);
       }
@@ -495,6 +506,12 @@ void pq3DWidget::setHints(vtkPVXMLElement* hints)
 }
 
 //-----------------------------------------------------------------------------
+bool pq3DWidget::pickOnMeshPoint() const
+{
+  return this->Internal->PickOnMeshPoint;
+} 
+
+//-----------------------------------------------------------------------------
 void pq3DWidget::setControlledProperty(const char* function,
   vtkSMProperty* controlled_property)
 {
@@ -608,26 +625,13 @@ void pq3DWidget::setWidgetVisible(bool visible)
     this->Internal->WidgetVisible = visible;
     this->updateWidgetVisibility();
 
-    // Handle trace to support show/hide actions
-#ifdef PARAVIEW_ENABLE_PYTHON
-    pqApplicationCore* core = pqApplicationCore::instance();
-    pqPythonManager* manager =
-        qobject_cast<pqPythonManager*>(core->manager("PYTHON_MANAGER"));
-    if (manager && 
-        manager->canStopTrace() && this->renderView() &&
-        !this->Internal->InDeleteCall)
+    if (vtkSMProxy* refProxy = this->getReferenceProxy())
       {
-      QString script =
-          QString("try:\n"
-                  "  paraview.smtrace\n"
-                  "  paraview.smtrace.trace_change_widget_visibility('%1')\n"
-                  "except AttributeError: pass\n").arg(
-            visible ? "ShowWidget" : "HideWidget");
-      pqPythonShell* shell = manager->pythonShellDialog()->shell();
-      shell->executeScript(script);
+      SM_SCOPED_TRACE(CallFunction)
+        .arg(visible? "Show3DWidgets" : "Hide3DWidgets")
+        .arg("proxy", refProxy)
+        .arg("comment", "toggle 3D widget visibility (only when running from the GUI)");
       }
-#endif
-    
     emit this->widgetVisibilityChanged(visible);
     }
 }
@@ -777,18 +781,24 @@ void pq3DWidget::updateMasterEnableState(bool I_am_the_Master)
     this->hideWidget();
     }
 }
+
 //-----------------------------------------------------------------------------
-void pq3DWidget::handleSourceNotification(pqPipelineSource* source,char* msg)
+void pq3DWidget::handleReferenceProxyUserEvent(
+  vtkObject* caller, unsigned long eventid, void* calldata)
 {
-  if(source->getProxy() == this->Internal->ReferenceProxy.GetPointer() && msg)
-    {
-    if(!strcmp("HideWidget", msg))
+  (void)caller;
+  (void)eventid;
+
+  Q_ASSERT(caller == this->getReferenceProxy());
+  Q_ASSERT(eventid == vtkCommand::UserEvent);
+
+  const char* message = reinterpret_cast<const char*>(calldata);
+  if (message != NULL && strcmp("HideWidget", message) == 0)
       {
       this->hideWidget();
       }
-    else if(!strcmp("ShowWidget",msg))
-      {
-      this->showWidget();
-      }
+  else if (message != NULL && strcmp("ShowWidget", message) == 0)
+    {
+    this->showWidget();
     }
 }

@@ -20,7 +20,7 @@
 #include "vtkCommand.h"
 #include "vtkObjectFactory.h"
 #include "vtkProcessModule.h"
-#include "vtkPVGenericRenderWindowInteractor.h"
+#include "vtkRenderWindowInteractor.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMDoubleVectorProperty.h"
 #include "vtkSMIntVectorProperty.h"
@@ -179,6 +179,8 @@ void vtkSMNewWidgetRepresentationProxy::CreateVTKObjects()
       
       vtkSMPropertyLink* link = vtkSMPropertyLink::New();
 
+      // NOTE: vtkSMPropertyLink no longer affect proxy reference. We're now
+      // only using vtkWeakPointer in vtkSMPropertyLink.
       link->AddLinkedProperty(this,
                               piter->GetKey(), 
                               vtkSMLink::OUTPUT);
@@ -204,12 +206,9 @@ void vtkSMNewWidgetRepresentationProxy::ExecuteEvent(unsigned long event)
 
   if (event == vtkCommand::StartInteractionEvent)
     {
-    vtkPVGenericRenderWindowInteractor* inter =
-        vtkPVGenericRenderWindowInteractor::SafeDownCast(
-            this->Widget->GetInteractor());
-    if (inter)
+    if (vtkRenderWindowInteractor* iren = this->Widget->GetInteractor())
       {
-      inter->InteractiveRenderEnabledOn();
+      iren->InvokeEvent(event);
       }
     if(widgetRepresentation)
       {
@@ -221,6 +220,10 @@ void vtkSMNewWidgetRepresentationProxy::ExecuteEvent(unsigned long event)
     this->RepresentationProxy->UpdatePropertyInformation();
     this->UpdateVTKObjects();
 
+    if (vtkRenderWindowInteractor* iren = this->Widget->GetInteractor())
+      {
+      iren->InvokeEvent(event);
+      }
     if(widgetRepresentation)
       {
       widgetRepresentation->OnInteraction();
@@ -228,13 +231,6 @@ void vtkSMNewWidgetRepresentationProxy::ExecuteEvent(unsigned long event)
     }
   else if (event == vtkCommand::EndInteractionEvent)
     {
-    vtkPVGenericRenderWindowInteractor* inter =
-        vtkPVGenericRenderWindowInteractor::SafeDownCast(
-            this->Widget->GetInteractor());
-    if (inter)
-      {
-      inter->InteractiveRenderEnabledOff();
-      }
     vtkSMProperty* sizeHandles =
         this->RepresentationProxy->GetProperty("SizeHandles");
     if (sizeHandles)
@@ -242,34 +238,16 @@ void vtkSMNewWidgetRepresentationProxy::ExecuteEvent(unsigned long event)
       sizeHandles->Modified();
       this->RepresentationProxy->UpdateProperty("SizeHandles");
       }
+
     if(widgetRepresentation)
       {
       widgetRepresentation->OnEndInteraction();
       }
-    }
-}
-
-//----------------------------------------------------------------------------
-void vtkSMNewWidgetRepresentationProxy::UnRegister(vtkObjectBase* obj)
-{
-  vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
-  // If the object is not being deleted by the interpreter and it
-  // has a reference count of 2 (SelfID and the reference that is
-  // being released), delete the internals so that the links
-  // release their references to the proxy
-  if ( pm && this->Internal )
-    {
-    int size = static_cast<int>(this->Internal->Links.size());
-    if (size > 0 && this->ReferenceCount == (2 + 2*size))
+    if (vtkRenderWindowInteractor* iren = this->Widget->GetInteractor())
       {
-      vtkSMNewWidgetRepresentationInternals* aInternal = this->Internal;
-      this->Internal = 0;
-      delete aInternal;
-      aInternal = 0;
+      iren->InvokeEvent(event);
       }
     }
-
-  this->Superclass::UnRegister(obj);
 }
 
 //----------------------------------------------------------------------------
@@ -277,5 +255,3 @@ void vtkSMNewWidgetRepresentationProxy::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
-
-

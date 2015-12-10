@@ -37,6 +37,11 @@ SET_SOURCE_FILES_PROPERTIES(
   ABSTRACT
   )
 
+# OpenGL2 specific definitions
+if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
+  add_definitions(-DVTKGL2)
+endif()
+
 vtk_module_library(vtkPVServerManagerApplication ${Module_SRCS})
 
 #------------------------------------------------------------------------------
@@ -99,24 +104,49 @@ target_link_libraries(vtkPVServerManagerApplication
 # Setup SM xmls. 
 #------------------------------------------------------------------------------
 SET(requestedResourceFiles
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/catalyst.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/filters.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/sources.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/readers.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/utilities.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/rendering.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/views_and_representations.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Resources/3d_widgets.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/filters.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Resources/internal_writers.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/readers.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/rendering.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/sources.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/utilities.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/views_and_representations.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Resources/writers.xml
   ${module_sm_xmls}
   )
+if (PARAVIEW_USE_MPI)
+  list(APPEND requestedResourceFiles
+    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_mpi.xml)
+endif()
+if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
+  list(APPEND requestedResourceFiles
+    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_opengl2.xml)
+else()
+  # Old OpenGL.
+  list(APPEND requestedResourceFiles
+    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_opengl1.xml)
+endif()
+
+#------------------------------------------------------------------------------
+list(FIND VTK_MODULES_ENABLED "vtkIOXdmf3" vtkioxdmf3_index)
+if (vtkioxdmf3_index GREATER 0)
+  list(APPEND requestedResourceFiles
+    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_xdmf3.xml)
+endif()
+
+list(FIND VTK_MODULES_ENABLED "vtkIOADIOS" vtkioadios_index)
+if (vtkioadios_index GREATER 0)
+  list(APPEND requestedResourceFiles
+    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_adios.xml)
+endif()
+#------------------------------------------------------------------------------
 
 if (PARAVIEW_ENABLE_PYTHON)
   list(APPEND requestedResourceFiles
       ${CMAKE_CURRENT_SOURCE_DIR}/Resources/pythonfilter.xml
   )
-endif(PARAVIEW_ENABLE_PYTHON)
+endif()
 set(resourceFiles)
 foreach(requestedResourceFile IN LISTS requestedResourceFiles)
   if (EXISTS "${requestedResourceFile}")
@@ -126,11 +156,10 @@ endforeach()
 set (PARAVIEW_SERVERMANAGER_XMLS ${resourceFiles}
     CACHE INTERNAL "Server Manager XMLs")
 
-get_target_property(kwprocessXML_location kwProcessXML LOCATION)
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/vtkSMGeneratedModules.h
   DEPENDS ${resourceFiles} kwProcessXML
-  COMMAND ${kwprocessXML_location}
+  COMMAND kwProcessXML
        ${CMAKE_CURRENT_BINARY_DIR}/vtkSMGeneratedModules.h
        vtkSMDefaultModules Interface GetInterfaces
        ${resourceFiles}

@@ -52,7 +52,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include <string>
 #include <vector>
 #include <iterator>
-
+#include <algorithm>
 
 
 namespace
@@ -408,11 +408,10 @@ int vtkUnstructuredPOPReader::RequestInformation(vtkInformation *request,
     return 0;
     }
 
-  // Superclass understands structured data, but we have to handle unstructured
-  // "extents" (pieces).
+  // We handle unstructured "extents" (pieces).
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
   outInfo->Set(
-    vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), -1);
+    CAN_HANDLE_PIECE_REQUEST(), 1);
 
   return 1;
 }
@@ -928,7 +927,9 @@ bool vtkUnstructuredPOPReader::Transform(
       {
       // the last layer of ghost cells was added in order to do the vertical velocity calculation.
       // it needs to be removed now.
-      grid->RemoveGhostCells(numberOfGhostLevels);
+      // TODO: Berk
+      // This needs to be fixed
+      //grid->RemoveGhostCells(numberOfGhostLevels);
       }
     }
 
@@ -1598,13 +1599,13 @@ bool vtkUnstructuredPOPReader::BuildGhostInformation(
     {
     return true;
     }
-  vtkUnsignedCharArray* cellGhostLevels = vtkUnsignedCharArray::New();
-  cellGhostLevels->SetName("vtkGhostLevels");
-  cellGhostLevels->SetNumberOfTuples(grid->GetNumberOfCells());
-  grid->GetCellData()->AddArray(cellGhostLevels);
-  cellGhostLevels->Delete();
+  vtkUnsignedCharArray* cellGhostArray = vtkUnsignedCharArray::New();
+  cellGhostArray->SetName(vtkDataSetAttributes::GhostArrayName());
+  cellGhostArray->SetNumberOfTuples(grid->GetNumberOfCells());
+  grid->GetCellData()->AddArray(cellGhostArray);
+  cellGhostArray->Delete();
 
-  unsigned char *ia = cellGhostLevels->GetPointer(0);
+  unsigned char *ia = cellGhostArray->GetPointer(0);
   for(vtkIdType i=0;i<grid->GetNumberOfCells();i++)
     {
     ia[i] = (unsigned char)0;
@@ -1654,7 +1655,7 @@ bool vtkUnstructuredPOPReader::BuildGhostInformation(
             }
           else
             {
-            ia[index] = ghostLevel;
+            ia[index] = vtkDataSetAttributes::DUPLICATECELL;
             }
           i++;
           }
@@ -1667,13 +1668,13 @@ bool vtkUnstructuredPOPReader::BuildGhostInformation(
     }
   while (k<subExtent[5]-subExtent[4]);
 
-  vtkUnsignedCharArray* pointGhostLevels = vtkUnsignedCharArray::New();
-  pointGhostLevels->SetName("vtkGhostLevels");
-  pointGhostLevels->SetNumberOfTuples(grid->GetNumberOfPoints());
-  grid->GetPointData()->AddArray(pointGhostLevels);
-  pointGhostLevels->Delete();
+  vtkUnsignedCharArray* pointGhostArray = vtkUnsignedCharArray::New();
+  pointGhostArray->SetName(vtkDataSetAttributes::GhostArrayName());
+  pointGhostArray->SetNumberOfTuples(grid->GetNumberOfPoints());
+  grid->GetPointData()->AddArray(pointGhostArray);
+  pointGhostArray->Delete();
 
-  ia = pointGhostLevels->GetPointer(0);
+  ia = pointGhostArray->GetPointer(0);
   for(vtkIdType i=0;i<grid->GetNumberOfPoints();i++)
     {
     ia[i] = (unsigned char)0;
@@ -1722,7 +1723,7 @@ bool vtkUnstructuredPOPReader::BuildGhostInformation(
             }
           else
             {
-            ia[index] = ghostLevel;
+            ia[index] = vtkDataSetAttributes::DUPLICATEPOINT;
             }
           i++;
           } while (i<actualXDimension);

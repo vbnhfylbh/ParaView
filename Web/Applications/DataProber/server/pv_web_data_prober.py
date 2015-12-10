@@ -1,25 +1,33 @@
 r"""
     This module is a ParaViewWeb server application.
-    The following command line illustrate how to use it::
+    The following command line illustrates how to use it::
 
         $ pvpython .../pv_web_data_prober.py --data-dir /.../path-to-your-data-directory
 
-    Any ParaViewWeb executable script come with a set of standard arguments that
-    can be overriden if need be::
+        --data-dir
+            Path used to list that directory on the server and let the client choose a
+            file to load.  You may also specify multiple directories, each with a name
+            that should be displayed as the top-level name of the directory in the UI.
+            If this parameter takes the form: "name1=path1|name2=path2|...",
+            then we will treat this as the case where multiple data directories are
+            required.  In this case, each top-level directory will be given the name
+            associated with the directory in the argument.
+
+    Any ParaViewWeb executable script comes with a set of standard arguments that can be overriden if need be::
 
         --port 8080
-             Port number on which the HTTP server will listen to.
+             Port number on which the HTTP server will listen.
 
         --content /path-to-web-content/
-             Directory that you want to server as static web content.
-             By default, this variable is empty which mean that we rely on another server
-             to deliver the static content and the current process only focus on the
-             WebSocket connectivity of clients.
+             Directory that you want to serve as static web content.
+             By default, this variable is empty which means that we rely on another
+             server to deliver the static content and the current process only
+             focuses on the WebSocket connectivity of clients.
 
         --authKey vtkweb-secret
              Secret key that should be provided by the client to allow it to make any
              WebSocket communication. The client will assume if none is given that the
-             server expect "vtkweb-secret" as secret key.
+             server expects "vtkweb-secret" as secret key.
 
 """
 
@@ -38,7 +46,7 @@ from vtk.web import server
 from vtkWebCorePython import *
 
 # import annotations
-from autobahn.wamp import exportRpc
+from autobahn.wamp import register as exportRpc
 
 from twisted.python import log
 import logging
@@ -48,7 +56,7 @@ try:
 except ImportError:
     # since  Python 2.6 and earlier don't have argparse, we simply provide
     # the source for the same as _argparse and we use it instead.
-    import _argparse as argparse
+    from vtk.util import _argparse as argparse
 
 # =============================================================================
 # Create custom Data Prober class to handle clients requests
@@ -109,13 +117,14 @@ class _DataProber(pv_wamp.PVServerProtocol):
         scene.PlayMode = "Snap To TimeSteps"
 
     @classmethod
-    def endInteractionCallback(cls, factory):
+    def endInteractionCallback(cls, self):
         def callback(caller, event):
             caller.GetProperty("Point1WorldPosition").Copy(
                 caller.GetProperty("Point1WorldPositionInfo"))
             caller.GetProperty("Point2WorldPosition").Copy(
                 caller.GetProperty("Point2WorldPositionInfo"))
-            factory.dispatch("http://vtk.org/event#probeDataChanged", True)
+            self.publish("vtk.event.probe.data.changed", True)
+            print 'publish callback'
         return callback
 
     def update3DWidget(self):
@@ -128,7 +137,7 @@ class _DataProber(pv_wamp.PVServerProtocol):
             widget.Enabled = 1
             cls.Widget = widget
             widget.SMProxy.AddObserver(vtk.vtkCommand.EndInteractionEvent,
-                cls.endInteractionCallback(self.factory))
+                cls.endInteractionCallback(self))
 
         if cls.PipelineObjects:
             # compute bounds for all pipeline objects.
@@ -181,7 +190,8 @@ class _DataProber(pv_wamp.PVServerProtocol):
             text += "</ul></li>"
         return text
 
-    @exportRpc("loadData")
+    # RpcName: loadData => pv.data.prober.load.data
+    @exportRpc("pv.data.prober.load.data")
     def loadData(self, datafile):
         """Load a data file. The argument is a path relative to the DataPath
         pointing to the dataset to load.
@@ -208,7 +218,8 @@ class _DataProber(pv_wamp.PVServerProtocol):
         item["name"] = os.path.split(datafile)[1]
         _DataProber.PipelineObjects.append(item)
 
-    @exportRpc("loadDatasets")
+    # RpcName: loadDatasets => pv.data.prober.load.dataset
+    @exportRpc("pv.data.prober.load.dataset")
     def loadDatasets(self, datafiles):
         # initially, we'll only support loading 1 dataset.
         for item in _DataProber.PipelineObjects:
@@ -224,7 +235,8 @@ class _DataProber(pv_wamp.PVServerProtocol):
         simple.Render()
         return True
 
-    @exportRpc("getProbeData")
+    # RpcName: getProbeData => pv.data.prober.probe.data
+    @exportRpc("pv.data.prober.probe.data")
     def getProbeData(self):
         """Returns probe-data from all readers. The returned datastructure has
             the following syntax.
@@ -270,29 +282,35 @@ class _DataProber(pv_wamp.PVServerProtocol):
                 (bounds[2] + bounds[3]) * 0.5,
                 (bounds[4] + bounds[5]) * 0.5]
 
-    @exportRpc("getDatabase")
+    # RpcName: getDatabase => pv.data.prober.database.json
+    @exportRpc("pv.data.prober.database.json")
     def getDatabase(self):
         return _DataProber.Database
 
-    @exportRpc("getDatabaseAsHTML")
+    # RpcName: getDatabaseAsHTML => pv.data.prober.database.html
+    @exportRpc("pv.data.prober.database.html")
     def getDatabaseAsHTML(self):
         return _DataProber.toHTML(_DataProber.Database)
 
-    @exportRpc("goToNext")
+    # RpcName: goToNext => pv.data.prober.time.next
+    @exportRpc("pv.data.prober.time.next")
     def goToNext(self):
         oldTime = self.View.ViewTime
         simple.GetAnimationScene().GoToNext()
         if oldTime != self.View.ViewTime:
-            self.factory.dispatch("http://vtk.org/event#probeDataChanged", True)
+            self.publish("vtk.event.probe.data.changed", True)
+            print 'publish a'
             return True
         return False
 
-    @exportRpc("goToPrev")
+    # RpcName: goToPrev => pv.data.prober.time.previous
+    @exportRpc("pv.data.prober.time.previous")
     def goToPrev(self):
         oldTime = self.View.ViewTime
         simple.GetAnimationScene().GoToPrevious()
         if oldTime != self.View.ViewTime:
-            self.factory.dispatch("http://vtk.org/event#probeDataChanged", True)
+            self.publish("vtk.event.probe.data.changed", True)
+            print 'publish b'
             return True
         return False
 
@@ -302,7 +320,7 @@ class _DataProber(pv_wamp.PVServerProtocol):
 
 if __name__ == "__main__":
     # Create argument parser
-    parser = argparse.ArgumentParser(description="ParaView Web Data-Prober")
+    parser = argparse.ArgumentParser(description="ParaView Web data.prober")
 
     # Add default arguments
     server.add_arguments(parser)

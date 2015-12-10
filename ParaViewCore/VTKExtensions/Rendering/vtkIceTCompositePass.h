@@ -34,16 +34,22 @@
 #include "vtkRenderPass.h"
 #include "vtkSynchronizedRenderers.h" //  needed for vtkRawImage.
 #include "vtkPVVTKExtensionsRenderingModule.h" // needed for export macro
+#include "vtkNew.h" // needed for vtkWeakPointer.
+#include <IceT.h> // for icet types
 
 class vtkMultiProcessController;
 class vtkPKdTree;
 class vtkIceTContext;
 class vtkPixelBufferObject;
 class vtkTextureObject;
-class vtkShaderProgram2;
 class vtkOpenGLRenderWindow;
 class vtkUnsignedCharArray;
 class vtkFloatArray;
+#ifdef VTKGL2
+class vtkOpenGLHelper;
+#else
+class vtkShaderProgram2;
+#endif
 
 class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkIceTCompositePass : public vtkRenderPass
 {
@@ -156,6 +162,11 @@ public:
   void GetLastRenderedTile(vtkSynchronizedRenderers::vtkRawImage& tile);
 
   // Description:
+  // Provides access to the last rendered depth-buffer, if any. May return NULL
+  // if depth buffer was not composited and available on the current rank.
+  vtkFloatArray* GetLastRenderedDepths();
+
+  // Description:
   // Obtains the composited depth-buffer from IceT and pushes it to the screen.
   // This is only done when DepthOnly is true.
   void PushIceTDepthBufferToScreen(const vtkRenderState* render_state);
@@ -172,7 +183,12 @@ public:
 
   // Description:
   // Internal callback. Don't use.
-  virtual void Draw(const vtkRenderState*);
+  virtual void GLDraw(const vtkRenderState*);
+  virtual void Draw(const vtkRenderState*,
+    const IceTDouble *proj_matrix, const IceTDouble *mv_matrix,
+    const IceTFloat *background_color, const IceTInt *viewport,
+    IceTImage result);
+
 protected:
   vtkIceTCompositePass();
   ~vtkIceTCompositePass();
@@ -212,11 +228,15 @@ protected:
 
   int ImageReductionFactor;
 
-  vtkFloatArray *LastRenderedDepths;
+  vtkNew<vtkFloatArray> LastRenderedDepths;
 
   vtkPixelBufferObject *PBO;
   vtkTextureObject *ZTexture;
+#ifdef VTKGL2
+  vtkOpenGLHelper *Program;
+#else
   vtkShaderProgram2 *Program;
+#endif
 
   bool FixBackground;
   vtkTextureObject *BackgroundTexture;

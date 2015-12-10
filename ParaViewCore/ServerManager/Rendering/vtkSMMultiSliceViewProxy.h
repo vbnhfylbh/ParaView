@@ -33,15 +33,36 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
-  // Create a default representation for the given source proxy.
-  // Returns a new proxy.
-  virtual vtkSMRepresentationProxy* CreateDefaultRepresentation(vtkSMProxy*, int);
-
-  // Description:
   // Similar to IsSelectionAvailable(), however, on failure returns the
   // error message otherwise 0.
   virtual const char* IsSelectVisiblePointsAvailable();
 
+  // Description:
+  // Overridden to set initial default slices when a representation is created.
+  // Not sure that's the best way to do this, but leaving the logic unchanged in
+  // this pass.
+  virtual vtkSMRepresentationProxy* CreateDefaultRepresentation(
+    vtkSMProxy* proxy, int outputPort);
+
+  // Description:
+  // Overridden to forward the call to the internal root view proxy.
+  virtual const char* GetRepresentationType(
+    vtkSMSourceProxy* producer, int outputPort);
+
+  // Description:
+  // Fetchs data bounds from the client-side object. We simply fetch the
+  // client-side data bounds since vtkPVMultiSliceView ensures that they are
+  // synced among all ranks in Update().
+  void GetDataBounds(double bounds[6]);
+
+  // Description:
+  // HACK: method to force representation type to "Slices".
+  static void ForceRepresentationType(vtkSMProxy* reprProxy, const char* type);
+
+  // Description:
+  // HACK: Get source's input data bounds (or BoundingBoxInModelCoordinates if
+  // present).
+  static bool GetDataBounds(vtkSMSourceProxy* source, int opport, double bounds[6]);
 //BTX
 protected:
   vtkSMMultiSliceViewProxy();
@@ -50,11 +71,15 @@ protected:
   // Description:
   // Use the center of the source to initialize the view with three orthogonal
   // slices in x, y, z.
-  void InitDefaultSlices(vtkSMSourceProxy* source, int opport);
+  void InitDefaultSlices(vtkSMSourceProxy* source, int opport,
+    vtkSMRepresentationProxy* repr);
 
 private:
   vtkSMMultiSliceViewProxy(const vtkSMMultiSliceViewProxy&); // Not implemented
   void operator=(const vtkSMMultiSliceViewProxy&); // Not implemented
+
+  class vtkInternals;
+  vtkInternals* Internals;
 //ETX
 };
 

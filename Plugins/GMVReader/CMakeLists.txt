@@ -7,16 +7,20 @@ IF(GMVReader_SKIP_DATARANGE_CALCULATIONS_IN_REQUEST_INFORMATION_CALLS)
   SET_SOURCE_FILES_PROPERTIES(
     vtkGMVReader.cxx
     COMPILE_FLAGS -DGMVREADER_SKIP_DATARANGE_CALCULATIONS)
-ENDIF(GMVReader_SKIP_DATARANGE_CALCULATIONS_IN_REQUEST_INFORMATION_CALLS)
+ENDIF()
 
 #--------------------------------------------------
 # Find and Use ParaView
 #--------------------------------------------------
 INCLUDE_DIRECTORIES(${VTK_INCLUDE_DIRS})
 IF(PARAVIEW_BUILD_QT_GUI)
-  INCLUDE(${QT_USE_FILE})
-ENDIF(PARAVIEW_BUILD_QT_GUI)
-
+  IF(PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    SET (Qt5_FIND_COMPONENTS Widgets)
+    INCLUDE(ParaViewQt5)
+  ELSE()
+    INCLUDE(${QT_USE_FILE})
+  ENDIF()
+ENDIF()
 
 # -----------------------------------------------------------------------------
 # Where are gmvread.c, gmvread.h and gmvrayread.h stored?
@@ -33,7 +37,7 @@ IF (GMVReader_GMVREAD_LIB_DIR)
   INCLUDE_DIRECTORIES("${ParaView_SOURCE_DIR}/Utilities/VisItBridge/Library/VisItLib/common/utility")
 ELSE ()
   MESSAGE(FATAL_ERROR "Please set GMVReader_GMVREAD_LIB_DIR to where gmvread.c, gmvread.h and gmvrayread.h in the VisItBridge source tree can be found.")
-ENDIF (GMVReader_GMVREAD_LIB_DIR)
+ENDIF ()
 
 # -----------------------------------------------------------------------------
 # Disable some warnings
@@ -45,7 +49,7 @@ IF (WIN32)
     # and newer
     # -------------------------------------------------------------------------
     ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
-  ENDIF (MSVC_VERSION GREATER 1400)
+  ENDIF ()
 ELSEIF (UNIX)
   IF (CMAKE_COMPILER_IS_GNUCXX)
     # -------------------------------------------------------------------------
@@ -55,16 +59,24 @@ ELSEIF (UNIX)
     CHECK_CXX_COMPILER_FLAG(-Wno-unused-result Wno-unused-result)
     IF (Wno-unused-result)
       SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result")
-    ENDIF (Wno-unused-result)
-  ENDIF (CMAKE_COMPILER_IS_GNUCXX)
-ENDIF (WIN32)
+    ENDIF ()
+  ENDIF ()
+ENDIF ()
+
+if(PARAVIEW_USE_MPI)
+  include(vtkMPI)
+endif()
 
 # ---------------------------------------------------------------------------
 # Combined plugin
 # -----------------------------------------------------------------------------
 IF (PARAVIEW_BUILD_QT_GUI)
   # Extend the auto-generated panel
-  QT4_WRAP_CPP(MOC_SRCS pqGMVReaderPanel.h)
+  IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    QT5_WRAP_CPP (MOC_SRCS pqGMVReaderPanel.h)
+  ELSE ()
+    QT4_WRAP_CPP (MOC_SRCS pqGMVReaderPanel.h)
+  ENDIF ()
   ADD_PARAVIEW_OBJECT_PANEL(IFACES IFACE_SRCS
     CLASS_NAME pqGMVReaderPanel
     XML_NAME GMVSeriesReader
@@ -79,20 +91,19 @@ IF (PARAVIEW_BUILD_QT_GUI)
     GUI_INTERFACES ${IFACES}
     GUI_SOURCES ${MOC_SRCS} ${UI_SRCS} ${IFACE_SRCS} pqGMVReaderPanel.cxx
     )
-ELSE (PARAVIEW_BUILD_QT_GUI)
+ELSE ()
   ADD_PARAVIEW_PLUGIN(GMVReader "1.0"
     REQUIRED_ON_SERVER
     REQUIRED_ON_CLIENT
     SERVER_MANAGER_XML GMVReaderSM.xml
     SERVER_MANAGER_SOURCES vtkGMVReader.cxx)
-ENDIF (PARAVIEW_BUILD_QT_GUI)
+ENDIF ()
 
 # Add testing if necessary
 IF (BUILD_TESTING)
   ADD_SUBDIRECTORY(Testing)
-ENDIF (BUILD_TESTING)
+ENDIF ()
 
 if(PARAVIEW_USE_MPI)
-  include(vtkMPI)
   vtk_mpi_link(GMVReader)
 endif()

@@ -71,10 +71,43 @@ public:
   bool applyChangesImmediately() const
     { return this->ApplyChangesImmediately; }
 
+  /// When this is true, the panel uses a descriptive layout where the
+  /// documentation for properties is used instead of their labels. pqProxyWidget
+  /// automatically adopts this style of layout if <UseDocumentationForLabels />
+  /// hint is present in the proxy.
+  bool useDocumentationForLabels() const
+    { return this->UseDocumentationForLabels; }
+
   /// Returns a new widget that has the label and a h-line separator. This is
   /// used on the pqProxyWidget to separate groups. Other widgets can use it for
   /// the same purpose, as needed.
   static QWidget* newGroupLabelWidget(const QString& label, QWidget* parentWidget);
+
+  /// Returns true of the proxy provided has XML hints indicating that labels
+  /// should use documentation instead of the XML label for the widgets in the
+  /// UI.
+  static bool useDocumentationForLabels(vtkSMProxy* proxy);
+
+  enum DocumentationType
+    {
+    NONE,
+    USE_DESCRIPTION,
+    USE_SHORT_HELP,
+    USE_LONG_HELP
+    };
+
+  /// Returns formatted (HTML or plainText) documentation for the property.
+  /// \c type cannot be NONE.
+  static QString documentationText(vtkSMProperty* property, DocumentationType type=USE_DESCRIPTION);
+
+  /// Returns formatted (HTML or plainText) documentation for the proxy.
+  /// \c type cannot be NONE.
+  static QString documentationText(vtkSMProxy* property, DocumentationType type=USE_DESCRIPTION);
+
+  /// Returns true if the proxy has XML hints indicating that the panel should
+  /// show a header label for the documentation. pqProxyWidget uses the
+  /// <ShowProxyDocumentationInPanel /> hint for this purpose.
+  static DocumentationType showProxyDocumentationInPanel(vtkSMProxy* proxy);
 
 signals:
   /// This signal is fired as soon as the user starts editing in the widget. The
@@ -84,6 +117,10 @@ signals:
   /// This signal is fired as soon as the user is done with making an atomic
   /// change. changeAvailable() is always fired before changeFinished().
   void changeFinished();
+
+  /// Indicates that a restart of the program is required for the setting
+  /// to take effect.
+  void restartRequired();
 
 public slots:
   /// Updates the property widgets shown based on the filterText or
@@ -106,11 +143,27 @@ public slots:
   /// recent call to filterWidgets().
   void updatePanel();
 
+  /// Restores application default proxy settings.
+  /// Returns true if any properties were modified.
+  virtual bool restoreDefaults();
+
+  /// Saves settings as defaults for proxy
+  void saveAsDefaults();
+
 protected:
   void showEvent(QShowEvent *event);
   void hideEvent(QHideEvent *event);
 
+private slots:
+  /// Called when a pqPropertyWidget fires changeFinished() signal.
+  /// This callback fires changeFinished() signal and handles AutoUpdateVTKObjects.
+  void onChangeFinished();
+
 private:
+  /// the actual constructor implementation.
+  void constructor(
+    vtkSMProxy* proxy, const QStringList &properties, QWidget *parent, Qt::WindowFlags flags);
+
   /// create all widgets
   void createWidgets(const QStringList &properties = QStringList());
 
@@ -128,6 +181,7 @@ private:
   Q_DISABLE_COPY(pqProxyWidget);
 
   bool ApplyChangesImmediately;
+  bool UseDocumentationForLabels;
   class pqInternals;
   pqInternals* Internals;
 };

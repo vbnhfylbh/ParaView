@@ -180,16 +180,6 @@ int vtkSQImageGhosts::RequestUpdateExtent(
 
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
 
-  int piece
-    = outInfo->Get(vtkSDDPipeline::UPDATE_PIECE_NUMBER());
-
-  int numPieces
-  = outInfo->Get(vtkSDDPipeline::UPDATE_NUMBER_OF_PIECES());
-
-  CartesianExtent updateExt;
-  outInfo->Get(vtkSDDPipeline::UPDATE_EXTENT(),updateExt.GetData());
-
-
   // gather metadata here for the pending execution.
   this->NGhosts
     = outInfo->Get(vtkSDDPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
@@ -199,27 +189,14 @@ int vtkSQImageGhosts::RequestUpdateExtent(
               this->ProblemDomain,
               this->NGhosts));
 
-  // shirnk the requested extent so that the reader doesn't run
-  // again.
-  updateExt
-     = CartesianExtent::Shrink(
-          updateExt,
-          this->ProblemDomain,
-          this->NGhosts,
-          this->Mode);
-
   vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 
-  inInfo->Set(vtkSDDPipeline::UPDATE_EXTENT(),updateExt.GetData(),6);
-  inInfo->Set(vtkSDDPipeline::UPDATE_PIECE_NUMBER(), piece);
-  inInfo->Set(vtkSDDPipeline::UPDATE_NUMBER_OF_PIECES(), numPieces);
   inInfo->Set(vtkSDDPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(), 0);
   inInfo->Set(vtkSDDPipeline::EXACT_EXTENT(), 1);
 
   #ifdef SQTK_DEBUG
   oss
     << "WHOLE_EXTENT=" << this->ProblemDomain << std::endl
-    << "UPDATE_EXTENT=" << updateExt << std::endl
     << "Mode=" << this->Mode << std::endl
     << "NGhosts=" << this->NGhosts << std::endl;
   pCerr() << oss.str() << std::endl;
@@ -321,8 +298,8 @@ int vtkSQImageGhosts::RequestData(
 
   // Get the input and output extents.
   CartesianExtent inPoints;
-  inInfo->Get(
-        vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+  inData->GetInformation()->Get(
+        vtkDataObject::DATA_EXTENT(),
         inPoints.GetData());
 
   CartesianExtent outPoints
@@ -331,11 +308,6 @@ int vtkSQImageGhosts::RequestData(
           this->ProblemDomain,
           this->NGhosts,
           this->Mode);
-
-  outInfo->Set(
-        vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
-        outPoints.GetData(),
-        6);
 
   outIm->SetExtent(outPoints.GetData());
 
@@ -346,14 +318,13 @@ int vtkSQImageGhosts::RequestData(
   CartesianExtent outCells
      = CartesianExtent::NodeToCell(outPoints,this->Mode);
 
-  CartesianExtent domainCells
-     = CartesianExtent::NodeToCell(this->ProblemDomain,this->Mode);
-
   // construct the set of transactions needed to transfer the
   // ghost data from remote processes. if not a parallel build
   // or run then we need not do this
   std::vector<GhostTransaction> transactions;
   #ifndef SQTK_WITHOUT_MPI
+  CartesianExtent domainCells
+     = CartesianExtent::NodeToCell(this->ProblemDomain,this->Mode);
   if (this->WorldSize>1)
     {
     // gather input extents
@@ -438,6 +409,8 @@ int vtkSQImageGhosts::RequestData(
         outCells,
         transactions,
         false);
+
+  outIm->GenerateGhostArray(inPoints.GetData());
 
   if ( this->LogLevel || globalLogLevel)
     {
@@ -578,6 +551,9 @@ void vtkSQImageGhosts::ExecuteTransactions(
           }
         }
       }
+    #else
+    (void)transactions;
+    (void)pointData;
     #endif
     }
 }

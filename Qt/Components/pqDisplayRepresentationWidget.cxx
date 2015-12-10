@@ -32,53 +32,98 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqDisplayRepresentationWidget.h"
 #include "ui_pqDisplayRepresentationWidget.h"
 
-#include "vtkSMIntVectorProperty.h"
-
-#include<QPointer>
-
-#include "pqServerManagerModel.h"
-#include "pqApplicationCore.h"
-#include "pqPipelineRepresentation.h"
-#include "pqPipelineSource.h"
+#include "pqComboBoxDomain.h"
+#include "pqCoreUtilities.h"
+#include "pqDataRepresentation.h"
 #include "pqPropertyLinks.h"
-#include "pqSignalAdaptors.h"
-#include "pqSMAdaptor.h"
 #include "pqUndoStack.h"
+#include "vtkPVXMLElement.h"
+#include "vtkSMRepresentationProxy.h"
 
-class pqDisplayRepresentationWidgetInternal : 
+#include <QPointer>
+#include <QSet>
+
+#include <cstdlib>
+
+//=============================================================================
+class pqDisplayRepresentationWidget::PropertyLinksConnection : public pqPropertyLinksConnection
+{
+  typedef pqPropertyLinksConnection Superclass;
+public:
+  PropertyLinksConnection(
+    QObject* qobject, const char* qproperty, const char* qsignal,
+    vtkSMProxy* smproxy, vtkSMProperty* smproperty, int smindex,
+    bool use_unchecked_modified_event,
+    QObject* parentObject=0)
+    : Superclass(qobject, qproperty, qsignal,
+      smproxy, smproperty, smindex, use_unchecked_modified_event,
+      parentObject)
+    {
+    }
+  virtual ~PropertyLinksConnection()
+    {
+    }
+
+protected:
+  /// Called to update the ServerManager Property due to UI change.
+  virtual void setServerManagerValue(bool use_unchecked, const QVariant& value)
+    {
+    Q_ASSERT(use_unchecked == false);
+    Q_UNUSED(use_unchecked);
+
+    BEGIN_UNDO_SET("Change representation type");
+    vtkSMProxy* reprProxy = this->proxySM();
+    vtkSMRepresentationProxy::SetRepresentationType(
+      reprProxy, value.toString().toLatin1().data());
+    END_UNDO_SET();
+    }
+private:
+  Q_DISABLE_COPY(PropertyLinksConnection);
+};
+
+
+//=============================================================================
+class pqDisplayRepresentationWidget::pqInternals :
   public Ui::displayRepresentationWidget
 {
+  QString RepresentationText;
 public:
-  QPointer<pqPipelineRepresentation> Display;
   pqPropertyLinks Links;
-  pqSignalAdaptorComboBox* Adaptor;
+  QPointer<pqComboBoxDomain> Domain;
+  QPointer<pqDataRepresentation> PQRepr;
+  QSet<QString> WarnOnRepresentationChange;
+  pqInternals()
+    {
+    }
+
+  bool setRepresentationText(const QString& text)
+    {
+    int idx = this->comboBox->findText(text);
+    if (idx != -1)
+      {
+      bool prev = this->comboBox->blockSignals(true);
+      this->comboBox->setCurrentIndex(idx);
+      this->RepresentationText = text;
+      this->comboBox->blockSignals(prev);
+      }
+    return (idx != -1);
+    }
+
+  const QString& representationText() const
+    {
+    return this->RepresentationText;
+    }
 };
 
 //-----------------------------------------------------------------------------
 pqDisplayRepresentationWidget::pqDisplayRepresentationWidget(
-  QWidget* _p): QWidget(_p)
+  QWidget* _p): Superclass(_p)
 {
-  this->Internal = new pqDisplayRepresentationWidgetInternal;
+  this->Internal = new pqDisplayRepresentationWidget::pqInternals();
   this->Internal->setupUi(this);
-  this->Internal->Links.setUseUncheckedProperties(true);
-
-  this->Internal->Adaptor = new pqSignalAdaptorComboBox(
-    this->Internal->comboBox);
-  this->Internal->Adaptor->setObjectName("adaptor");
-
-  QObject::connect(this->Internal->Adaptor, 
-    SIGNAL(currentTextChanged(const QString&)),
-    this, SLOT(onCurrentTextChanged(const QString&)));
-
-  QObject::connect(this->Internal->Adaptor, 
-    SIGNAL(currentTextChanged(const QString&)),
-    this, SIGNAL(currentTextChanged(const QString&)));
-
-  QObject::connect(&this->Internal->Links,
-    SIGNAL(qtWidgetChanged()),
-    this, SLOT(onQtWidgetChanged()));
-
-  this->updateLinks();
+  this->connect(this->Internal->comboBox,
+    SIGNAL(currentIndexChanged(const QString&)),
+    SLOT(comboBoxChanged(const QString&)));
 }
 
 //-----------------------------------------------------------------------------
@@ -90,115 +135,111 @@ pqDisplayRepresentationWidget::~pqDisplayRepresentationWidget()
 //-----------------------------------------------------------------------------
 void pqDisplayRepresentationWidget::setRepresentation(pqDataRepresentation* display)
 {
-  if(!display || display != this->Internal->Display)
+  if (this->Internal->PQRepr)
     {
-    this->Internal->Display = qobject_cast<pqPipelineRepresentation*>(display);
-    this->updateLinks();
+    this->Internal->PQRepr->disconnect(this);
+    }
+  vtkSMProxy* proxy = display? display->getProxy() : NULL;
+  this->setRepresentation(proxy);
+  this->Internal->PQRepr = display;
+  if (display)
+    {
+    display->connect(this, SIGNAL(representationTextChanged(const QString&)),
+      SLOT(renderViewEventually()));
     }
 }
 
 //-----------------------------------------------------------------------------
-void pqDisplayRepresentationWidget::updateLinks()
+void pqDisplayRepresentationWidget::setRepresentation(vtkSMProxy* proxy)
 {
   // break old links.
-  this->Internal->Links.removeAllPropertyLinks();
-
-  this->Internal->comboBox->setEnabled(this->Internal->Display != 0);
-  this->Internal->comboBox->blockSignals(true);
+  this->Internal->Links.clear();
+  this->Internal->WarnOnRepresentationChange.clear();
+  delete this->Internal->Domain;
+  bool prev = this->Internal->comboBox->blockSignals(true);
   this->Internal->comboBox->clear();
-  if (!this->Internal->Display)
+  vtkSMProperty* smproperty = proxy? proxy->GetProperty("Representation") : NULL;
+  this->Internal->comboBox->setEnabled(smproperty != NULL);
+  if (!smproperty)
     {
     this->Internal->comboBox->addItem("Representation");
-    this->Internal->comboBox->blockSignals(false);
+    this->Internal->comboBox->blockSignals(prev);
     return;
     }
 
-  vtkSMProxy* displayProxy = this->Internal->Display->getProxy();
-  vtkSMProperty* repProperty =
-      this->Internal->Display->getProxy()->GetProperty("Representation");
-  if (repProperty)
+  this->Internal->Domain = new pqComboBoxDomain(this->Internal->comboBox, smproperty);
+  this->Internal->Links.addPropertyLink<PropertyLinksConnection>(
+    this, "representationText", SIGNAL(representationTextChanged(const QString&)),
+    proxy, smproperty);
+  this->Internal->comboBox->blockSignals(prev);
+
+  // process hints to see which representation types we need to warn the user
+  // about.
+  vtkPVXMLElement* hints = proxy->GetHints();
+  for (unsigned int cc=0; cc < (hints? hints->GetNumberOfNestedElements() : 0); cc++)
     {
-    QList<QVariant> items = 
-      pqSMAdaptor::getEnumerationPropertyDomain(repProperty);
-    foreach(QVariant item, items)
+    vtkPVXMLElement* child = hints->GetNestedElement(cc);
+    if (child && child->GetName() && strcmp(child->GetName(), "WarnOnRepresentationChange") == 0)
       {
-      this->Internal->comboBox->addItem(item.toString());
+      this->Internal->WarnOnRepresentationChange.insert(child->GetAttributeOrEmpty("value"));
       }
-
-    this->Internal->Links.addPropertyLink(
-      this->Internal->Adaptor, "currentText",
-      SIGNAL(currentTextChanged(const QString&)),
-      displayProxy, repProperty);
-    this->Internal->comboBox->setEnabled(true);
     }
-  else
-    {
-    this->Internal->comboBox->setEnabled(false);
-    }
-
-  this->Internal->comboBox->blockSignals(false);
-
 }
 
 //-----------------------------------------------------------------------------
-void pqDisplayRepresentationWidget::reloadGUI()
+void pqDisplayRepresentationWidget::setRepresentationText(const QString& text)
 {
-  this->updateLinks();
+  this->Internal->setRepresentationText(text);
 }
 
 //-----------------------------------------------------------------------------
-void pqDisplayRepresentationWidget::onQtWidgetChanged()
+QString pqDisplayRepresentationWidget::representationText() const
 {
-  if ( !this->Internal->Display )
-    {
-    //
-    return;
-    }
-  BEGIN_UNDO_SET("Changed 'Representation'");
-  QString text = this->Internal->Adaptor->currentText();
-
-  vtkSMProperty* repProperty =
-      this->Internal->Display->getProxy()->GetProperty("Representation");
-  QList<QVariant> domainStrings = 
-    pqSMAdaptor::getEnumerationPropertyDomain(repProperty);
-
-  int index = domainStrings.indexOf(text);
-  if (index != -1)
-    {
-    this->Internal->Display->setRepresentation(text);
-    this->Internal->Links.blockSignals(true);
-    //this->Internal->Links.accept();
-    this->Internal->Links.blockSignals(false);
-    }
-  END_UNDO_SET();
+  return this->Internal->comboBox->isEnabled()?
+    this->Internal->representationText() : QString();
 }
 
 //-----------------------------------------------------------------------------
-void pqDisplayRepresentationWidget::onCurrentTextChanged(const QString&)
+void pqDisplayRepresentationWidget::comboBoxChanged(const QString& text)
 {
-  if (this->Internal->Display)
+  // NOTE: this method doesn't get called when
+  // pqDisplayRepresentationWidget::setRepresentationText() is called.
+  if (this->Internal->WarnOnRepresentationChange.contains(text))
     {
-    this->Internal->Display->renderViewEventually();
+    bool confirmed = pqCoreUtilities::promptUser(
+      QString("pqDisplayRepresentationWidget_type_%1").arg(text),
+      QMessageBox::Question,
+      "Are you sure?",
+      QString("This will change the representation type to \"%1\".\n"
+              "That may take a while, depending on your dataset.\n"
+              " Are you sure?").arg(text),
+      QMessageBox::Yes | QMessageBox::No | QMessageBox::Save);
+
+    if (!confirmed)
+      {
+      this->Internal->setRepresentationText(
+        this->Internal->representationText());
+      return;
+      }
     }
+  this->Internal->setRepresentationText(text);
+  emit this->representationTextChanged(text);
 }
 
-//-----------------------------------------------------------------------------
+//=============================================================================
 pqDisplayRepresentationPropertyWidget::pqDisplayRepresentationPropertyWidget(
   vtkSMProxy *smProxy, QWidget *parentObject)
   : pqPropertyWidget(smProxy, parentObject)
 {
   QVBoxLayout *layoutLocal = new QVBoxLayout;
   layoutLocal->setMargin(0);
-  this->Widget = new pqDisplayRepresentationWidget;
+  this->Widget = new pqDisplayRepresentationWidget(this);
   layoutLocal->addWidget(this->Widget);
   setLayout(layoutLocal);
+  this->Widget->setRepresentation(smProxy);
 
-  pqServerManagerModel *smm = pqApplicationCore::instance()->getServerManagerModel();
-  pqPipelineRepresentation *repr = smm->findItem<pqPipelineRepresentation *>(smProxy);
-  if(repr)
-    {
-    this->Widget->setRepresentation(repr);
-    }
+  this->connect(this->Widget, SIGNAL(representationTextChanged(const QString&)),
+    SIGNAL(changeAvailable()));
 }
 
 //-----------------------------------------------------------------------------

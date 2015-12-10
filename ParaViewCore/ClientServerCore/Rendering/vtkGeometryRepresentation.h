@@ -19,7 +19,7 @@
 // It handles non-polygonal datasets by extracting external surfaces. One can
 // use this representation to show surface/wireframe/points/surface-with-edges.
 // .SECTION Thanks
-// The addition of a transformation matrix was supported by CEA/DIF 
+// The addition of a transformation matrix was supported by CEA/DIF
 // Commissariat a l'Energie Atomique, Centre DAM Ile-De-France, Arpajon, France.
 
 #ifndef __vtkGeometryRepresentation_h
@@ -60,34 +60,21 @@ public:
   // requests.
   virtual void MarkModified();
 
-  // This is same a vtkDataObject::FieldAssociation types so you can use those
-  // as well.
-  enum AttributeTypes
-    {
-    POINT_DATA=0,
-    CELL_DATA=1
-    };
-
   // Description:
   // Get/Set the visibility for this representation. When the visibility of
   // representation of false, all view passes are ignored.
   virtual void SetVisibility(bool val);
 
   // Description:
+  // Determines the number of distinct values in vtkBlockColors
+  // See also vtkPVGeometryFilter
+  void SetBlockColorsDistinctValues(int distinctValues);
+  int GetBlockColorsDistinctValues();
+
+  // Description:
   // Enable/Disable LOD;
   virtual void SetSuppressLOD(bool suppress)
     { this->SuppressLOD = suppress; }
-
-  // Description:
-  // Methods to control scalar coloring. ColorAttributeType defines the
-  // attribute type.
-  vtkSetMacro(ColorAttributeType, int);
-  vtkGetMacro(ColorAttributeType, int);
-
-  // Description:
-  // Pick the array to color with.
-  vtkSetStringMacro(ColorArrayName);
-  vtkGetStringMacro(ColorArrayName);
 
   // Description:
   // Set the lighting properties of the object. vtkGeometryRepresentation
@@ -128,7 +115,7 @@ public:
   // Description:
   // Returns true if this class would like to get ghost-cells if available for
   // the connection whose information object is passed as the argument.
-  static bool DoRequestGhostCells(vtkInformation* information); 
+  static bool DoRequestGhostCells(vtkInformation* information);
 
   // Description:
   // Representations that use geometry representation as the internal
@@ -141,6 +128,7 @@ public:
   //***************************************************************************
   // Forwarded to vtkPVGeometryFilter
   virtual void SetUseOutline(int);
+  void SetTriangulate(int);
   void SetNonlinearSubdivisionLevel(int);
 
   //***************************************************************************
@@ -164,16 +152,20 @@ public:
   virtual void SetPosition(double, double, double);
   virtual void SetScale(double, double, double);
   virtual void SetTexture(vtkTexture*);
-  virtual void SetUserTransform(const double[16]); 
+  virtual void SetUserTransform(const double[16]);
 
   //***************************************************************************
   // Forwarded to Mapper and LODMapper.
   virtual void SetInterpolateScalarsBeforeMapping(int val);
   virtual void SetLookupTable(vtkScalarsToColors* val);
+  // Description:
+  // Sets if scalars are mapped through a color-map or are used
+  // directly as colors. 
+  // 0 maps to VTK_COLOR_MODE_DIRECT_SCALARS
+  // 1 maps to VTK_COLOR_MODE_MAP_SCALARS
+  // @see vtkScalarsToColors::MapScalars
   virtual void SetMapScalars(int val);
   virtual void SetStatic(int val);
-
-  virtual void SetAllowSpecularHighlightingWithScalarColoring(int allow);
 
   // Description:
   // Provides access to the actor used by this representation.
@@ -201,6 +193,16 @@ public:
   virtual double GetBlockOpacity(unsigned int index);
   virtual void RemoveBlockOpacity(unsigned int index);
   virtual void RemoveBlockOpacities();
+
+  // Description:
+  // Convenience method to get the array name used to scalar color with.
+  const char* GetColorArrayName();
+
+  // Description:
+  // Convenience method to get bounds from a dataset/composite dataset.
+  // Returns true if valid bounds were computed.
+  static bool GetBounds(vtkDataObject* dataObject, double bounds[6]);
+
 //BTX
 protected:
   vtkGeometryRepresentation();
@@ -274,14 +276,11 @@ protected:
   vtkPVLODActor* Actor;
   vtkProperty* Property;
 
-  int ColorAttributeType;
-  char* ColorArrayName;
   double Ambient;
   double Specular;
   double Diffuse;
   int Representation;
   bool SuppressLOD;
-  bool AllowSpecularHighlightingWithScalarColoring;
   bool RequestGhostCellsIfNeeded;
   double DataBounds[6];
 

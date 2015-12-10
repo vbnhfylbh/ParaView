@@ -38,14 +38,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QStringList>
 #include <QTextStream>
-#include <vtksys/ios/sstream>
+#include <sstream>
+
+#define SERVER_CONFIGURATION_DEFAULT_NAME "unknown"
 
 //-----------------------------------------------------------------------------
 pqServerConfiguration::pqServerConfiguration()
 {
   vtkNew<vtkPVXMLParser> parser;
   parser->Parse(
-    "<Server name=\"unknown\" configuration=\"\"><ManualStartup/></Server>");
+    "<Server name='" SERVER_CONFIGURATION_DEFAULT_NAME "' configuration=''><ManualStartup/></Server>");
   this->constructor(parser->GetRootElement());
 }
 
@@ -71,7 +73,7 @@ pqServerConfiguration::~pqServerConfiguration()
 //-----------------------------------------------------------------------------
 void pqServerConfiguration::setName(const QString& arg_name)
 {
-  this->XML->SetAttribute("name", arg_name.toAscii().data());
+  this->XML->SetAttribute("name", arg_name.toLatin1().data());
 }
 
 //-----------------------------------------------------------------------------
@@ -81,9 +83,15 @@ QString pqServerConfiguration::name() const
 }
 
 //-----------------------------------------------------------------------------
+bool pqServerConfiguration::isNameDefault() const
+{
+  return this->name() == SERVER_CONFIGURATION_DEFAULT_NAME;
+}
+
+//-----------------------------------------------------------------------------
 pqServerResource pqServerConfiguration::resource() const
 {
-  return pqServerResource(this->XML->GetAttributeOrDefault("resource", ""));
+  return pqServerResource(this->XML->GetAttributeOrDefault("resource", ""), *this);
 }
 
 //-----------------------------------------------------------------------------
@@ -95,7 +103,7 @@ void pqServerConfiguration::setResource(const pqServerResource& arg_resource)
 //-----------------------------------------------------------------------------
 void pqServerConfiguration::setResource(const QString& str)
 {
-  this->XML->SetAttribute("resource", str.toAscii().data());
+  this->XML->SetAttribute("resource", str.toLatin1().data());
 }
 
 //-----------------------------------------------------------------------------
@@ -116,13 +124,42 @@ pqServerConfiguration::StartupType pqServerConfiguration::startupType() const
 //-----------------------------------------------------------------------------
 vtkPVXMLElement* pqServerConfiguration::optionsXML() const
 {
-  if (this->XML->GetNumberOfNestedElements() == 1)
+  vtkPVXMLElement* startup = this->startupXML();
+  if (startup != NULL)
     {
-    return this->XML->GetNestedElement(0)->FindNestedElementByName("Options");
+    return startup->FindNestedElementByName("Options"); 
     }
   return NULL;
 }
 
+//-----------------------------------------------------------------------------
+vtkPVXMLElement* pqServerConfiguration::hintsXML() const
+{
+  return this->XML->FindNestedElementByName("Hints");
+}
+
+//-----------------------------------------------------------------------------
+vtkPVXMLElement* pqServerConfiguration::startupXML() const
+{
+  switch (this->startupType())
+    {
+    case (MANUAL):
+      {
+      return this->XML->FindNestedElementByName("ManualStartup");
+      break;
+      }
+    case (COMMAND):
+      {
+      return this->XML->FindNestedElementByName("CommandStartup");
+      break;
+      } 
+    default:
+      {
+      return NULL;
+      break;
+      }
+    }
+}
 //-----------------------------------------------------------------------------
 /// If startupType() == COMMAND, then this method can be used to obtain
 /// the command for the startup. Note that this does not include any
@@ -180,14 +217,13 @@ QString pqServerConfiguration::command(double& timeout, double& delay) const
 //-----------------------------------------------------------------------------
 void pqServerConfiguration::setStartupToManual()
 {
-  vtkPVXMLElement* startupElement = this->XML->GetNestedElement(0);
+  vtkPVXMLElement* startupElement = this->startupXML();
   if (startupElement)
     {
     startupElement->SetName("ManualStartup");
     }
   else
     {
-    this->XML->RemoveAllNestedElements(); // for sanity 
     vtkNew<vtkPVXMLElement> child;
     child->SetName("ManualStartup");
     this->XML->AddNestedElement(child.GetPointer());
@@ -199,14 +235,13 @@ void pqServerConfiguration::setStartupToCommand(
   double timeout, double delay, const QString& command_str)
 {
   // we try to preserve any existing options.
-  vtkPVXMLElement* startupElement = this->XML->GetNestedElement(0);
+  vtkPVXMLElement* startupElement = this->startupXML();
   if (startupElement)
     {
     startupElement->SetName("CommandStartup");
     }
   else
     {
-    this->XML->RemoveAllNestedElements(); // for sanity 
     vtkNew<vtkPVXMLElement> child;
     child->SetName("CommandStartup");
     this->XML->AddNestedElement(child.GetPointer());
@@ -228,7 +263,7 @@ void pqServerConfiguration::setStartupToCommand(
   QStringList commandList = command_str.split(" ", QString::SkipEmptyParts);
   Q_ASSERT(commandList.size() >= 1);
 
-  xml_command->AddAttribute("exec", commandList[0].toAscii().data());
+  xml_command->AddAttribute("exec", commandList[0].toLatin1().data());
   xml_command->AddAttribute("timeout", timeout);
   xml_command->AddAttribute("delay", delay);
 
@@ -241,14 +276,14 @@ void pqServerConfiguration::setStartupToCommand(
     vtkNew<vtkPVXMLElement> xml_argument;
     xml_argument->SetName("Argument");
     xml_arguments->AddNestedElement(xml_argument.GetPointer());
-    xml_argument->AddAttribute("value", commandList[i].toAscii().data());
+    xml_argument->AddAttribute("value", commandList[i].toLatin1().data());
     }
 }
 
 //-----------------------------------------------------------------------------
 QString pqServerConfiguration::toString(vtkIndent indent) const
 {
-  vtksys_ios::stringstream stream;
+  std::stringstream stream;
   this->XML->PrintXML(stream, indent);
   return stream.str().c_str();
 }

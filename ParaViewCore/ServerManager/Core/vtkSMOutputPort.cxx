@@ -30,15 +30,11 @@
 #include "vtkSMSession.h"
 #include "vtkTimerLog.h"
 
-#include <vtksys/ios/sstream>
+#include <sstream>
 
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSMOutputPort);
 
-bool vtkSMOutputPort::UseStreaming = false;
-int vtkSMOutputPort::DefaultPass = 0;
-int vtkSMOutputPort::DefaultNumPasses = 0;
-double vtkSMOutputPort::DefaultResolution = 0;
 //----------------------------------------------------------------------------
 vtkSMOutputPort::vtkSMOutputPort()
 {
@@ -68,7 +64,7 @@ vtkPVDataInformation* vtkSMOutputPort::GetDataInformation()
 {
   if (!this->DataInformationValid)
     {
-    vtksys_ios::ostringstream mystr;
+    std::ostringstream mystr;
     mystr << this->GetSourceProxy()->GetXMLName() << "::GatherInformation";
     vtkTimerLog::MarkStartEvent(mystr.str().c_str());
     this->GatherDataInformation();
@@ -189,25 +185,11 @@ void vtkSMOutputPort::UpdatePipelineInternal(double time,
 {
   this->SourceProxy->GetSession()->PrepareProgress();
   vtkClientServerStream stream;
-  if (vtkSMOutputPort::UseStreaming)
-    {
-    stream << vtkClientServerStream::Invoke
-           << SIPROXY(this->SourceProxy)
-           << "UpdateStreamingPipeline"
-           << vtkSMOutputPort::DefaultPass //pass
-           << vtkSMOutputPort::DefaultNumPasses //number of passes
-           << vtkSMOutputPort::DefaultResolution //resolution
-           << this->PortIndex << time << (doTime? 1:0)
-           << vtkClientServerStream::End;
-    }
-  else
-    {
-    stream << vtkClientServerStream::Invoke
-           << SIPROXY(this->SourceProxy)
-           << "UpdatePipeline"
-           << this->PortIndex << time << (doTime? 1 : 0)
-           << vtkClientServerStream::End;
-    }
+  stream << vtkClientServerStream::Invoke
+         << SIPROXY(this->SourceProxy)
+         << "UpdatePipeline"
+         << this->PortIndex << time << (doTime? 1 : 0)
+         << vtkClientServerStream::End;
   this->SourceProxy->ExecuteStream(stream);
   this->SourceProxy->GetSession()->CleanupPendingProgress();
 }
@@ -220,19 +202,6 @@ void vtkSMOutputPort::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "SourceProxy: " << this->SourceProxy << endl;
 }
 
-//----------------------------------------------------------------------------
-void vtkSMOutputPort::SetUseStreaming(bool value)
-{
-  vtkSMOutputPort::UseStreaming = value;
-}
-
-//----------------------------------------------------------------------------
-void vtkSMOutputPort::SetDefaultPiece(int dp, int dnp, double dr)
-{
-  vtkSMOutputPort::DefaultPass = dp;
-  vtkSMOutputPort::DefaultNumPasses = dnp;
-  vtkSMOutputPort::DefaultResolution = dr;
-}
 //----------------------------------------------------------------------------
 vtkSMSourceProxy* vtkSMOutputPort::GetSourceProxy()
 {

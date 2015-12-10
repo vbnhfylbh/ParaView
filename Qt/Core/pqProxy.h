@@ -98,15 +98,6 @@ public:
   /// if no hints are defined.
   vtkPVXMLElement* getHints() const;
 
-  /// Sets default values for the underlying proxy. 
-  /// This is during the initialization stage of the pqProxy 
-  /// for proxies created by the GUI itself i.e.
-  /// for proxies loaded through state or created by python client
-  /// this method won't be called. 
-  /// The default implementation iterates over all properties
-  /// of the proxy and sets them to default values. 
-  virtual void setDefaultPropertyValues();
-
   /// Returns a list of all helper proxies.
   QList<vtkSMProxy*> getHelperProxies() const;
 
@@ -115,6 +106,9 @@ public:
 
   /// Returns the keys for helper proxies.
   QList<QString> getHelperKeys() const;
+
+  /// convert proxy documentation from RST to HTML (so that it can be used in Qt)
+  static std::string rstToHtml(const char* rstStr);
 
   /// Concept of helper proxies:
   /// A pqProxy is created for every important vtkSMProxy registered. Many a times, 
@@ -127,9 +121,6 @@ public:
   virtual void addHelperProxy(const QString& key, vtkSMProxy*);
   void removeHelperProxy(const QString& key, vtkSMProxy*);
 
-  /// Unregisters all helper proxies.
-  void clearHelperProxies();
-
   /// Updates the internal datastructures using the proxies currently registered
   /// under the group that would be used for helper proxies. This makes it
   /// possible to locate helper proxies created from Python.
@@ -137,6 +128,11 @@ public:
 
   /// Returns the proxy manager by calling this->getProxy()->GetProxyManager();
   vtkSMSessionProxyManager* proxyManager() const;
+
+  /// Returns a pqProxy instance, of any, whose helper proxy is the *aproxy*.
+  /// This is not the fastest implementation, so beware of that.
+  /// If found, the key is set to the helper key.
+  static pqProxy* findProxyWithHelper(vtkSMProxy* aproxy, QString& key);
 
 signals:
   /// Fired when the name of the proxy is changed.

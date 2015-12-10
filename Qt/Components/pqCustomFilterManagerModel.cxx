@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqApplicationCore.h"
 #include "vtkSMProxyManager.h"
 #include "vtkSMSessionProxyManager.h"
-#include "vtksys/ios/sstream"
+#include <sstream>
 
 class pqCustomFilterManagerModelInternal : public QList<QString> {};
 
@@ -80,7 +80,7 @@ QModelIndex pqCustomFilterManagerModel::index(int row, int column,
   if(this->Internal && !parentIndex.isValid() && column == 0 && row >= 0 &&
       row < this->Internal->size())
     {
-    return this->createIndex(row, column, 0);
+    return this->createIndex(row, column);
     }
 
   return QModelIndex();
@@ -133,7 +133,7 @@ QModelIndex pqCustomFilterManagerModel::getIndexFor(
     int row = this->Internal->indexOf(filter);
     if(row != -1)
       {
-      return this->createIndex(row, 0, 0);
+      return this->createIndex(row, 0);
       }
     }
 
@@ -213,7 +213,7 @@ void pqCustomFilterManagerModel::importCustomFiltersFromSettings()
     }
 
   vtkPVXMLParser *parser = vtkPVXMLParser::New();
-  parser->Parse(state.toAscii().data());
+  parser->Parse(state.toLatin1().data());
 
   proxyManager->LoadCustomProxyDefinitions(parser->GetRootElement());
 
@@ -237,7 +237,7 @@ void pqCustomFilterManagerModel::exportCustomFiltersToSettings()
   root->SetName("CustomFilterDefinitions");
   proxyManager->SaveCustomProxyDefinitions(root);
 
-  vtksys_ios::ostringstream os;
+  std::ostringstream os;
   root->PrintXML(os,vtkIndent(0));
   QString state = os.str().c_str();
   root->Delete();

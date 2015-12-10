@@ -61,6 +61,7 @@ namespace ParaViewPython {
     // main processes waits in MPI_Init() and calls exit() when
     // the others are done, causing apparent memory leaks for any non-static objects
     // created before MPI_Init().
+    vtkInitializationHelper::SetApplicationName("ParaView");
     static vtkSmartPointer<vtkPVPythonOptions> options =
       vtkSmartPointer<vtkPVPythonOptions>::New();
     vtkInitializationHelper::Initialize( argc, argv, processType, options );
@@ -82,6 +83,11 @@ namespace ParaViewPython {
 
     vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
 
+    // register callback to initialize modules statically. The callback is
+    // empty when BUILD_SHARED_LIBS is ON.
+    vtkPVInitializePythonModules();
+
+
     int ret_val = 0;
     if (pm->GetSymmetricMPIMode() == false &&
       pm->GetPartitionId() > 0)
@@ -100,10 +106,6 @@ namespace ParaViewPython {
       std::vector<char*> pythonArgs;
       ProcessArgsForPython(pythonArgs, options->GetPythonScriptName(),
         remaining_argc, remaining_argv);
-
-      // register callback to initialize modules statically. The callback is
-      // empty when BUILD_SHARED_LIBS is ON.
-      vtkPVInitializePythonModules();
 
       // Start interpretor
       vtkPythonInterpreter::Initialize();

@@ -21,8 +21,11 @@
 #include "vtkPVProminentValuesInformation.h"
 #include "vtkPVRepresentedDataInformation.h"
 #include "vtkSMInputProperty.h"
+#include "vtkSMPropertyHelper.h"
 #include "vtkSMProxyInternals.h"
 #include "vtkSMSession.h"
+#include "vtkSMStringListDomain.h"
+#include "vtkSMTrace.h"
 #include "vtkTimerLog.h"
 
 #include <assert.h>
@@ -39,7 +42,10 @@ vtkSMRepresentationProxy::vtkSMRepresentationProxy()
   this->ProminentValuesInformation = vtkPVProminentValuesInformation::New();
   this->ProminentValuesFraction = -1;
   this->ProminentValuesUncertainty = -1;
+  this->ProminentValuesInformationValid = false;
+  
   this->MarkedModified = false;
+  this->VTKRepresentationUpdated = false;
 }
 
 //----------------------------------------------------------------------------
@@ -193,12 +199,32 @@ void vtkSMRepresentationProxy::MarkDirty(vtkSMProxy* modifiedProxy)
     if (!this->MarkedModified && !this->SkipDependency(modifiedProxy))
       {
       this->MarkedModified = true;
+      this->VTKRepresentationUpdated = false;
       vtkClientServerStream stream;
       stream << vtkClientServerStream::Invoke
          << VTKOBJECT(this)
          << "MarkModified"
          << vtkClientServerStream::End;
       this->ExecuteStream(stream);
+      }
+    }
+
+  if (modifiedProxy == this)
+    {
+    // propagate the modification to all sub-representations. If modifiedProxy
+    // != this, then the sub-representations are marked modified by input proxy
+    // dependencies properly.
+    // This ensures that when "Representation" property on
+    // composite-representations is changed, for example, the
+    // sub-representations that actually re-execute are noticed and
+    // data-information, among other things, gets updated.
+    for (unsigned int cc=0, max=this->GetNumberOfSubProxies(); cc < max; ++cc)
+      {
+      vtkSMProxy* subRepr = this->GetSubProxy(cc);
+      if (subRepr)
+        {
+        subRepr->MarkDirty(modifiedProxy);
+        }
       }
     }
 
@@ -238,15 +264,13 @@ bool vtkSMRepresentationProxy::SkipDependency(vtkSMProxy* producer)
 void vtkSMRepresentationProxy::OnVTKRepresentationUpdated()
 {
   this->MarkedModified = false;
+  this->VTKRepresentationUpdated = true;
 }
 
 //----------------------------------------------------------------------------
 void vtkSMRepresentationProxy::ViewUpdated(vtkSMProxy* view)
 {
-  if (this->MarkedModified == false)
-    {
-    this->PostUpdateData();
-    }
+  this->PostUpdateData();
 
   // If this class has sub-representations, we need to tell those that the view
   // has updated as well.
@@ -270,7 +294,7 @@ void vtkSMRepresentationProxy::PostUpdateData()
   // In that case, we should not let PostUpdateData() happen. The following
   // check ensures that PostUpdateData() call has any effect only after the VTK
   // representation has updated as well.
-  if (this->MarkedModified == false)
+  if (this->MarkedModified == false && this->VTKRepresentationUpdated == true)
     {
     this->Superclass::PostUpdateData();
     }
@@ -281,6 +305,7 @@ void vtkSMRepresentationProxy::InvalidateDataInformation()
 {
   this->Superclass::InvalidateDataInformation();
   this->RepresentedDataInformationValid = false;
+  this->ProminentValuesInformationValid = false;
 }
 
 //----------------------------------------------------------------------------
@@ -316,7 +341,10 @@ vtkPVProminentValuesInformation* vtkSMRepresentationProxy::GetProminentValuesInf
   bool largerFractionOrLessCertain =
     this->ProminentValuesFraction < fraction ||
     this->ProminentValuesUncertainty > uncertaintyAllowed;
-  if (differentAttribute || invalid || largerFractionOrLessCertain)
+  if (!this->ProminentValuesInformationValid ||
+      differentAttribute ||
+      invalid ||
+      largerFractionOrLessCertain)
     {
     vtkTimerLog::MarkStartEvent(
       "vtkSMRepresentationProxy::GetProminentValues");
@@ -337,6 +365,7 @@ vtkPVProminentValuesInformation* vtkSMRepresentationProxy::GetProminentValuesInf
       "vtkSMRepresentationProxy::GetProminentValues");
     this->ProminentValuesFraction = fraction;
     this->ProminentValuesUncertainty = uncertaintyAllowed;
+    this->ProminentValuesInformationValid = true;
     }
 
   return this->ProminentValuesInformation;
@@ -364,6 +393,7 @@ void vtkSMRepresentationProxy::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+
 //---------------------------------------------------------------------------
 vtkTypeUInt32 vtkSMRepresentationProxy::GetGlobalID()
 {
@@ -381,44 +411,32 @@ vtkTypeUInt32 vtkSMRepresentationProxy::GetGlobalID()
 }
 
 //---------------------------------------------------------------------------
-class vtkSMRepresentationProxyObserver : public vtkCommand
+bool vtkSMRepresentationProxy::SetRepresentationType(const char* type)
 {
-public:
-  vtkWeakPointer<vtkSMProperty> Output;
-  typedef vtkCommand Superclass;
-  virtual const char* GetClassNameInternal() const
-    { return "vtkSMRepresentationProxyObserver"; }
-  static vtkSMRepresentationProxyObserver* New()
+  if (vtkSMProperty* property = this->GetProperty("Representation"))
     {
-    return new vtkSMRepresentationProxyObserver();
-    }
-  virtual void Execute(vtkObject* caller, unsigned long event, void* calldata)
-    {
-    (void)event;
-    (void)calldata;
-    vtkSMProperty* input = vtkSMProperty::SafeDownCast(caller);
-    if (input && this->Output)
+    vtkSMStringListDomain* sld = vtkSMStringListDomain::SafeDownCast(
+      property->FindDomain("vtkSMStringListDomain"));
+
+    unsigned int tmp;
+    if (sld != NULL && sld->IsInDomain(type, tmp) == 0)
       {
-      // this will copy both checked and unchecked property values.
-      this->Output->Copy(input);
+      // Let's not warn about this. Let the caller decide if this is an
+      // error/warning.
+      // vtkWarningMacro("Requested type not available: " << type);
+      return false;
       }
-    }
-};
 
-//---------------------------------------------------------------------------
-void vtkSMRepresentationProxy::LinkProperty(
-  vtkSMProperty* input, vtkSMProperty* output)
-{
-  if (input == output || input == NULL || output == NULL)
-    {
-    vtkErrorMacro("Invalid call to LinkProperty. Check arguments.");
-    return;
+    SM_SCOPED_TRACE(CallMethod)
+      .arg(this)
+      .arg("SetRepresentationType")
+      .arg(type)
+      .arg("comment", "change representation type");
+
+    vtkSMPropertyHelper(property).Set(type? type : "");
+    this->UpdateVTKObjects();
+    return true;
     }
 
-  vtkSMRepresentationProxyObserver* observer =
-    vtkSMRepresentationProxyObserver::New();
-  observer->Output = output;
-  input->AddObserver(vtkCommand::PropertyModifiedEvent, observer);
-  input->AddObserver(vtkCommand::UncheckedPropertyModifiedEvent, observer);
-  observer->FastDelete();
+  return false;
 }

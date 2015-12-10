@@ -36,7 +36,7 @@ public:
   static vtkCameraManipulator *New();
   vtkTypeMacro(vtkCameraManipulator, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
-  
+
   // Description:
   // Event bindings controlling the effects of pressing mouse buttons
   // or moving the mouse.
@@ -49,7 +49,14 @@ public:
                             vtkRenderWindowInteractor *iren);
   virtual void OnButtonUp(int x, int y, vtkRenderer *ren,
                           vtkRenderWindowInteractor *iren);
-  
+
+  // Description:
+  // These methods are called on all registered manipulators, not just the
+  // active one. Hence, these should just be used to record state and not
+  // perform any interactions.
+  virtual void OnKeyUp(vtkRenderWindowInteractor* iren);
+  virtual void OnKeyDown(vtkRenderWindowInteractor* iren);
+
   // Description:
   // These settings determine which button and modifiers the
   // manipulator responds to. Button can be either 1 (left), 2
@@ -69,12 +76,17 @@ public:
   vtkGetVector3Macro(Center, double);
 
   // Description:
+  // Set and get the rotation factor.
+  vtkSetMacro(RotationFactor, double);
+  vtkGetMacro(RotationFactor, double);
+
+  // Description:
   // Set and get the manipulator name.
   vtkSetStringMacro(ManipulatorName);
   vtkGetStringMacro(ManipulatorName);
 
   // Description:
-  // Get/Set the GUI helper. 
+  // Get/Set the GUI helper.
   void SetGUIHelper(vtkCameraManipulatorGUIHelper*);
   vtkGetObjectMacro(GUIHelper, vtkCameraManipulatorGUIHelper);
 protected:
@@ -88,6 +100,7 @@ protected:
   int Control;
 
   double Center[3];
+  double RotationFactor;
   double DisplayCenter[2];
   void ComputeDisplayCenter(vtkRenderer *ren);
 
