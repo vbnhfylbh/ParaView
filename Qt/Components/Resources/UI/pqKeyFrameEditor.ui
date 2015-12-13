@@ -10,7 +10,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QGridLayout" >
    <property name="leftMargin" >
@@ -34,7 +34,7 @@
    <item row="0" column="0" colspan="2" >
     <widget class="QLabel" name="label" >
      <property name="text" >
-      <string>Label</string>
+      <string>Надпись</string>
      </property>
     </widget>
    </item>
@@ -51,21 +51,21 @@
    <item row="1" column="1" >
     <widget class="QPushButton" name="pbNew" >
      <property name="text" >
-      <string>New</string>
+      <string>Новый</string>
      </property>
     </widget>
    </item>
    <item row="2" column="1" >
     <widget class="QPushButton" name="pbDelete" >
      <property name="text" >
-      <string>Delete</string>
+      <string>Удалить</string>
      </property>
     </widget>
    </item>
    <item row="3" column="1" >
     <widget class="QPushButton" name="pbDeleteAll" >
      <property name="text" >
-      <string>Delete All</string>
+      <string>Удалить все</string>
      </property>
     </widget>
    </item>

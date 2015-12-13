@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Find Data</string>
+   <string>Найти данные</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -23,7 +23,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Create Selection</string>
+      <string>Создать выделение</string>
      </property>
     </widget>
    </item>
@@ -62,7 +62,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Current Selection (none)</string>
+      <string>Текущее выделение (пустое)</string>
      </property>
     </widget>
    </item>
@@ -108,7 +108,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Selection Display Properties</string>
+      <string>Свойства отображения выделения</string>
      </property>
     </widget>
    </item>
@@ -159,10 +159,10 @@
         </sizepolicy>
        </property>
        <property name="toolTip">
-        <string>&lt;p&gt;Freeze the selection to select the currently selected elements by IDs instead of the current selection criteria&lt;/p&gt;</string>
+        <string>&lt;p&gt;Заморозить выделение для выбора их выделенных элементов по ID вместо текущего критерия выделения&lt;/p&gt;</string>
        </property>
        <property name="text">
-        <string>Freeze Selection</string>
+        <string>Заморозить выделение</string>
        </property>
       </widget>
      </item>
@@ -172,10 +172,10 @@
         <bool>false</bool>
        </property>
        <property name="toolTip">
-        <string>&lt;p&gt;Create a new &lt;b&gt;Extract Selection&lt;/b&gt; filter to extract the current selection&lt;/p&gt;</string>
+        <string>&lt;p&gt;Создать новое &lt;b&gt;Извлечь выделение&lt;/b&gt; фильтровать для извлечения текущего выделения&lt;/p&gt;</string>
        </property>
        <property name="text">
-        <string>Extract Selection</string>
+        <string>Извлечь выделение</string>
        </property>
       </widget>
      </item>
@@ -185,10 +185,10 @@
         <bool>false</bool>
        </property>
        <property name="toolTip">
-        <string>&lt;p&gt;Create a new &lt;b&gt;Plot Selection Over Time&lt;/b&gt; filter to plot the current selection over time&lt;/p&gt;</string>
+        <string>&lt;p&gt;Создать новое &lt;b&gt;Нанести выделение на график зависимости от времени&lt;/b&gt; фильтровать для нанесения на график зависимости от времени текущего выделения&lt;/p&gt;</string>
        </property>
        <property name="text">
-        <string>Plot Selection Over Time</string>
+        <string>Нанести выделение на график зависимости от времени</string>
        </property>
       </widget>
      </item>

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -19,7 +19,7 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Find</string>
+        <string>Найти</string>
        </property>
       </widget>
      </item>
@@ -33,7 +33,7 @@
      <item>
       <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>from</string>
+        <string>из</string>
        </property>
       </widget>
      </item>
@@ -68,7 +68,7 @@
       <bool>false</bool>
      </property>
      <property name="text">
-      <string>Run Selection Query</string>
+      <string>Выполнить запрос выделения</string>
      </property>
     </widget>
    </item>

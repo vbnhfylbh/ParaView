@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Camera Controls</string>
+   <string>Настройки камеры</string>
   </property>
   <property name="orientation">
    <enum>Qt::Horizontal</enum>
@@ -25,13 +25,13 @@
      <normaloff>:/pqWidgets/Icons/pqResetCamera24.png</normaloff>:/pqWidgets/Icons/pqResetCamera24.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Reset</string>
+    <string>&amp;Вернуть умолчания</string>
    </property>
    <property name="iconText">
-    <string>Reset Camera</string>
+    <string>Вернуть умолчания камеры</string>
    </property>
    <property name="statusTip">
-    <string>Reset Camera</string>
+    <string>Вернуть умолчания камеры</string>
    </property>
   </action>
   <action name="actionPositiveX">
@@ -46,13 +46,13 @@
     <string>+X</string>
    </property>
    <property name="toolTip">
-    <string>Set view direction to +X</string>
+    <string>Установить проекцию вида +X</string>
    </property>
    <property name="statusTip">
-    <string>Set view direction to +X</string>
+    <string>Установить проекцию вида +X</string>
    </property>
    <property name="whatsThis">
-    <string>Set view direction to +X</string>
+    <string>Установить проекцию вида +X</string>
    </property>
   </action>
   <action name="actionNegativeX">
@@ -67,13 +67,13 @@
     <string>-X</string>
    </property>
    <property name="toolTip">
-    <string>Set view direction to -X</string>
+    <string>Установить проекцию вида -X</string>
    </property>
    <property name="statusTip">
-    <string>Set view direction to -X</string>
+    <string>Установить проекцию вида -X</string>
    </property>
    <property name="whatsThis">
-    <string>Set view direction to -X</string>
+    <string>Установить проекцию вида -X</string>
    </property>
   </action>
   <action name="actionPositiveY">
@@ -88,13 +88,13 @@
     <string>+Y</string>
    </property>
    <property name="toolTip">
-    <string>Set view direction to +Y</string>
+    <string>Установить проекцию вида +Y</string>
    </property>
    <property name="statusTip">
-    <string>Set view direction to +Y</string>
+    <string>Установить проекцию вида +Y</string>
    </property>
    <property name="whatsThis">
-    <string>Set view direction to +Y</string>
+    <string>Установить проекцию вида +Y</string>
    </property>
   </action>
   <action name="actionNegativeY">
@@ -109,13 +109,13 @@
     <string>-Y</string>
    </property>
    <property name="toolTip">
-    <string>Set view direction to -Y</string>
+    <string>Установить проекцию вида -Y</string>
    </property>
    <property name="statusTip">
-    <string>Set view direction to -Y</string>
+    <string>Установить проекцию вида -Y</string>
    </property>
    <property name="whatsThis">
-    <string>Set view direction to -Y</string>
+    <string>Установить проекцию вида -Y</string>
    </property>
   </action>
   <action name="actionPositiveZ">
@@ -130,13 +130,13 @@
     <string>+Z</string>
    </property>
    <property name="toolTip">
-    <string>Set view direction to +Z</string>
+    <string>Установить проекцию вида +Z</string>
    </property>
    <property name="statusTip">
-    <string>Set view direction to +Z</string>
+    <string>Установить проекцию вида +Z</string>
    </property>
    <property name="whatsThis">
-    <string>Set view direction to +Z</string>
+    <string>Установить проекцию вида +Z</string>
    </property>
   </action>
   <action name="actionNegativeZ">
@@ -151,13 +151,13 @@
     <string>-Z</string>
    </property>
    <property name="toolTip">
-    <string>Set view direction to -Z</string>
+    <string>Установить проекцию вида -Z</string>
    </property>
    <property name="statusTip">
-    <string>Set view direction to -Z</string>
+    <string>Установить проекцию вида -Z</string>
    </property>
    <property name="whatsThis">
-    <string>Set view direction to -Z</string>
+    <string>Установить проекцию вида -Z</string>
    </property>
   </action>
   <action name="actionZoomToBox">
@@ -169,18 +169,18 @@
      <normaloff>:/pqWidgets/Icons/pqZoomToSelection24.png</normaloff>:/pqWidgets/Icons/pqZoomToSelection24.png</iconset>
    </property>
    <property name="text">
-    <string>Zoom to Box</string>
+    <string>Приблизить параллелепипед</string>
    </property>
    <property name="statusTip">
-    <string>Zoom to Box</string>
+    <string>Приблизить параллелепипед</string>
    </property>
   </action>
   <action name="actionZoomToData">
    <property name="text">
-    <string>ZTD</string>
+    <string>Приблизить данные</string>
    </property>
    <property name="toolTip">
-    <string>Zoom To Data</string>
+    <string>Приблизить данные</string>
    </property>
    <property name="icon">
     <iconset resource="../../../Components/Resources/pqComponents.qrc">

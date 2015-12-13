@@ -17,7 +17,7 @@
    </font>
   </property>
   <property name="windowTitle" >
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QVBoxLayout" >
    <property name="spacing" >
@@ -44,7 +44,7 @@
       </font>
      </property>
      <property name="text" >
-      <string>Copy Active Selection</string>
+      <string>Скопировать выделение</string>
      </property>
     </widget>
    </item>
@@ -66,7 +66,7 @@
       <enum>QFrame::NoFrame</enum>
      </property>
      <property name="text" >
-      <string>Copied Selection</string>
+      <string>Скопированное выделение</string>
      </property>
      <property name="textFormat" >
       <enum>Qt::AutoText</enum>

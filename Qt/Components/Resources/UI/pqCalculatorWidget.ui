@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_7" stretch="0,1,0">
    <property name="spacing">
@@ -43,7 +43,7 @@
           <enum>Qt::NoFocus</enum>
          </property>
          <property name="text">
-          <string>Clear</string>
+          <string>Очистить</string>
          </property>
         </widget>
        </item>
@@ -546,7 +546,7 @@
         <enum>Qt::NoFocus</enum>
        </property>
        <property name="text">
-        <string>Scalars</string>
+        <string>Скаляры</string>
        </property>
       </widget>
      </item>
@@ -556,7 +556,7 @@
         <enum>Qt::NoFocus</enum>
        </property>
        <property name="text">
-        <string>Vectors</string>
+        <string>Векторы</string>
        </property>
       </widget>
      </item>

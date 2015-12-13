@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
@@ -79,7 +79,7 @@
        </row>
        <column>
         <property name="text">
-         <string>Participant</string>
+         <string>Участник</string>
         </property>
         <property name="toolTip">
          <string/>
@@ -107,7 +107,7 @@
        </column>
        <item row="0" column="0">
         <property name="text">
-         <string>I'm alone</string>
+         <string>Я одинок</string>
         </property>
         <property name="flags">
          <set>ItemIsEnabled</set>
@@ -126,7 +126,7 @@
         <enum>Qt::RightToLeft</enum>
        </property>
        <property name="text">
-        <string>Share mouse pointer</string>
+        <string>Разделить указатель мыши</string>
        </property>
       </widget>
      </item>
@@ -139,7 +139,7 @@
         </sizepolicy>
        </property>
        <property name="title">
-        <string>Chat room</string>
+        <string>Чат</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>

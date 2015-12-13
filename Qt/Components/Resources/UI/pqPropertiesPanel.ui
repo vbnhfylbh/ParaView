@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Properties Panel</string>
+   <string>Панель свойств</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -22,7 +22,7 @@
      <item>
       <widget class="QPushButton" name="Accept">
        <property name="text">
-        <string>&amp;Apply</string>
+        <string>&amp;Применить</string>
        </property>
        <property name="icon">
         <iconset resource="../pqComponents.qrc">
@@ -39,7 +39,7 @@
      <item>
       <widget class="QPushButton" name="Reset">
        <property name="text">
-        <string>&amp;Reset</string>
+        <string>&amp;Вернуть умолчания</string>
        </property>
        <property name="icon">
         <iconset resource="../pqComponents.qrc">
@@ -50,7 +50,7 @@
      <item>
       <widget class="QPushButton" name="Delete">
        <property name="text">
-        <string>&amp;Delete</string>
+        <string>&amp;Удалить</string>
        </property>
        <property name="icon">
         <iconset resource="../../../Widgets/Resources/QtWidgets.qrc">
@@ -82,7 +82,7 @@
      <item>
       <widget class="pqSearchBox" name="SearchBox" native="true">
        <property name="settingKey" stdset="0">
-        <string notr="true">showAdvancedProperties</string>
+        <string notr="true">Показать доп. свойства</string>
        </property>
        <property name="advancedSearchEnabled" stdset="0">
         <bool>true</bool>
@@ -127,7 +127,7 @@
           <item>
            <widget class="pqExpanderButton" name="PropertiesButton">
             <property name="text" stdset="0">
-             <string>Properties</string>
+             <string>Свойства</string>
             </property>
             <property name="checked" stdset="0">
              <bool>true</bool>
@@ -146,7 +146,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Copy properties</string>
+             <string>Копировать свойства</string>
             </property>
             <property name="text">
              <string/>
@@ -169,7 +169,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Paste copied properties</string>
+             <string>Вставить скопированные свойства</string>
             </property>
             <property name="text">
              <string/>
@@ -189,7 +189,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Restore application default setting values</string>
+             <string>Восстановить в приложении значения настроек по-умолчанию</string>
             </property>
             <property name="text">
              <string/>
@@ -205,7 +205,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Save current settings values as default</string>
+             <string>Сохранить текущие значения настроек как умолчания</string>
             </property>
             <property name="text">
              <string/>
@@ -243,7 +243,7 @@
           <item>
            <widget class="pqExpanderButton" name="DisplayButton">
             <property name="text" stdset="0">
-             <string>Display</string>
+             <string>Отображение</string>
             </property>
             <property name="checked" stdset="0">
              <bool>true</bool>
@@ -262,7 +262,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Copy display properties</string>
+             <string>Копировать свойства отображения</string>
             </property>
             <property name="text">
              <string/>
@@ -285,7 +285,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Paste copied display properties</string>
+             <string>Вставить скопированные свойства отображения</string>
             </property>
             <property name="text">
              <string/>
@@ -305,7 +305,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Restore application default setting values for display</string>
+             <string>Восстановить в приложении значения настроек отображения по-умолчанию</string>
             </property>
             <property name="text">
              <string/>
@@ -321,7 +321,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Save current display settings values as default</string>
+             <string>Сохранить текущие значения настроек отображения как умолчания</string>
             </property>
             <property name="text">
              <string/>
@@ -359,7 +359,7 @@
           <item>
            <widget class="pqExpanderButton" name="ViewButton">
             <property name="text" stdset="0">
-             <string>View</string>
+             <string>Представление</string>
             </property>
             <property name="checked" stdset="0">
              <bool>true</bool>
@@ -378,7 +378,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Copy view properties</string>
+             <string>Копировать свойства представления</string>
             </property>
             <property name="text">
              <string/>
@@ -401,7 +401,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Paste view properties</string>
+             <string>Вставить свойства представления</string>
             </property>
             <property name="text">
              <string/>
@@ -421,7 +421,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Restore application default setting values for view</string>
+             <string>Восстановить в приложении значения настроек представления по-умолчанию</string>
             </property>
             <property name="text">
              <string/>
@@ -437,7 +437,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Save current view settings values as default</string>
+             <string>Сохранить текущие значения настроек представления как умолчания</string>
             </property>
             <property name="text">
              <string/>

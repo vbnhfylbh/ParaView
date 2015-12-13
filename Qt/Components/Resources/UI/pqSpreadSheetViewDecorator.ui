@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QHBoxLayout">
    <property name="spacing">
@@ -23,7 +23,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>&lt;b&gt;Showing  &lt;/b&gt;</string>
+      <string>&lt;b&gt;Выбрано  &lt;/b&gt;</string>
      </property>
     </widget>
    </item>
@@ -37,7 +37,7 @@
    <item>
     <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>&lt;b&gt;   Attribute:&lt;/b&gt;</string>
+      <string>&lt;b&gt;   Атрибут:&lt;/b&gt;</string>
      </property>
     </widget>
    </item>
@@ -48,32 +48,32 @@
      </property>
      <item>
       <property name="text">
-       <string>Points</string>
+       <string>Точки</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Cells</string>
+       <string>Элементы</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Field Data</string>
+       <string>Данные поля</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Vertices</string>
+       <string>Вершины</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Edges</string>
+       <string>Ребра</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Rows</string>
+       <string>Строки</string>
       </property>
      </item>
     </widget>
@@ -87,7 +87,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Precision:</string>
+      <string>Точность:</string>
      </property>
     </widget>
    </item>
@@ -104,16 +104,16 @@
    <item>
     <widget class="QToolButton" name="SelectionOnly">
      <property name="toolTip">
-      <string>Show only selected elements.</string>
+      <string>Показывать только выделенные элементы.</string>
      </property>
      <property name="statusTip">
-      <string>Show only selected elements.</string>
+      <string>Показывать только выделенные элементы.</string>
      </property>
      <property name="whatsThis">
-      <string>Show only selected elements.</string>
+      <string>Показывать только выделенные элементы.</string>
      </property>
      <property name="text">
-      <string>Selected</string>
+      <string>Выделенные</string>
      </property>
      <property name="icon">
       <iconset resource="../pqComponents.qrc">
@@ -130,16 +130,16 @@
    <item>
     <widget class="QToolButton" name="ToggleColumnVisibility">
      <property name="toolTip">
-      <string>Toggle column visibility</string>
+      <string>Переключить видимость столбцов</string>
      </property>
      <property name="statusTip">
-      <string>Toggle column visibility</string>
+      <string>Переключить видимость столбцов</string>
      </property>
      <property name="whatsThis">
-      <string>Toggle column visibility</string>
+      <string>Переключить видимость столбцов</string>
      </property>
      <property name="text">
-      <string>Toggle column visibility</string>
+      <string>Переключить видимость столбцов</string>
      </property>
      <property name="icon">
       <iconset resource="../pqComponents.qrc">
@@ -150,7 +150,7 @@
    <item>
     <widget class="QToolButton" name="ToggleCellConnectivity">
      <property name="toolTip">
-      <string>Toggle cell connectivity visibility</string>
+      <string>Переключить видимость соединений элементов</string>
      </property>
      <property name="text">
       <string>...</string>

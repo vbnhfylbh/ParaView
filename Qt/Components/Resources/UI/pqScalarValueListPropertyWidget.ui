@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <property name="horizontalSpacing">
@@ -47,7 +47,7 @@
      <item>
       <widget class="QToolButton" name="Add">
        <property name="toolTip">
-        <string>Add new entry</string>
+        <string>Добавить запись</string>
        </property>
        <property name="text">
         <string>...</string>
@@ -61,7 +61,7 @@
      <item>
       <widget class="QToolButton" name="Remove">
        <property name="toolTip">
-        <string>Remove current entry</string>
+        <string>Удалить текущую запись</string>
        </property>
        <property name="text">
         <string>...</string>
@@ -75,7 +75,7 @@
      <item>
       <widget class="QToolButton" name="AddRange">
        <property name="toolTip">
-        <string>Add a range of values</string>
+        <string>Добавить диапазон значений</string>
        </property>
        <property name="text">
         <string>...</string>
@@ -102,7 +102,7 @@
      <item>
       <widget class="QToolButton" name="RemoveAll">
        <property name="toolTip">
-        <string>Remove all entries</string>
+        <string>Удалить все записи</string>
        </property>
        <property name="text">
         <string>...</string>
@@ -118,7 +118,7 @@
    <item row="0" column="0" colspan="2">
     <widget class="QLabel" name="ScalarRangeLabel">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Value Range:&lt;/span&gt;  [%1, %2]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Диапазон значений:&lt;/span&gt;  [%1, %2]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Диалог</string>
   </property>
   <layout class="QVBoxLayout" name="Layout">
    <item>
@@ -54,7 +54,7 @@
       <item>
        <widget class="QPushButton" name="RestoreDefaultsButton">
         <property name="toolTip">
-         <string>Restore application default setting values</string>
+         <string>Восставноить значения настроек приложения по-умолчанию</string>
         </property>
         <property name="text">
          <string/>
@@ -64,7 +64,7 @@
       <item>
        <widget class="QPushButton" name="SaveButton">
         <property name="toolTip">
-         <string>Save current settings values as default</string>
+         <string>Сохранить текущие значения настроек как умолчания</string>
         </property>
         <property name="text">
          <string/>
@@ -99,7 +99,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Apply</string>
+         <string>Применить</string>
         </property>
         <property name="icon">
          <iconset theme="SP_DialogApplyButton">
@@ -111,7 +111,7 @@
       <item>
        <widget class="QPushButton" name="ResetButton">
         <property name="text">
-         <string>Reset</string>
+         <string>Вернуть умолчания</string>
         </property>
        </widget>
       </item>
@@ -124,7 +124,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>&amp;Cancel</string>
+         <string>&amp;Отмена</string>
         </property>
        </widget>
       </item>

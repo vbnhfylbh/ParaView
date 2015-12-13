@@ -13,7 +13,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Dialog</string>
+   <string>Диалог</string>
   </property>
   <layout class="QGridLayout" >
    <property name="margin" >
@@ -33,16 +33,16 @@
      <item>
       <widget class="QPushButton" name="abortAnimationButton" >
        <property name="toolTip" >
-        <string>Abort Saving Animation</string>
+        <string>Отменить сохранение анимации</string>
        </property>
        <property name="statusTip" >
-        <string>Interrupts the saving of animation and aborts it.</string>
+        <string>Прервать и отменить сохранение анимации.</string>
        </property>
        <property name="whatsThis" >
-        <string>Interrupts the saving of animation and aborts it.</string>
+        <string>Прервать и отменить сохранение анимации.</string>
        </property>
        <property name="text" >
-        <string>Abort Animation</string>
+        <string>Отменить анимацию</string>
        </property>
       </widget>
      </item>

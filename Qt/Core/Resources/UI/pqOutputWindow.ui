@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Диалог</string>
   </property>
   <property name="modal">
    <bool>false</bool>
@@ -73,7 +73,7 @@
      <item>
       <widget class="QCheckBox" name="checkBoxConsoleView">
        <property name="text">
-        <string>Console View</string>
+        <string>Простой текст</string>
        </property>
       </widget>
      </item>
@@ -93,21 +93,21 @@
      <item>
       <widget class="QPushButton" name="clearButton">
        <property name="text">
-        <string>Clear</string>
+        <string>Очистить</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="filterButton">
        <property name="text">
-        <string>Filter</string>
+        <string>Фильтровать</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="closeButton">
        <property name="text">
-        <string>Close</string>
+        <string>Закрыть</string>
        </property>
       </widget>
      </item>

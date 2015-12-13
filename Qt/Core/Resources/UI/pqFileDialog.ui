@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Диалог</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
@@ -63,7 +63,7 @@
      <item>
       <widget class="QToolButton" name="NavigateBack">
        <property name="toolTip">
-        <string>Navigate Back</string>
+        <string>Назад</string>
        </property>
        <property name="text">
         <string/>
@@ -76,7 +76,7 @@
      <item>
       <widget class="QToolButton" name="NavigateForward">
        <property name="toolTip">
-        <string>Navigate Forward</string>
+        <string>Вперед</string>
        </property>
        <property name="text">
         <string/>
@@ -89,7 +89,7 @@
      <item>
       <widget class="QToolButton" name="NavigateUp">
        <property name="toolTip">
-        <string>Navigate Up</string>
+        <string>На уровень выше</string>
        </property>
        <property name="text">
         <string/>
@@ -102,7 +102,7 @@
      <item>
       <widget class="QToolButton" name="CreateFolder">
        <property name="toolTip">
-        <string>Create New Folder</string>
+        <string>Создать папку</string>
        </property>
        <property name="text">
         <string/>
@@ -181,7 +181,7 @@
          <item row="0" column="0">
           <widget class="QLabel" name="label_2">
            <property name="text">
-            <string>File name:</string>
+            <string>Имя файла:</string>
            </property>
           </widget>
          </item>
@@ -198,7 +198,7 @@
          <item row="1" column="0">
           <widget class="QLabel" name="label">
            <property name="text">
-            <string>Files of type:</string>
+            <string>Тип файла:</string>
            </property>
           </widget>
          </item>
@@ -212,7 +212,7 @@
          <item row="1" column="2">
           <widget class="QPushButton" name="Cancel">
            <property name="text">
-            <string>Cancel</string>
+            <string>Отмена</string>
            </property>
           </widget>
          </item>

@@ -3,7 +3,7 @@
  <class>pqEditMenuBuilder</class>
  <widget class="QMenu" name="pqEditMenuBuilder">
   <property name="title">
-   <string>&amp;Edit</string>
+   <string>&amp;Правка</string>
   </property>
   <action name="actionEditUndo">
    <property name="checkable">
@@ -17,7 +17,7 @@
      <normaloff>:/pqWidgets/Icons/pqUndo24.png</normaloff>:/pqWidgets/Icons/pqUndo24.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Undo</string>
+    <string>&amp;Отменить</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Z</string>
@@ -32,7 +32,7 @@
      <normaloff>:/pqWidgets/Icons/pqRedo24.png</normaloff>:/pqWidgets/Icons/pqRedo24.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Redo</string>
+    <string>&amp;Повторить</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
@@ -44,7 +44,7 @@
      <normaloff>:/pqWidgets/Icons/pqUndoCamera24.png</normaloff>:/pqWidgets/Icons/pqUndoCamera24.png</iconset>
    </property>
    <property name="text">
-    <string>Camera Undo</string>
+    <string>Отменить действие камеры</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+B</string>
@@ -56,7 +56,7 @@
      <normaloff>:/pqWidgets/Icons/pqRedoCamera24.png</normaloff>:/pqWidgets/Icons/pqRedoCamera24.png</iconset>
    </property>
    <property name="text">
-    <string>Camera Redo</string>
+    <string>Повторить действие камеры</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
@@ -64,16 +64,16 @@
   </action>
   <action name="actionChangeInput">
    <property name="text">
-    <string>Change &amp;Input...</string>
+    <string>Изменить &amp;входные данные...</string>
    </property>
    <property name="iconText">
-    <string>Change Input...</string>
+    <string>Изменить входные данные...</string>
    </property>
    <property name="toolTip">
-    <string>Change a Filter's Input</string>
+    <string>Изменить входные данные фильтра</string>
    </property>
    <property name="statusTip">
-    <string>Change a Filter's Input</string>
+    <string>Изменить входные данные фильтра</string>
    </property>
   </action>
   <action name="actionCopy">
@@ -82,10 +82,10 @@
      <normaloff>:/pqWidgets/Icons/pqCopy22.png</normaloff>:/pqWidgets/Icons/pqCopy22.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Copy</string>
+    <string>&amp;Копировать</string>
    </property>
    <property name="statusTip">
-    <string>Copy properties</string>
+    <string>Копировать свойства</string>
    </property>
   </action>
   <action name="actionPaste">
@@ -94,10 +94,10 @@
      <normaloff>:/pqWidgets/Icons/pqPaste22.png</normaloff>:/pqWidgets/Icons/pqPaste22.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Paste</string>
+    <string>&amp;Вставить</string>
    </property>
    <property name="statusTip">
-    <string>Paste copied properties</string>
+    <string>Вставить скопированные свойства</string>
    </property>
   </action>
   <action name="actionDelete">
@@ -106,15 +106,15 @@
      <normaloff>:/QtWidgets/Icons/pqDelete24.png</normaloff>:/QtWidgets/Icons/pqDelete24.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Delete</string>
+    <string>&amp;Удалить</string>
    </property>
    <property name="statusTip">
-    <string>Delete</string>
+    <string>Удалить</string>
    </property>
   </action>
   <action name="actionDelete_All">
    <property name="text">
-    <string>Reset Session</string>
+    <string>Восстановить сессию по-умолчанию</string>
    </property>
   </action>
   <action name="actionIgnoreTime">
@@ -122,27 +122,27 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Ignore Time</string>
+    <string>Не учитывать время</string>
    </property>
    <property name="toolTip">
-    <string>Disregard this source/filter's time from animations</string>
+    <string>Исключить время данного объекта/фильтра из анимации</string>
    </property>
    <property name="statusTip">
-    <string>Disregard this source/filter's time from animations</string>
+    <string>Исключить время данного объекта/фильтра из анимации</string>
    </property>
    <property name="whatsThis">
-    <string>Disregard this source/filter's time from animations</string>
+    <string>Исключить время данного объекта/фильтра из анимации</string>
    </property>
   </action>
   <action name="actionEditSettings">
    <property name="text">
-    <string>Settings...</string>
+    <string>Настройки...</string>
    </property>
    <property name="iconText">
-    <string>Settings</string>
+    <string>Настройки</string>
    </property>
    <property name="toolTip">
-    <string>Settings</string>
+    <string>Настройки</string>
    </property>
   </action>
   <action name="actionQuery">
@@ -151,13 +151,13 @@
      <normaloff>:/pqWidgets/Icons/pqFindData32.png</normaloff>:/pqWidgets/Icons/pqFindData32.png</iconset>
    </property>
    <property name="text">
-    <string>Find Data...</string>
+    <string>Поиск данных...</string>
    </property>
    <property name="iconText">
-    <string>Find Data</string>
+    <string>Поиск данных</string>
    </property>
    <property name="toolTip">
-    <string>Find data matching various criteria from the current source (v).</string>
+    <string>Поиск данных по критерию текущего объекта (v).</string>
    </property>
    <property name="shortcut">
     <string>V</string>

@@ -14,7 +14,7 @@
    <bool>true</bool>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Основное окно</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../../Qt/Components/Resources/pqComponents.qrc">
@@ -46,7 +46,7 @@
    </widget>
    <widget class="QMenu" name="menuSources">
     <property name="title">
-     <string>&amp;Sources</string>
+     <string>&amp;Объекты</string>
     </property>
    </widget>
    <widget class="QMenu" name="menuFilters">
@@ -56,17 +56,17 @@
    </widget>
    <widget class="QMenu" name="menu_Edit">
     <property name="title">
-     <string>&amp;Edit</string>
+     <string>&amp;Правка</string>
     </property>
    </widget>
    <widget class="QMenu" name="menu_View">
     <property name="title">
-     <string>&amp;View</string>
+     <string>&amp;Вид</string>
     </property>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
-     <string>&amp;Инструменты</string>
+     <string>&amp;Действия</string>
     </property>
    </widget>
    <widget class="QMenu" name="menu_Help">
@@ -100,7 +100,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Обозреватель трубы</string>
+    <string>Конвейер данных</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -116,7 +116,7 @@
     <set>Qt::BottomDockWidgetArea|Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Statistics Inspector</string>
+    <string>Статистика</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>8</number>
@@ -137,7 +137,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Comparative View Inspector</string>
+    <string>Стенд сравнений</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
@@ -149,7 +149,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Collaboration Panel</string>
+    <string>Панель кооперации</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
@@ -161,7 +161,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Информация</string>
+    <string>Данные</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -199,7 +199,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Memory Inspector</string>
+    <string>Память</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
@@ -217,7 +217,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Properties</string>
+    <string>Свойства</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -229,7 +229,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Multi-block Inspector</string>
+    <string>Блоки данных</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -241,7 +241,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Color Map Editor</string>
+    <string>Редактор цветовой карты</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
@@ -259,7 +259,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Selection Display Inspector</string>
+    <string>Выделенная область</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
@@ -275,7 +275,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Display</string>
+    <string>Дисплей</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -291,7 +291,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>View</string>
+    <string>Вид</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -307,7 +307,7 @@
     <set>Qt::AllDockWidgetAreas</set>
    </property>
    <property name="windowTitle">
-    <string>Time Inspector</string>
+    <string>Шкала времени</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>

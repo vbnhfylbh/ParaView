@@ -6,7 +6,7 @@
    <bool>true</bool>
   </property>
   <property name="windowTitle" >
-   <string>Center Axes Controls</string>
+   <string>Настройки центральных осей</string>
   </property>
   <property name="orientation" >
    <enum>Qt::Horizontal</enum>
@@ -29,10 +29,10 @@
     <iconset resource="../pqComponents.qrc">:/pqWidgets/Icons/pqShowOrientationAxes24.png</iconset>
    </property>
    <property name="text" >
-    <string>Show Orientation Axes</string>
+    <string>Показать ориентационные оси</string>
    </property>
    <property name="statusTip" >
-    <string>Show/Hide orientation axes</string>
+    <string>Показать/скрыть ориентационные оси</string>
    </property>
   </action>
 
@@ -47,10 +47,10 @@
     <iconset resource="../pqComponents.qrc" >:/pqWidgets/Icons/pqShowCenterAxes24.png</iconset>
    </property>
    <property name="text" >
-    <string>Show Center</string>
+    <string>Показать центр</string>
    </property>
    <property name="statusTip" >
-    <string>Show/Hide center of rotation</string>
+    <string>Показать/скрыть центр вращения</string>
    </property>
   </action>
   <action name="actionPickCenter" >
@@ -64,16 +64,16 @@
     <iconset resource="../pqComponents.qrc" >:/pqWidgets/Icons/pqPickCenter24.png</iconset>
    </property>
    <property name="text" >
-    <string>Pick Center</string>
+    <string>Выбрать центр</string>
    </property>
    <property name="iconText" >
-    <string>Pick Center</string>
+    <string>Выбрать центр</string>
    </property>
    <property name="toolTip" >
-    <string>Pick Center</string>
+    <string>Выбрать центр</string>
    </property>
    <property name="statusTip" >
-    <string>Mouse press to pick center of rotation</string>
+    <string>Выберите центр вращения</string>
    </property>
   </action>
   <action name="actionResetCenter" >
@@ -84,10 +84,10 @@
     <iconset resource="../pqComponents.qrc" >:/pqWidgets/Icons/pqResetCenter24.png</iconset>
    </property>
    <property name="text" >
-    <string>Reset Center</string>
+    <string>Вернуть центр по-умолчанию</string>
    </property>
    <property name="statusTip" >
-    <string>Reset center of rotation</string>
+    <string>Вернуть центр вращения по-умолчанию</string>
    </property>
   </action>
  

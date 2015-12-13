@@ -23,7 +23,7 @@
       </sizepolicy>
      </property>
      <property name="title">
-      <string>Use Window Location</string>
+      <string>Использовать положение окна</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -47,7 +47,7 @@
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>Top Center</string>
+         <string>Наверху по центру</string>
         </property>
         <property name="text">
          <string/>
@@ -82,7 +82,7 @@
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>Top Right Corner</string>
+         <string>Наверху у правого угла</string>
         </property>
         <property name="text">
          <string/>
@@ -117,7 +117,7 @@
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>Top Left Corner</string>
+         <string>Наверху у левого угла</string>
         </property>
         <property name="text">
          <string/>
@@ -152,7 +152,7 @@
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>Bottom Right Corner</string>
+         <string>Внизу у правого угла</string>
         </property>
         <property name="text">
          <string/>
@@ -187,7 +187,7 @@
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>Bottom Left Corner</string>
+         <string>Внизу у левого угла</string>
         </property>
         <property name="text">
          <string/>
@@ -225,7 +225,7 @@
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>Bottom Center</string>
+         <string>Внизу по центру</string>
         </property>
         <property name="text">
          <string/>
@@ -260,7 +260,7 @@
    <item row="1" column="0">
     <widget class="QGroupBox" name="groupBoxPosition">
      <property name="title">
-      <string>Lower Left Corner</string>
+      <string>Нижний левый угол</string>
      </property>
      <property name="checkable">
       <bool>true</bool>

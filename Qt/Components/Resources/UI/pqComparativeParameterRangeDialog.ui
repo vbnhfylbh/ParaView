@@ -11,14 +11,14 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Enter Parameter Range</string>
+   <string>Введите диапазон параметра</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QLabel" name="multivalueHint">
      <property name="text">
-      <string>Use comma-separated values to enter multiple values.
-However number of values in both entires must match.</string>
+      <string>Используйте значения, разделенные запятой для ввода множества значений.
+Количество значений в обоих записях должно совпадать.</string>
      </property>
     </widget>
    </item>
@@ -30,7 +30,7 @@ However number of values in both entires must match.</string>
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>  to  </string>
+        <string>  к  </string>
        </property>
       </widget>
      </item>
@@ -55,32 +55,32 @@ However number of values in both entires must match.</string>
    <item>
     <widget class="QComboBox" name="mode">
      <property name="toolTip">
-      <string>Controls the direction in which the paramter is varied.</string>
+      <string>Управляет направление изменения параметра.</string>
      </property>
      <property name="statusTip">
-      <string>Controls the direction in which the paramter is varied.</string>
+      <string>Управляет направление изменения параметра.</string>
      </property>
      <property name="whatsThis">
-      <string>Controls the direction in which the paramter is varied.</string>
+      <string>Управляет направление изменения параметра.</string>
      </property>
      <item>
       <property name="text">
-       <string>Vary horizontally first</string>
+       <string>Изменять сперва горизонтально</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Vary vertically first</string>
+       <string>Изменять сперва вертикально</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Only vary horizontally</string>
+       <string>Изменять только горизонтально</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Only vary vertically</string>
+       <string>Изменять только вертикально</string>
       </property>
      </item>
     </widget>

@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1,0,0,0,0,1">
    <property name="spacing">
@@ -29,7 +29,7 @@
    <item>
     <widget class="QLabel" name="timeLabel">
      <property name="text">
-      <string>Time:</string>
+      <string>Время:</string>
      </property>
     </widget>
    </item>
@@ -76,7 +76,7 @@
    <item>
     <widget class="QLabel" name="timestepCountLabel">
      <property name="text">
-      <string>of (TDB)</string>
+      <string>(в динамическом масштабе TDB)</string>
      </property>
     </widget>
    </item>

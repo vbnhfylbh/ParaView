@@ -10,7 +10,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QGridLayout" >
    <property name="leftMargin" >
@@ -34,28 +34,28 @@
    <item row="4" column="0" colspan="2" >
     <widget class="QCheckBox" name="GenerateTriangles" >
      <property name="text" >
-      <string>Generate Triangles</string>
+      <string>Создать треугольники</string>
      </property>
     </widget>
    </item>
    <item row="3" column="0" colspan="2" >
     <widget class="QCheckBox" name="ComputeScalars" >
      <property name="text" >
-      <string>Compute Scalars</string>
+      <string>Вычислить скаляры</string>
      </property>
     </widget>
    </item>
    <item row="2" column="0" colspan="2" >
     <widget class="QCheckBox" name="ComputeGradients" >
      <property name="text" >
-      <string>Compute Gradients</string>
+      <string>Вычислить градиенты</string>
      </property>
     </widget>
    </item>
    <item row="1" column="0" colspan="2" >
     <widget class="QCheckBox" name="ComputeNormals" >
      <property name="text" >
-      <string>Compute Normals</string>
+      <string>Вычислить нормали</string>
      </property>
     </widget>
    </item>
@@ -65,7 +65,7 @@
    <item row="0" column="0" >
     <widget class="QLabel" name="label_7" >
      <property name="text" >
-      <string>Contour By</string>
+      <string>Контур по</string>
      </property>
     </widget>
    </item>

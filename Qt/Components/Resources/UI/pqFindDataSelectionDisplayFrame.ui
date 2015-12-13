@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
@@ -20,10 +20,10 @@
       <bool>true</bool>
      </property>
      <property name="toolTip">
-      <string>&lt;p&gt;Set the color to use to show selected elements&lt;/p&gt;</string>
+      <string>&lt;p&gt;Выбрать цвет выделенных элементов&lt;/p&gt;</string>
      </property>
      <property name="text">
-      <string>Selection Color</string>
+      <string>Цвет выделения</string>
      </property>
     </widget>
    </item>

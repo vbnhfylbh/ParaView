@@ -10,7 +10,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QVBoxLayout" >
    <property name="spacing" >
@@ -48,14 +48,14 @@
      <item>
       <widget class="QCheckBox" name="show3DWidget" >
        <property name="text" >
-        <string>Show Point</string>
+        <string>Показывать точку</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="useCenterBounds" >
        <property name="text" >
-        <string>Center on Bounds</string>
+        <string>Центр по границам</string>
        </property>
       </widget>
      </item>
@@ -81,7 +81,7 @@
      <item>
       <widget class="QLabel" name="label_3" >
        <property name="text" >
-        <string>Point</string>
+        <string>Точка</string>
        </property>
       </widget>
      </item>

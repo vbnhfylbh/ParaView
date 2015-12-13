@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QGridLayout" name="wdgLayout" columnstretch="0,0">
    <item row="1" column="1">
@@ -26,7 +26,7 @@
       </sizepolicy>
      </property>
      <property name="whatsThis">
-      <string>Enter the thickness for the line.</string>
+      <string>Введите толщину линии.</string>
      </property>
      <property name="minimum">
       <number>1</number>
@@ -42,7 +42,7 @@
    <item row="1" column="0">
     <widget class="QLabel" name="ThicknessLabel">
      <property name="text">
-      <string>Line Thickness</string>
+      <string>Толщина линии</string>
      </property>
     </widget>
    </item>
@@ -58,36 +58,36 @@
       </sizepolicy>
      </property>
      <property name="whatsThis">
-      <string>Select the line style for the series.</string>
+      <string>Выберите стиль линий для последовательности точек.</string>
      </property>
      <item>
       <property name="text">
-       <string>None</string>
+       <string>Не выбрано</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Solid</string>
+       <string>Непрерывная</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Dash</string>
+       <string>Штриховая</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Dot</string>
+       <string>Пунктирная</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Dash Dot</string>
+       <string>Штрихпунктирная</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Dash Dot Dot</string>
+       <string>Штрих-пунктир-пунктир</string>
       </property>
      </item>
     </widget>
@@ -95,14 +95,14 @@
    <item row="2" column="0">
     <widget class="QLabel" name="StyleListLabel">
      <property name="text">
-      <string>Line Style</string>
+      <string>Стиль линий</string>
      </property>
     </widget>
    </item>
    <item row="3" column="0">
     <widget class="QLabel" name="MarkerStyleListLabel">
      <property name="text">
-      <string>Marker Style</string>
+      <string>Стиль отметок</string>
      </property>
     </widget>
    </item>
@@ -119,32 +119,32 @@
      </property>
      <item>
       <property name="text">
-       <string>None</string>
+       <string>не выбрано</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Cross</string>
+       <string>Крест</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Plus</string>
+       <string>Плюс</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Square</string>
+       <string>Квадрат</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Circle</string>
+       <string>Круг</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Diamond</string>
+       <string>Ромб</string>
       </property>
      </item>
     </widget>
@@ -152,7 +152,7 @@
    <item row="4" column="0">
     <widget class="QLabel" name="AxisListLabel">
      <property name="text">
-      <string>Chart Axes</string>
+      <string>Оси графика</string>
      </property>
     </widget>
    </item>
@@ -168,26 +168,26 @@
       </sizepolicy>
      </property>
      <property name="whatsThis">
-      <string>Select the chart axes for the line series.</string>
+      <string>Выберите оси графиков для последовательности.</string>
      </property>
      <item>
       <property name="text">
-       <string>Bottom-Left</string>
+       <string>Внизу слева</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Bottom-Right</string>
+       <string>Внизу справа</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Top-Right</string>
+       <string>Вверху справа</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Top-Left</string>
+       <string>Вверху слева</string>
       </property>
      </item>
     </widget>
@@ -201,7 +201,7 @@
       </sizepolicy>
      </property>
      <property name="whatsThis">
-      <string>This displays the list of line series. You can use the list to edit the series options.</string>
+      <string>Отображает список последовательностей. Используйте список для редактирования опций последовательности.</string>
      </property>
      <property name="alternatingRowColors">
       <bool>true</bool>

@@ -12,16 +12,16 @@
   </property>
   <action name="actionPBChangeInput">
    <property name="text">
-    <string>Change &amp;Input...</string>
+    <string>Изменить &amp;входные данные...</string>
    </property>
    <property name="iconText">
-    <string>Change Input...</string>
+    <string>Изменить входные данные...</string>
    </property>
    <property name="toolTip">
-    <string>Change a Filter's Input</string>
+    <string>Изменить входные данные фильтра</string>
    </property>
    <property name="statusTip">
-    <string>Change a Filter's Input</string>
+    <string>Изменить входные данные фильтра</string>
    </property>
   </action>
   <action name="actionPBDelete">
@@ -30,10 +30,10 @@
      <normaloff>:/QtWidgets/Icons/pqDelete24.png</normaloff>:/QtWidgets/Icons/pqDelete24.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Delete</string>
+    <string>&amp;Удалить</string>
    </property>
    <property name="statusTip">
-    <string>Delete</string>
+    <string>Удалить</string>
    </property>
   </action>
   <action name="actionPBCopy">
@@ -42,10 +42,10 @@
      <normaloff>:/pqWidgets/Icons/pqCopy22.png</normaloff>:/pqWidgets/Icons/pqCopy22.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Copy</string>
+    <string>&amp;Копировать</string>
    </property>
    <property name="statusTip">
-    <string>Copy Properties</string>
+    <string>Копировать свойства</string>
    </property>
   </action>
   <action name="actionPBPaste">
@@ -54,10 +54,10 @@
      <normaloff>:/pqWidgets/Icons/pqPaste22.png</normaloff>:/pqWidgets/Icons/pqPaste22.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Paste</string>
+    <string>&amp;Вставить</string>
    </property>
    <property name="statusTip">
-    <string>Paste Properties</string>
+    <string>Вставить свойства</string>
    </property>
   </action>
   <action name="actionPBIgnoreTime">
@@ -65,16 +65,16 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Ignore Time</string>
+    <string>Не учитывать время</string>
    </property>
    <property name="toolTip">
-    <string>Disregard this source/filter's time from animations</string>
+    <string>Не учитывать время данного объекта/фильтра в анимации</string>
    </property>
    <property name="statusTip">
-    <string>Disregard this source/filter's time from animations</string>
+    <string>Не учитывать время данного объекта/фильтра в анимации</string>
    </property>
    <property name="whatsThis">
-    <string>Disregard this source/filter's time from animations</string>
+    <string>Не учитывать время данного объекта/фильтра в анимации</string>
    </property>
   </action>
   <action name="actionPBOpen">
@@ -83,13 +83,13 @@
      <normaloff>:/pqWidgets/Icons/pqOpen24.png</normaloff>:/pqWidgets/Icons/pqOpen24.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Open</string>
+    <string>&amp;Открыть</string>
    </property>
    <property name="toolTip">
-    <string>Open</string>
+    <string>Открыть</string>
    </property>
    <property name="statusTip">
-    <string>Open</string>
+    <string>Открыть</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::WidgetShortcut</enum>
@@ -97,7 +97,7 @@
   </action>
   <action name="actionPBCreateCustomFilter">
    <property name="text">
-    <string>&amp;Create Custom Filter...</string>
+    <string>&amp;Создать пользовательский фильтр...</string>
    </property>
   </action>
   <addaction name="actionPBOpen"/>

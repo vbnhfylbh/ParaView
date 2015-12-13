@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>About ParaView</string>
+   <string>О программе</string>
   </property>
   <property name="modal">
    <bool>true</bool>
@@ -80,7 +80,7 @@
      </property>
      <widget class="QWidget" name="tabClient">
       <attribute name="title">
-       <string>Client Information</string>
+       <string>Локальная конфигурация</string>
       </attribute>
       <layout class="QVBoxLayout">
        <property name="spacing">
@@ -99,12 +99,12 @@
          </property>
          <column>
           <property name="text">
-           <string>Item</string>
+           <string>Имя</string>
           </property>
          </column>
          <column>
           <property name="text">
-           <string>Description</string>
+           <string>Описание</string>
           </property>
          </column>
         </widget>
@@ -113,7 +113,7 @@
      </widget>
      <widget class="QWidget" name="tabServer">
       <attribute name="title">
-       <string>Connection Information</string>
+       <string>Удаленная конфигурация</string>
       </attribute>
       <layout class="QGridLayout">
        <property name="margin">
@@ -132,12 +132,12 @@
          </property>
          <column>
           <property name="text">
-           <string>Item</string>
+           <string>Имя</string>
           </property>
          </column>
          <column>
           <property name="text">
-           <string>Description</string>
+           <string>Описание</string>
           </property>
          </column>
         </widget>

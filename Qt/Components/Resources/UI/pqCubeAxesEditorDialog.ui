@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Edit Cube Axes Properties</string>
+   <string>Редактировать свойства осей куба</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -21,41 +21,41 @@
      </property>
      <widget class="QWidget" name="xtab">
       <attribute name="title">
-       <string>X Axis</string>
+       <string>Ось X</string>
       </attribute>
       <layout class="QGridLayout">
        <item row="4" column="0" colspan="2">
         <widget class="QCheckBox" name="CubeAxesXGridLines">
          <property name="text">
-          <string>Show Grid Lines</string>
+          <string>Показывать линии сетки</string>
          </property>
         </widget>
        </item>
        <item row="3" column="0" colspan="2">
         <widget class="QCheckBox" name="CubeAxesXAxisMinorTickVisibility">
          <property name="text">
-          <string>Show Minor Ticks</string>
+          <string>Показывать мелкие отметки</string>
          </property>
         </widget>
        </item>
        <item row="2" column="0" colspan="2">
         <widget class="QCheckBox" name="CubeAxesXAxisTickVisibility">
          <property name="text">
-          <string>Show Ticks</string>
+          <string>Показывать отметки</string>
          </property>
         </widget>
        </item>
        <item row="1" column="0" colspan="2">
         <widget class="QCheckBox" name="CubeAxesXAxisVisibility">
          <property name="text">
-          <string>Show Axis</string>
+          <string>Показывать ось</string>
          </property>
         </widget>
        </item>
        <item row="6" column="0">
         <widget class="QGroupBox" name="CubeAxesXCustomBounds">
          <property name="title">
-          <string>Custom Bounds</string>
+          <string>Пользовательские границы</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -79,7 +79,7 @@
           <item>
            <widget class="QLabel" name="label_5">
             <property name="text">
-             <string>Title</string>
+             <string>Заголовок</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
@@ -105,7 +105,7 @@
           <item>
            <widget class="QCheckBox" name="CubeAxesUseDefaultXTitle">
             <property name="toolTip">
-             <string>Uncheck to override any provided AxisTitle inside FieldData</string>
+             <string>Снять выбор для определения заголовка оси для данных поля</string>
             </property>
             <property name="text">
              <string/>
@@ -134,7 +134,7 @@
        <item row="7" column="0">
         <widget class="QGroupBox" name="CubeAxesXCustomRange">
          <property name="title">
-          <string>Custom Range</string>
+          <string>Пользовательский диапазон</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -155,7 +155,7 @@
        <item row="5" column="0">
         <widget class="QCheckBox" name="UseOriginalBoundsRangeForX">
          <property name="text">
-          <string>Original Bounds as Range</string>
+          <string>Первоначальные границы как диапазон</string>
          </property>
         </widget>
        </item>
@@ -163,41 +163,41 @@
      </widget>
      <widget class="QWidget" name="ytab">
       <attribute name="title">
-       <string>Y Axis</string>
+       <string>Ось Y</string>
       </attribute>
       <layout class="QGridLayout">
        <item row="4" column="0" colspan="2">
         <widget class="QCheckBox" name="CubeAxesYGridLines">
          <property name="text">
-          <string>Show Grid Lines</string>
+          <string>Показывать линии сетки</string>
          </property>
         </widget>
        </item>
        <item row="3" column="0" colspan="2">
         <widget class="QCheckBox" name="CubeAxesYAxisMinorTickVisibility">
          <property name="text">
-          <string>Show Minor Ticks</string>
+          <string>Показывать мелкие отметки</string>
          </property>
         </widget>
        </item>
        <item row="1" column="0" colspan="2">
         <widget class="QCheckBox" name="CubeAxesYAxisVisibility">
          <property name="text">
-          <string>Show Axis</string>
+          <string>Показывать ось</string>
          </property>
         </widget>
        </item>
        <item row="2" column="0" colspan="2">
         <widget class="QCheckBox" name="CubeAxesYAxisTickVisibility">
          <property name="text">
-          <string>Show Ticks</string>
+          <string>Показывать отметки</string>
          </property>
         </widget>
        </item>
        <item row="6" column="0">
         <widget class="QGroupBox" name="CubeAxesYCustomBounds">
          <property name="title">
-          <string>Custom Bounds</string>
+          <string>Пользовательские границы</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -221,7 +221,7 @@
           <item>
            <widget class="QLabel" name="label_6">
             <property name="text">
-             <string>Title</string>
+             <string>Заголовок</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
@@ -247,7 +247,7 @@
           <item>
            <widget class="QCheckBox" name="CubeAxesUseDefaultYTitle">
             <property name="toolTip">
-             <string>Uncheck to override any provided AxisTitle inside FieldData</string>
+             <string>Снять выбор для определения заголовка оси для данных поля</string>
             </property>
             <property name="text">
              <string/>
@@ -276,7 +276,7 @@
        <item row="7" column="0">
         <widget class="QGroupBox" name="CubeAxesYCustomRange">
          <property name="title">
-          <string>Custom Range</string>
+          <string>Пользовательский диапазон</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -297,7 +297,7 @@
        <item row="5" column="0">
         <widget class="QCheckBox" name="UseOriginalBoundsRangeForY">
          <property name="text">
-          <string>Original Bounds as Range</string>
+          <string>Первоначальные границы как диапазон</string>
          </property>
         </widget>
        </item>
@@ -305,41 +305,41 @@
      </widget>
      <widget class="QWidget" name="ztab">
       <attribute name="title">
-       <string>Z Axis</string>
+       <string>Ось Z</string>
       </attribute>
       <layout class="QGridLayout">
        <item row="4" column="0" colspan="2">
         <widget class="QCheckBox" name="CubeAxesZGridLines">
          <property name="text">
-          <string>Show Grid Lines</string>
+          <string>Показывать линии сетки</string>
          </property>
         </widget>
        </item>
        <item row="1" column="0" colspan="2">
         <widget class="QCheckBox" name="CubeAxesZAxisVisibility">
          <property name="text">
-          <string>Show Axis</string>
+          <string>Показывать ось</string>
          </property>
         </widget>
        </item>
        <item row="3" column="0" colspan="2">
         <widget class="QCheckBox" name="CubeAxesZAxisMinorTickVisibility">
          <property name="text">
-          <string>Show Minor Ticks</string>
+          <string>Показывать мелкие отметки<</string>
          </property>
         </widget>
        </item>
        <item row="2" column="0" colspan="2">
         <widget class="QCheckBox" name="CubeAxesZAxisTickVisibility">
          <property name="text">
-          <string>Show Ticks</string>
+          <string>Показывать отметки</string>
          </property>
         </widget>
        </item>
        <item row="6" column="0">
         <widget class="QGroupBox" name="CubeAxesZCustomBounds">
          <property name="title">
-          <string>Custom Bounds</string>
+          <string>Пользовательские границы</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -363,7 +363,7 @@
           <item>
            <widget class="QLabel" name="label_7">
             <property name="text">
-             <string>Title</string>
+             <string>Заголовок</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
@@ -389,7 +389,7 @@
           <item>
            <widget class="QCheckBox" name="CubeAxesUseDefaultZTitle">
             <property name="toolTip">
-             <string>Uncheck to override any provided AxisTitle inside FieldData</string>
+             <string>Снять выбор для определения заголовка оси для данных поля</string>
             </property>
             <property name="text">
              <string/>
@@ -418,7 +418,7 @@
        <item row="7" column="0">
         <widget class="QGroupBox" name="CubeAxesZCustomRange">
          <property name="title">
-          <string>Custom Range</string>
+          <string>Пользовательский диапазон</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -439,7 +439,7 @@
        <item row="5" column="0">
         <widget class="QCheckBox" name="UseOriginalBoundsRangeForZ">
          <property name="text">
-          <string>Original Bounds as Range</string>
+          <string>Первоначальные границы как диапазон</string>
          </property>
         </widget>
        </item>
@@ -453,17 +453,17 @@
       <widget class="QComboBox" name="CubeAxesTickLocation">
        <item>
         <property name="text">
-         <string>Inside</string>
+         <string>Внутри</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Outside</string>
+         <string>Снаружи</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Both</string>
+         <string>Оба</string>
         </property>
        </item>
       </widget>
@@ -478,14 +478,14 @@
      <item row="5" column="0">
       <widget class="QLabel" name="label_9">
        <property name="text">
-        <string>Sticky Axes</string>
+        <string>Фиксированные оси</string>
        </property>
       </widget>
      </item>
      <item row="0" column="0">
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Fly Mode</string>
+        <string>Режим полета</string>
        </property>
       </widget>
      </item>
@@ -493,27 +493,27 @@
       <widget class="QComboBox" name="CubeAxesFlyMode">
        <item>
         <property name="text">
-         <string>Outer Edges</string>
+         <string>Внешние ребра</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Closest Triad</string>
+         <string>Ближайшая тройка</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Furthest Triad</string>
+         <string>Наиболее удаленная тройка</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Static Triad</string>
+         <string>Статичная тройка</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Static Edges</string>
+         <string>Статичные ребра</string>
         </property>
        </item>
       </widget>
@@ -521,14 +521,14 @@
      <item row="1" column="0">
       <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>Tick Location</string>
+        <string>Положение отметок</string>
        </property>
       </widget>
      </item>
      <item row="2" column="0">
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>Corner Offset</string>
+        <string>Смещение углов</string>
        </property>
       </widget>
      </item>
@@ -545,7 +545,7 @@
      <item row="3" column="0">
       <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>Grid Line Location</string>
+        <string>Расположение линии сетки</string>
        </property>
       </widget>
      </item>
@@ -553,17 +553,17 @@
       <widget class="QComboBox" name="CubeAxesGridLineLocation">
        <item>
         <property name="text">
-         <string>All Faces</string>
+         <string>Все плоскости</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Furthest Faces</string>
+         <string>Наиболее удаленные плоскости</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Closest Faces</string>
+         <string>Ближайшие плоскости</string>
         </property>
        </item>
       </widget>
@@ -571,7 +571,7 @@
      <item row="4" column="0">
       <widget class="QLabel" name="label_8">
        <property name="text">
-        <string>Custom Axes Origin</string>
+        <string>Пользовательская точка отсчета координат для осей</string>
        </property>
       </widget>
      </item>
@@ -588,7 +588,7 @@
      <item row="6" column="0">
       <widget class="QLabel" name="label_10">
        <property name="text">
-        <string>Center Sticky Axes</string>
+        <string>Оси с фиксированным центром</string>
        </property>
       </widget>
      </item>
@@ -641,10 +641,10 @@
       </sizepolicy>
      </property>
      <property name="toolTip">
-      <string>&lt;html&gt;Set the color to use for axes.&lt;/html&gt;</string>
+      <string>&lt;html&gt;Выбрать цвет для осей.&lt;/html&gt;</string>
      </property>
      <property name="text">
-      <string>Set Axes Color...</string>
+      <string>Выбрать цвет осей...</string>
      </property>
     </widget>
    </item>
@@ -682,14 +682,14 @@
      <item>
       <widget class="QPushButton" name="Ok">
        <property name="text">
-        <string>Ok</string>
+        <string>ОК</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="Cancel">
        <property name="text">
-        <string>Cancel</string>
+        <string>Отмена</string>
        </property>
       </widget>
      </item>

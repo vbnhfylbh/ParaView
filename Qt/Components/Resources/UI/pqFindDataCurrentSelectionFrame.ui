@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -25,7 +25,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Show:</string>
+        <string>Показать:</string>
        </property>
       </widget>
      </item>
@@ -42,10 +42,10 @@
         <bool>false</bool>
        </property>
        <property name="toolTip">
-        <string>Invert the selection</string>
+        <string>Обратить выделение</string>
        </property>
        <property name="text">
-        <string>Invert selection</string>
+        <string>Обратить выделение</string>
        </property>
       </widget>
      </item>

@@ -10,13 +10,13 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QGridLayout" >
    <item row="0" column="0" colspan="2" >
     <widget class="QCheckBox" name="show3DWidget" >
      <property name="text" >
-      <string>Show Sphere</string>
+      <string>Показать сферу</string>
      </property>
     </widget>
    </item>
@@ -25,7 +25,7 @@
      <item row="0" column="0" >
       <widget class="QLabel" name="label" >
        <property name="text" >
-        <string>Center</string>
+        <string>Центр</string>
        </property>
       </widget>
      </item>
@@ -41,7 +41,7 @@
      <item row="1" column="0" >
       <widget class="QLabel" name="normalLabel" >
        <property name="text" >
-        <string>Normal</string>
+        <string>Нормаль</string>
        </property>
       </widget>
      </item>
@@ -57,7 +57,7 @@
      <item row="2" column="0" >
       <widget class="QLabel" name="label_2" >
        <property name="text" >
-        <string>Radius</string>
+        <string>Радиус</string>
        </property>
       </widget>
      </item>
@@ -82,7 +82,7 @@
    <item row="2" column="1" >
     <widget class="QPushButton" name="resetBounds" >
      <property name="text" >
-      <string>Reset Bounds</string>
+      <string>Вернуть границы по-умолчанию</string>
      </property>
     </widget>
    </item>

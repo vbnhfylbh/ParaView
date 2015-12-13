@@ -10,7 +10,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Python Shell</string>
+   <string>Терминал Python</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3" >
    <property name="spacing" >
@@ -46,7 +46,7 @@
          <item>
           <widget class="QPushButton" name="runScript" >
            <property name="text" >
-            <string>Run Script</string>
+            <string>Выполнить сценарий</string>
            </property>
            <property name="autoDefault" >
             <bool>false</bool>
@@ -59,7 +59,7 @@
             <enum>Qt::StrongFocus</enum>
            </property>
            <property name="text" >
-            <string>Clear</string>
+            <string>Очистить</string>
            </property>
            <property name="autoDefault" >
             <bool>false</bool>
@@ -69,7 +69,7 @@
          <item>
           <widget class="QPushButton" name="reset" >
            <property name="text" >
-            <string>Reset</string>
+            <string>Вернуть умолчания</string>
            </property>
            <property name="autoDefault" >
             <bool>false</bool>
@@ -92,7 +92,7 @@
          <item>
           <widget class="QPushButton" name="close" >
            <property name="text" >
-            <string>Close</string>
+            <string>Закрыть</string>
            </property>
            <property name="autoDefault" >
             <bool>false</bool>

@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QGridLayout" name="gridLayout" columnstretch="0,1,1,1">
    <property name="margin">
@@ -26,7 +26,7 @@
    <item row="0" column="1">
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Left Button</string>
+      <string>Левая кнопка</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -36,7 +36,7 @@
    <item row="0" column="2">
     <widget class="QLabel" name="label_4">
      <property name="text">
-      <string>Middle Button</string>
+      <string>Средняя кнопка</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -46,7 +46,7 @@
    <item row="0" column="3">
     <widget class="QLabel" name="label_5">
      <property name="text">
-      <string>Right Button</string>
+      <string>Правая кнопка</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>

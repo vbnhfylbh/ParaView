@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Open Data With...</string>
+   <string>Открыть данные с помощью...</string>
   </property>
   <layout class="QVBoxLayout">
    <property name="spacing">
@@ -23,7 +23,7 @@
    <item>
     <widget class="QLabel" name="FileInfo">
      <property name="text">
-      <string>A reader for FileName could not be found.  Please choose one:</string>
+      <string>Приложение для чтения FileName не было найдено. Пожалуйста выберите вручную:</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -40,7 +40,7 @@
    <item>
     <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>Opening the file with an incompatible reader may result in unpredictable behavior or a crash.  Please choose the correct reader.</string>
+      <string>Открытие файла в несовместимом приложении может вызвать непредсказуемые последствия и ошибки. Пожалуйста откройте файл в корректном приложении.</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -78,7 +78,7 @@
      <item>
       <widget class="QPushButton" name="cancelButton">
        <property name="text">
-        <string>Cancel</string>
+        <string>Отмена</string>
        </property>
       </widget>
      </item>

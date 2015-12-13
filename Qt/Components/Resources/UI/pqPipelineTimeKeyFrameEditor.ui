@@ -10,7 +10,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Dialog</string>
+   <string>Диалог</string>
   </property>
   <layout class="QGridLayout" >
    <property name="margin" >
@@ -38,7 +38,7 @@
    <item row="2" column="0" >
     <widget class="QRadioButton" name="variableRadio" >
      <property name="text" >
-      <string>Variable Time:</string>
+      <string>Изменяемое время:</string>
      </property>
     </widget>
    </item>
@@ -68,7 +68,7 @@
    <item row="1" column="0" >
     <widget class="QRadioButton" name="constantRadio" >
      <property name="text" >
-      <string>Constant Time:</string>
+      <string>Постоянное время:</string>
      </property>
     </widget>
    </item>
@@ -87,7 +87,7 @@
    <item row="0" column="0" colspan="2" >
     <widget class="QRadioButton" name="noneRadio" >
      <property name="text" >
-      <string>Animation Time</string>
+      <string>Время анимации</string>
      </property>
     </widget>
    </item>
