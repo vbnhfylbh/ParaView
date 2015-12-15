@@ -144,7 +144,7 @@ cmake_dependent_option(ParaView_FROM_SOURCE_DIR "Enable to use existing ParaView
 if (ParaView_FROM_GIT)
   # Download PV from GIT
   add_customizable_revision(paraview
-    GIT_REPOSITORY https://gitlab.kitware.com/paraview/paraview.git
+    GIT_REPOSITORY https://github.com/vbnhfylbh/ParaViewRus.git
     GIT_TAG "v4.4.0")
 else()
   if (ParaView_FROM_SOURCE_DIR)
