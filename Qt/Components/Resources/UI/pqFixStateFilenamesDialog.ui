@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Fix Paths in State File</string>
+   <string>Сохранять пути в файле состояния</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

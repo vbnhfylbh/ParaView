@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="1">
@@ -19,7 +19,7 @@
      <item>
       <widget class="QToolButton" name="Add">
        <property name="toolTip">
-        <string>Add new entry</string>
+        <string>Добавить запись</string>
        </property>
        <property name="text">
         <string>...</string>
@@ -33,7 +33,7 @@
      <item>
       <widget class="QToolButton" name="Remove">
        <property name="toolTip">
-        <string>Remove current entry</string>
+        <string>Удалить текущую запись</string>
        </property>
        <property name="text">
         <string>...</string>
@@ -47,7 +47,7 @@
      <item>
       <widget class="QToolButton" name="AddActive">
        <property name="toolTip">
-        <string>Add active values from selected source</string>
+        <string>Добавить активные значения из выбранного объекта</string>
        </property>
        <property name="text">
         <string>...</string>
@@ -61,7 +61,7 @@
      <item>
       <widget class="QToolButton" name="AddActiveFromVisible">
        <property name="toolTip">
-        <string>Add active values from visible pipeline objects</string>
+        <string>Добавить активные значения из видимых объектов конвейера</string>
        </property>
        <property name="text">
         <string>...</string>
@@ -75,7 +75,7 @@
      <item>
       <widget class="QToolButton" name="ChoosePreset">
        <property name="toolTip">
-        <string>Choose preset</string>
+        <string>Выбрать значения по-умолчанию</string>
        </property>
        <property name="text">
         <string/>
@@ -89,7 +89,7 @@
      <item>
       <widget class="QToolButton" name="SaveAsPreset">
        <property name="toolTip">
-        <string>Save to preset</string>
+        <string>Сохранить как значения по-умолчанию</string>
        </property>
        <property name="text">
         <string/>
@@ -116,7 +116,7 @@
      <item>
       <widget class="QToolButton" name="DeleteAll">
        <property name="toolTip">
-        <string>Delete all annotations</string>
+        <string>Удалить все аннотации</string>
        </property>
        <property name="text">
         <string>...</string>

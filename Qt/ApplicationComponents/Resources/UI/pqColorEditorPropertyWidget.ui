@@ -11,19 +11,19 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="1" column="1">
     <widget class="QPushButton" name="EditColorMap">
      <property name="toolTip">
-      <string>Edit Color Map</string>
+      <string>Редактировать цветовую схему</string>
      </property>
      <property name="statusTip">
-      <string>Edit Color Map</string>
+      <string>Редактировать цветовую схему</string>
      </property>
      <property name="text">
-      <string>Edit</string>
+      <string>Редактировать</string>
      </property>
      <property name="icon">
       <iconset resource="../../../Components/Resources/pqComponents.qrc">
@@ -37,13 +37,13 @@
    <item row="1" column="0">
     <widget class="QPushButton" name="ShowScalarBar">
      <property name="toolTip">
-      <string>Toggle Color Legend Visibility</string>
+      <string>Переключить видимость цветовой легенды</string>
      </property>
      <property name="statusTip">
-      <string>Toggle Color Legend Visibility</string>
+      <string>Переключить видимость цветовой легенды</string>
      </property>
      <property name="text">
-      <string>Show</string>
+      <string>Показать</string>
      </property>
      <property name="icon">
       <iconset resource="../../../Components/Resources/pqComponents.qrc">
@@ -63,13 +63,13 @@
    <item row="1" column="2">
     <widget class="QPushButton" name="Rescale">
      <property name="toolTip">
-      <string>Rescale to Data Range</string>
+      <string>Масштабировать по диапазону данных</string>
      </property>
      <property name="statusTip">
-      <string>Rescale to Data Range</string>
+      <string>Масштабировать по диапазону данных</string>
      </property>
      <property name="text">
-      <string>Rescale</string>
+      <string>Масштабировать</string>
      </property>
      <property name="icon">
       <iconset resource="../../../Components/Resources/pqComponents.qrc">

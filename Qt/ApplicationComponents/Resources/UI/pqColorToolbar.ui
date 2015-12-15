@@ -3,7 +3,7 @@
  <class>pqColorToolbar</class>
   <widget class="QToolBar" name="variableToolbar" >
    <property name="windowTitle" >
-    <string>Active Variable Controls</string>
+    <string>Настройки активных переменных</string>
    </property>
    <property name="orientation" >
     <enum>Qt::Horizontal</enum>
@@ -25,13 +25,13 @@
      <iconset resource="../../../Components/Resources/pqComponents.qrc" >:/pqWidgets/Icons/pqScalarBar24.png</iconset>
     </property>
     <property name="text" >
-     <string>Show Color Legend</string>
+     <string>Показать цветовую легенду</string>
     </property>
     <property name="toolTip" >
-     <string>Toggle Color Legend Visibility</string>
+     <string>Переключить видимость цветовой легенды</string>
     </property>
     <property name="statusTip" >
-     <string>Toggle Color Legend Visibility</string>
+     <string>Переключить видимость цветовой легенды</string>
     </property>
    </action>
    <action name="actionEditColorMap" >
@@ -42,10 +42,10 @@
      <iconset resource="../../../Components/Resources/pqComponents.qrc" >:/pqWidgets/Icons/pqEditColor24.png</iconset>
     </property>
     <property name="text" >
-     <string>Edit Color Map</string>
+     <string>Редактировать цветовую схему</string>
     </property>
     <property name="statusTip" >
-     <string>Edit Color Map</string>
+     <string>Редактировать цветовую схему</string>
     </property>
    </action>
    <action name="actionResetRange" >
@@ -56,13 +56,13 @@
      <iconset resource="../../../Components/Resources/pqComponents.qrc" >:/pqWidgets/Icons/pqResetRange24.png</iconset>
     </property>
     <property name="text" >
-     <string>Reset Range</string>
+     <string>Востановить диапазон по-умолчанию</string>
     </property>
     <property name="toolTip" >
-     <string>Rescale to Data Range</string>
+     <string>Масштабировать по диапазону данных</string>
     </property>
     <property name="statusTip" >
-     <string>Rescale to Data Range</string>
+     <string>Масштабировать по диапазону данных</string>
     </property>
    </action>
    <action name="actionRescaleCustomRange" >
@@ -73,13 +73,13 @@
      <iconset resource="../../../Components/Resources/pqComponents.qrc" >:/pqWidgets/Icons/pqResetRangeCustom24.png</iconset>
     </property>
     <property name="text" >
-     <string>Rescale Custom Range</string>
+     <string>Масштабировать по пользовательскому диапазону</string>
     </property>
     <property name="toolTip" >
-     <string>Rescale to Custom Data Range</string>
+     <string>Масштабировать по пользовательскому диапазону данных</string>
     </property>
     <property name="statusTip" >
-     <string>Rescale to Custom Data Range</string>
+     <string>Масштабировать по пользовательскому диапазону данных</string>
     </property>
    </action>
    <action name="actionRescaleVisibleRange" >
@@ -90,13 +90,13 @@
      <iconset resource="../../../Components/Resources/pqComponents.qrc" >:/pqWidgets/Icons/pqResetToVisibleRange32.png</iconset>
     </property>
     <property name="text" >
-     <string>Rescale Visible Range</string>
+     <string>Масштабировать по видимому диапазону</string>
     </property>
     <property name="toolTip" >
-     <string>Rescale to Visible Data Range</string>
+     <string>Масштабировать по видимому диапазону данных</string>
     </property>
     <property name="statusTip" >
-     <string>Rescale to Visible Data Range</string>
+     <string>Масштабировать по видимому диапазону данных</string>
     </property>
    </action>
    <addaction name="actionScalarBarVisibility" />

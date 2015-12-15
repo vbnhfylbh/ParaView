@@ -127,7 +127,7 @@
    <item>
     <widget class="QCheckBox" name="zlibStripAlpha">
      <property name="text">
-      <string>Отображать ли альфа канал.</string>
+      <string>Отображать альфа канал.</string>
      </property>
     </widget>
    </item>
@@ -189,7 +189,7 @@ p, li { white-space: pre-wrap; }
        </item>
        <item>
         <property name="text">
-         <string>сервер в локальной памяти / на данной машине</string>
+         <string>сервер в локальной памяти / на локальной машине</string>
         </property>
        </item>
       </widget>

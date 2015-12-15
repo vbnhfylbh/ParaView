@@ -18,7 +18,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle" >
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QGridLayout" >
    <property name="margin" >
@@ -33,14 +33,14 @@
    <item row="0" column="0" >
     <widget class="QLabel" name="label" >
      <property name="text" >
-      <string>Interpolation:</string>
+      <string>Интерполяция:</string>
      </property>
     </widget>
    </item>
    <item row="1" column="0" colspan="2" >
     <widget class="QGroupBox" name="exponentialGroup" >
      <property name="title" >
-      <string>Exponential</string>
+      <string>Экспонента</string>
      </property>
      <layout class="QGridLayout" >
       <property name="margin" >
@@ -59,14 +59,14 @@
       <item row="0" column="0" >
        <widget class="QLabel" name="label_2" >
         <property name="text" >
-         <string>Base</string>
+         <string>По основанию</string>
         </property>
        </widget>
       </item>
       <item row="1" column="0" >
        <widget class="QLabel" name="label_3" >
         <property name="text" >
-         <string>Start Power</string>
+         <string>Начальная степень</string>
         </property>
        </widget>
       </item>
@@ -80,7 +80,7 @@
       <item row="2" column="0" >
        <widget class="QLabel" name="label_4" >
         <property name="text" >
-         <string>End Power</string>
+         <string>Конечная степень</string>
         </property>
        </widget>
       </item>
@@ -113,7 +113,7 @@
    <item row="2" column="0" colspan="2" >
     <widget class="QGroupBox" name="sinusoidGroup" >
      <property name="title" >
-      <string>Sinusoid</string>
+      <string>Синусоида</string>
      </property>
      <layout class="QGridLayout" >
       <property name="margin" >
@@ -125,21 +125,21 @@
       <item row="2" column="0" >
        <widget class="QLabel" name="label_7" >
         <property name="text" >
-         <string>Offset</string>
+         <string>Смещение</string>
         </property>
        </widget>
       </item>
       <item row="1" column="0" >
        <widget class="QLabel" name="label_6" >
         <property name="text" >
-         <string>Frequency</string>
+         <string>Частота</string>
         </property>
        </widget>
       </item>
       <item row="0" column="0" >
        <widget class="QLabel" name="label_5" >
         <property name="text" >
-         <string>Phase</string>
+         <string>Фаза</string>
         </property>
        </widget>
       </item>

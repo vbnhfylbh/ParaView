@@ -10,7 +10,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QVBoxLayout" >
    <property name="spacing" >
@@ -31,7 +31,7 @@
    <item>
     <widget class="QCheckBox" name="show3DWidget" >
      <property name="text" >
-      <string>Show Plane</string>
+      <string>Показать плоскость</string>
      </property>
     </widget>
    </item>
@@ -46,17 +46,17 @@
        <bool>true</bool>
      </property>
      <property name="text">
-      <string>Note: Use 'P' key to pick origin position on mesh</string>
+      <string>Примечание: Используйте кнопку 'P' для выбора начала координат на сетке</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="QCheckBox" name="pickMeshPoint" >
      <property name="text" >
-      <string>Snap Picked Point on Mesh Point</string>
+      <string>Закрепить выбранную точку на точке сетки</string>
      </property>
      <property name="toolTip">
-       <string>If checked, picked points using 'P' will be snapped on mesh points</string>
+       <string>Закрепить выбранные точки с помощью кнопки 'P' на точках сетки</string>
      </property>
     </widget>
    </item>
@@ -83,7 +83,7 @@
      <item row="1" column="0" >
       <widget class="QLabel" name="labelNormal" >
        <property name="text" >
-        <string>Normal</string>
+        <string>Нормаль</string>
        </property>
       </widget>
      </item>
@@ -93,7 +93,7 @@
      <item row="0" column="0" >
       <widget class="QLabel" name="labelOrigin" >
        <property name="text" >
-        <string>Origin</string>
+        <string>Начало координат</string>
        </property>
       </widget>
      </item>
@@ -137,49 +137,49 @@
      <item row="0" column="1" >
       <widget class="QPushButton" name="resetBounds" >
        <property name="text" >
-        <string>Reset Bounds</string>
+        <string>Восстановить границы по-умолчанию</string>
        </property>
       </widget>
      </item>
      <item row="3" column="0" >
       <widget class="QPushButton" name="useCameraNormal" >
        <property name="text" >
-        <string>Camera Normal</string>
+        <string>Нормаль камеры</string>
        </property>
       </widget>
      </item>
      <item row="0" column="0" >
       <widget class="QPushButton" name="useXNormal" >
        <property name="text" >
-        <string>&amp;X Normal</string>
+        <string>&amp;X нормаль</string>
        </property>
       </widget>
      </item>
      <item row="2" column="0" >
       <widget class="QPushButton" name="useZNormal" >
        <property name="text" >
-        <string>&amp;Z Normal</string>
+        <string>&amp;Z нормаль</string>
        </property>
       </widget>
      </item>
      <item row="1" column="0" >
       <widget class="QPushButton" name="useYNormal" >
        <property name="text" >
-        <string>&amp;Y Normal</string>
+        <string>&amp;Y нормаль</string>
        </property>
       </widget>
      </item>
      <item row="3" column="1" >
       <widget class="QPushButton" name="useCenterBounds" >
        <property name="text" >
-        <string>Center on Bounds</string>
+        <string>Центр на границах</string>
        </property>
       </widget>
      </item>
       <item row="4" column="0" >
         <widget class="QPushButton" name="resetCameraToNormal" >
           <property name="text" >
-            <string>Reset Camera to Normal</string>
+            <string>Вернуть камеру к нормали</string>
           </property>
         </widget>
       </item>

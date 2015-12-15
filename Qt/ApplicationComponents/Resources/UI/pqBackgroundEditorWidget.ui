@@ -21,17 +21,17 @@
     <widget class="QComboBox" name="BackgroundType">
      <item>
       <property name="text">
-       <string>Single color</string>
+       <string>Сплошной цвет</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Gradient</string>
+       <string>Градиент</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Image</string>
+       <string>Изображение</string>
       </property>
      </item>
     </widget>
@@ -52,7 +52,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Color</string>
+          <string>Цвет</string>
          </property>
         </widget>
        </item>
@@ -71,7 +71,7 @@
           </size>
          </property>
          <property name="text">
-          <string>Restore Default</string>
+          <string>Вернуть значение по-умолчанию</string>
          </property>
         </widget>
        </item>
@@ -84,7 +84,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Color 2</string>
+          <string>Цвет 2</string>
          </property>
         </widget>
        </item>
@@ -109,7 +109,7 @@
           </size>
          </property>
          <property name="text">
-          <string>Restore Default</string>
+          <string>Вернуть значение по-умолчанию</string>
          </property>
         </widget>
        </item>

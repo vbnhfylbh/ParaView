@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <property name="margin">
@@ -23,7 +23,7 @@
    <item row="0" column="0">
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Minimum</string>
+      <string>Минимум</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -36,7 +36,7 @@
    <item row="1" column="0">
     <widget class="QLabel" name="label_4">
      <property name="text">
-      <string>Maximum</string>
+      <string>Максимум</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -49,7 +49,7 @@
    <item row="0" column="2" rowspan="2">
     <widget class="pqHighlightablePushButton" name="Reset">
      <property name="toolTip">
-      <string>Reset using current data values</string>
+      <string>Восстановить, используя текущие значения данных</string>
      </property>
     </widget>
    </item>

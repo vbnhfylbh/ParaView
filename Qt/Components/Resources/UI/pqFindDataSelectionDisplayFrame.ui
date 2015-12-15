@@ -33,17 +33,17 @@
       <bool>true</bool>
      </property>
      <property name="toolTip">
-      <string>&lt;p&gt;Set the color to use to show selected elements&lt;/p&gt;</string>
+      <string>&lt;p&gt;Выбрать цвета для выделенных элментов&lt;/p&gt;</string>
      </property>
      <property name="text">
-      <string>Interactive Selection Color</string>
+      <string>Цвет интерактивного выделения</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="QToolButton" name="labelPropertiesInteractiveSelection">
      <property name="toolTip">
-      <string>Edit interactive selection label properties</string>
+      <string>Редактировать свойства надписей интерактивного выделения</string>
      </property>
      <property name="icon">
       <iconset resource="../pqComponents.qrc">
@@ -57,10 +57,10 @@
    <item>
     <widget class="QPushButton" name="cellLabelsButton">
      <property name="toolTip">
-      <string>&lt;p&gt;Set the array to label selected cells with&lt;/p&gt;</string>
+      <string>&lt;p&gt;Выбрать массив подписей для выделенных элементов&lt;/p&gt;</string>
      </property>
      <property name="text">
-      <string>Cell Labels</string>
+      <string>Подписи элементов</string>
      </property>
      <property name="icon">
       <iconset resource="../pqComponents.qrc">
@@ -71,10 +71,10 @@
    <item>
     <widget class="QPushButton" name="pointLabelsButton">
      <property name="toolTip">
-      <string>&lt;p&gt;Set the array to label to selected points with&lt;/p&gt;</string>
+      <string>&lt;p&gt;Выбрать массив подписей для выделенных точек&lt;/p&gt;</string>
      </property>
      <property name="text">
-      <string>Point Labels</string>
+      <string>Подписи точек</string>
      </property>
      <property name="icon">
       <iconset resource="../pqComponents.qrc">
@@ -85,10 +85,10 @@
    <item>
     <widget class="QToolButton" name="showFrustumButton">
      <property name="toolTip">
-      <string>&lt;p&gt;For frustum based selections, show the frustum used to select the elements&lt;/p&gt;</string>
+      <string>&lt;p&gt;Показат усеченный конус для выделения&lt;/p&gt;</string>
      </property>
      <property name="text">
-      <string>Show frustum</string>
+      <string>Показат усеченный конус</string>
      </property>
      <property name="icon">
       <iconset resource="../pqComponents.qrc">
@@ -102,7 +102,7 @@
    <item>
     <widget class="QToolButton" name="labelPropertiesSelection">
      <property name="toolTip">
-      <string>Edit selection label properties</string>
+      <string>Редактировать свойства надписи выделения</string>
      </property>
      <property name="icon">
       <iconset resource="../pqComponents.qrc">

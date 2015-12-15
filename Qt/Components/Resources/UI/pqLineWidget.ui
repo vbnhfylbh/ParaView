@@ -10,7 +10,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QVBoxLayout" >
    <property name="spacing" >
@@ -51,17 +51,17 @@
      <item row="0" column="0" >
       <widget class="QCheckBox" name="visible" >
        <property name="text" >
-        <string>Show Line</string>
+        <string>Показать линию</string>
        </property>
       </widget>
      </item>
      <item row="1" column="1" >
       <widget class="QCheckBox" name="pickMeshPoint" >
        <property name="text" >
-        <string>Snap On Mesh Point</string>
+        <string>Закрепить на точке сетки</string>
        </property>
        <property name="toolTip">
-         <string>If checked, picked points using 'P' will be snapped on mesh points</string>
+         <string>Выберите для закрепления выбранных точек на точках сетки с помощью кнопки 'P'</string>
        </property>
       </widget>
      </item>
@@ -69,21 +69,21 @@
       <widget class="QComboBox" name="pickPoint">
        <item>
          <property name="text" >
-          <string>Pick Both Points</string>
+          <string>Выбрать обе точки</string>
          </property>
        </item>
        <item>
          <property name="text" >
-          <string>Pick Point 1</string>
+          <string>Выбрать точку 1</string>
          </property>
        </item>
        <item>
          <property name="text" >
-          <string>Pick Point 2</string>
+          <string>Выбрать точку 2</string>
          </property>
        </item>
        <property name="toolTip">
-         <string>Allow to choose wich point to pick, for easier replacing</string>
+         <string>Разрешить выбрать одну точку для упрощения замены</string>
        </property>
       </widget>
      </item>
@@ -112,7 +112,7 @@
      <item row="0" column="0" >
       <widget class="QLabel" name="labelPoint1" >
        <property name="text" >
-        <string>Point 1</string>
+        <string>Точка 1</string>
        </property>
        <property name="wordWrap" >
         <bool>true</bool>
@@ -150,7 +150,7 @@
      <item>
       <widget class="QLabel" name="labelPoint2" >
        <property name="text" >
-        <string>Point 2</string>
+        <string>Точка 2</string>
        </property>
        <property name="wordWrap" >
         <bool>true</bool>
@@ -171,21 +171,21 @@
    <item>
     <widget class="QPushButton" name="xAxis" >
      <property name="text" >
-      <string>X Axis</string>
+      <string>Ось X</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="QPushButton" name="yAxis" >
      <property name="text" >
-      <string>Y Axis</string>
+      <string>Ось Y</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="QPushButton" name="zAxis" >
      <property name="text" >
-      <string>Z Axis</string>
+      <string>Ось Z</string>
      </property>
     </widget>
    </item>

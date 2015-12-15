@@ -10,7 +10,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Dialog</string>
+   <string>Диалог</string>
   </property>
   <layout class="QGridLayout" >
    <property name="margin" >
@@ -75,7 +75,7 @@
      <item>
       <widget class="QLabel" name="label" >
        <property name="text" >
-        <string>Name:</string>
+        <string>Имя:</string>
        </property>
       </widget>
      </item>
@@ -85,7 +85,7 @@
      <item>
       <widget class="QLabel" name="label_2" >
        <property name="text" >
-        <string>Mode:</string>
+        <string>Режим:</string>
        </property>
       </widget>
      </item>
@@ -93,12 +93,12 @@
       <widget class="QComboBox" name="comboBox" >
        <item>
         <property name="text" >
-         <string>Object Link</string>
+         <string>Ссылка на объект</string>
         </property>
        </item>
        <item>
         <property name="text" >
-         <string>Property Link</string>
+         <string>Ссылка на свойство</string>
         </property>
        </item>
       </widget>

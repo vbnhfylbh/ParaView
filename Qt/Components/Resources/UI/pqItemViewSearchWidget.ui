@@ -81,7 +81,7 @@
    </palette>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Диалог</string>
   </property>
   <property name="windowOpacity">
    <double>0.870000000000000</double>
@@ -133,7 +133,7 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Find</string>
+       <string>Найти</string>
       </property>
      </widget>
      <widget class="QPushButton" name="nextButton">
@@ -155,7 +155,7 @@
        <enum>Qt::StrongFocus</enum>
       </property>
       <property name="toolTip">
-       <string>Next (ALT+N)</string>
+       <string>Следующее (ALT+N)</string>
       </property>
       <property name="text">
        <string/>
@@ -184,7 +184,7 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Match Case</string>
+       <string>Учитывать регистр</string>
       </property>
      </widget>
      <widget class="QPushButton" name="closeButton">
@@ -203,7 +203,7 @@
        </sizepolicy>
       </property>
       <property name="toolTip">
-       <string>Close (Esc)</string>
+       <string>Закрыть (Esc)</string>
       </property>
       <property name="text">
        <string/>
@@ -232,7 +232,7 @@
        </sizepolicy>
       </property>
       <property name="toolTip">
-       <string>Previous (ALT+P)</string>
+       <string>Предыдущее (ALT+P)</string>
       </property>
       <property name="text">
        <string/>

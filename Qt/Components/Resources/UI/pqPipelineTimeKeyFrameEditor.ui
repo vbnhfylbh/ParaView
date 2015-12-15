@@ -38,7 +38,7 @@
    <item row="2" column="0" >
     <widget class="QRadioButton" name="variableRadio" >
      <property name="text" >
-      <string>Изменяемое время:</string>
+      <string>Переменное время:</string>
      </property>
     </widget>
    </item>

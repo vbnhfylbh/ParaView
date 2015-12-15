@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -38,7 +38,7 @@
      <item>
       <widget class="QToolButton" name="ShowScalarBar">
        <property name="toolTip">
-        <string>Show/hide color legend</string>
+        <string>Показать/скрыть цветовую легенду</string>
        </property>
        <property name="text">
         <string/>
@@ -58,7 +58,7 @@
         <bool>false</bool>
        </property>
        <property name="toolTip">
-        <string>Edit color legend properties</string>
+        <string>Редактировать свойства цветовой легенды</string>
        </property>
        <property name="text">
         <string>...</string>
@@ -80,7 +80,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Array Name:</string>
+      <string>Имя массива:</string>
      </property>
      <property name="textFormat">
       <enum>Qt::AutoText</enum>
@@ -138,7 +138,7 @@
             <bool>false</bool>
            </property>
            <property name="toolTip">
-            <string>Restore application default setting values for color map</string>
+            <string>Восстановить значения настроек для цветовой схемы по-умолчанию</string>
            </property>
            <property name="text">
             <string/>
@@ -155,7 +155,7 @@
             <bool>false</bool>
            </property>
            <property name="toolTip">
-            <string>Save current color map settings values as default for arrays of this name</string>
+            <string>Сохранить текущие значения настроек цветовой схемы в качестве значений по-муолчанию для массивов с таким именем</string>
            </property>
            <property name="text">
             <string/>
@@ -172,7 +172,7 @@
             <bool>false</bool>
            </property>
            <property name="toolTip">
-            <string>Save current color map settings values as default for all arrays</string>
+            <string>Сохранить текущие значения настроек цветовой схемы в качестве значений по-умолчанию для всех массивов</string>
            </property>
            <property name="text">
             <string/>
@@ -199,10 +199,10 @@
          <item>
           <widget class="QPushButton" name="Update">
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Update views.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Обновить представления.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
-            <string>Render Views</string>
+            <string>Визуализировать представления</string>
            </property>
            <property name="icon">
             <iconset resource="../../../Components/Resources/pqComponents.qrc">
@@ -219,7 +219,7 @@
          <item>
           <widget class="QPushButton" name="AutoUpdate">
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Render view(s) automatically.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Визуализировать представление(я) автоматически.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
             <string/>

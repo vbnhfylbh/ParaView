@@ -11,19 +11,19 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Create Orbit</string>
+   <string>Создать орбиту</string>
   </property>
   <layout class="QVBoxLayout">
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>Orbit Parameters</string>
+      <string>Параметры орбиты</string>
      </property>
      <layout class="QGridLayout">
       <item row="0" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>Center</string>
+         <string>Центр</string>
         </property>
        </widget>
       </item>
@@ -39,7 +39,7 @@
       <item row="1" column="0">
        <widget class="QLabel" name="normalLabel">
         <property name="text">
-         <string>Normal</string>
+         <string>Нормаль</string>
         </property>
        </widget>
       </item>
@@ -55,7 +55,7 @@
       <item row="2" column="0">
        <widget class="QLabel" name="label_2">
         <property name="text">
-         <string>Origin</string>
+         <string>Начало координат</string>
         </property>
        </widget>
       </item>
@@ -89,7 +89,7 @@
      <item>
       <widget class="QPushButton" name="resetBounds">
        <property name="text">
-        <string>Reset Bounds</string>
+        <string>Восстановить значения границ по-умолчанию</string>
        </property>
       </widget>
      </item>

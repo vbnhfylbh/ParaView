@@ -10,7 +10,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Set Range</string>
+   <string>Выбрать диапазон</string>
   </property>
   <layout class="QGridLayout" >
    <property name="margin" >
@@ -43,7 +43,7 @@
      <item>
       <widget class="QPushButton" name="RescaleButton" >
        <property name="text" >
-        <string>&amp;Rescale</string>
+        <string>&amp;Масштабировать</string>
        </property>
        <property name="default" >
         <bool>true</bool>
@@ -53,7 +53,7 @@
      <item>
       <widget class="QPushButton" name="CancelButton" >
        <property name="text" >
-        <string>&amp;Cancel</string>
+        <string>&amp;Отменить</string>
        </property>
       </widget>
      </item>
@@ -62,28 +62,28 @@
    <item row="0" column="2" >
     <widget class="QLabel" name="label_2" >
      <property name="text" >
-      <string>Maximum</string>
+      <string>Максимум</string>
      </property>
     </widget>
    </item>
    <item row="0" column="3" >
     <widget class="QLineEdit" name="MaximumScalar" >
      <property name="whatsThis" >
-      <string>Enter the new range maximum here.</string>
+      <string>Введите новый максимум диапазона.</string>
      </property>
     </widget>
    </item>
    <item row="0" column="1" >
     <widget class="QLineEdit" name="MinimumScalar" >
      <property name="whatsThis" >
-      <string>Enter the new range minimum here.</string>
+      <string>Введите новый минимум диапазона.</string>
      </property>
     </widget>
    </item>
    <item row="0" column="0" >
     <widget class="QLabel" name="label" >
      <property name="text" >
-      <string>Minimum</string>
+      <string>Минимум</string>
      </property>
     </widget>
    </item>

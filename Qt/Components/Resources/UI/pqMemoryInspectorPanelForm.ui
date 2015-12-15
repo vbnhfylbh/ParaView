@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <property name="toolTip">
    <string/>
@@ -73,7 +73,7 @@
          <item>
           <widget class="QCheckBox" name="autoUpdate">
            <property name="text">
-            <string>Auto-update</string>
+            <string>Автообновление</string>
            </property>
            <property name="checked">
             <bool>true</bool>

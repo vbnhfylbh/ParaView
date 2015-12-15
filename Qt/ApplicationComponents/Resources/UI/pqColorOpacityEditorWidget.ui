@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Форма</string>
   </property>
   <layout class="QVBoxLayout" name="mainLayout">
    <property name="spacing">
@@ -72,7 +72,7 @@
        <item>
         <widget class="QToolButton" name="ResetRangeToData">
          <property name="toolTip">
-          <string>Rescale to data range</string>
+          <string>Масштабировать по диапазону значений</string>
          </property>
          <property name="text">
           <string/>
@@ -86,7 +86,7 @@
        <item>
         <widget class="QToolButton" name="ResetRangeToCustom">
          <property name="toolTip">
-          <string>Rescale to custom range</string>
+          <string>Масштабировать по пользовательскому диапазону</string>
          </property>
          <property name="text">
           <string/>
@@ -100,7 +100,7 @@
        <item>
         <widget class="QToolButton" name="ResetRangeToDataOverTime">
          <property name="toolTip">
-          <string>Rescale to data range over all timesteps</string>
+          <string>Масштабировать по диапазону данных всего отрезка времени</string>
          </property>
          <property name="text">
           <string/>
@@ -114,7 +114,7 @@
        <item>
         <widget class="QToolButton" name="ResetRangeToVisibleData">
          <property name="toolTip">
-          <string>Rescale to visible range</string>
+          <string>Масштабировать по видимому диапазону</string>
          </property>
          <property name="text">
           <string/>
@@ -128,7 +128,7 @@
        <item>
         <widget class="QToolButton" name="InvertTransferFunctions">
          <property name="toolTip">
-          <string>Invert the transfer functions</string>
+          <string>Обратить передаточные функции</string>
          </property>
          <property name="text">
           <string/>
@@ -155,7 +155,7 @@
        <item>
         <widget class="QToolButton" name="ChoosePreset">
          <property name="toolTip">
-          <string>Choose preset</string>
+          <string>Задать значения по-умолчанию</string>
          </property>
          <property name="text">
           <string/>
@@ -169,7 +169,7 @@
        <item>
         <widget class="QToolButton" name="SaveAsPreset">
          <property name="toolTip">
-          <string>Save to preset</string>
+          <string>Сохранить значения по-умолчанию</string>
          </property>
          <property name="text">
           <string/>
@@ -183,7 +183,7 @@
        <item>
         <widget class="QToolButton" name="AdvancedButton">
          <property name="toolTip">
-          <string>Manually edit transfer functions</string>
+          <string>Вручную редактировать передаточные функции</string>
          </property>
          <property name="text">
           <string/>
@@ -206,7 +206,7 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Data:</string>
+        <string>Данные:</string>
        </property>
       </widget>
      </item>
@@ -225,20 +225,20 @@
    <item>
     <widget class="QCheckBox" name="UseLogScale">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When checked, the mapping from data to colors is done using a log-scale. Note that this does not affect the mapping of data to opacity.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Выберите для окраски данных в логарифмическом масштабе. Примечание: это не влияет на прозрачность данных.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
-      <string>Use log scale when mapping data to colors</string>
+      <string>Использовать логарифмический масштаб для окраски данных</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="QCheckBox" name="EnableOpacityMapping">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When checked, the opacity function is used to render translucent surfaces.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Выберите для визаулизации просвечивающих поверхностей с помощью функции прозрачности.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
-      <string>Enable opacity mapping for surfaces</string>
+      <string>Включить прозрачность поверхностей</string>
      </property>
     </widget>
    </item>
@@ -251,7 +251,7 @@
       </sizepolicy>
      </property>
      <property name="text">
-      <string>Color transfer function values</string>
+      <string>Раскрасить значения передаточной функции</string>
      </property>
     </widget>
    </item>
@@ -274,7 +274,7 @@
    <item>
     <widget class="QLabel" name="OpacityLabel">
      <property name="text">
-      <string>Opacity transfer function values</string>
+      <string>Значения передаточной функции прозрачности</string>
      </property>
     </widget>
    </item>
