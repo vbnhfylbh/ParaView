@@ -1,14 +1,14 @@
 if(VTK_RENDERING_BACKEND STREQUAL "OpenGL")
   if(PARAVIEW_BUILD_QT_GUI)
 
-    set(_mobile_remote_DEFAULT_ENABLED)
+    set(_mobile_remote_DEFAULT_DISABLED)
     if (BUILD_SHARED_LIBS)
-      set(_mobile_remote_DEFAULT_ENABLED DEFAULT_ENABLED)
+      set(_mobile_remote_DEFAULT_DISABLED DEFAULT_DISABLED)
     endif()
 
     pv_plugin(MobileRemoteControl
       DESCRIPTION "Use a mobile device to view the ParaView scene and control the camera."
-      ${_mobile_remote_DEFAULT_ENABLED}
+      ${_mobile_remote_DEFAULT_DISABLED}
     )
   endif()
 endif()

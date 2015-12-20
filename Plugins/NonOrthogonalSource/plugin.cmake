@@ -8,5 +8,5 @@ pv_plugin(NonOrthogonalSource
   # AUTOLOAD
 
   # Specify this option if this plugin must be enabled for building, by default.
-  DEFAULT_ENABLED
+  DEFAULT_DISABLED
 )
