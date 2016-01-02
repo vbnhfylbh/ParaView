@@ -22,7 +22,7 @@
     <Proxy group="filters" name="PMergeConnected" />
   </Category>
 
-  <Category name="DataAnalysis" menu_label="&amp;Анализ данных" show_in_toolbar="1" hide_for_tests="1">
+  <Category name="DataAnalysis" menu_label="Анализ данных" show_in_toolbar="1" hide_for_tests="1">
     <Proxy group="filters" name="Calculator"
             icon=":/pqWidgets/Icons/pqCalculator24.png" omit_from_toolbar="1"/>
     <Proxy group="filters" name="ExtractSelection"
@@ -51,7 +51,7 @@
     <Proxy group="filters" name="ExtractLocation" omit_from_toolbar="1" />
   </Category>
 
-  <Category name="Statistics" menu_label="&amp;Statistics">
+  <Category name="Statistics" menu_label="Статистика">
     <Proxy group="filters" name="ContingencyStatistics"/>
     <Proxy group="filters" name="DescriptiveStatistics"/>
     <Proxy group="filters" name="KMeans"/>

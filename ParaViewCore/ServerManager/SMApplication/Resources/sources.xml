@@ -644,7 +644,7 @@
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkCylinderSource"
-                 label="Cylinder"
+                 label="Цилиндр"
                  name="CylinderSource">
       <Documentation long_help="Create a 3D cylinder of a given radius and height."
                      short_help="3D cylinder of a given radius and height">The
@@ -655,6 +655,7 @@
       <IntVectorProperty command="SetResolution"
                          default_values="6"
                          name="Resolution"
+                         label="Разрешение"
                          number_of_elements="1"
                          panel_visibility="default">
         <IntRangeDomain max="512"

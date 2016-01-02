@@ -2137,7 +2137,8 @@ found and the point will be rejected.</Documentation>
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkPVArrayCalculator"
-                 name="Calculator">
+                 name="Calculator"
+                 label="Калькулятор">
       <Documentation long_help="Compute new attribute arrays as function of existing arrays."
                      short_help="Compute new attribute arrays.">
 The Calculator filter computes a new data array or new point
@@ -2220,10 +2221,11 @@ type as the input.</Documentation>
       <IntVectorProperty command="SetAttributeMode"
                          default_values="1"
                          name="AttributeMode"
+                         label="Тип данных"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
-          <Entry text="Point Data" value="1" />
-          <Entry text="Cell Data" value="2" />
+          <Entry text="Точки" value="1" />
+          <Entry text="Объемные элементы" value="2" />
         </EnumerationDomain>
         <Documentation>This property determines whether the computation is to
         be performed on point-centered or cell-centered data.</Documentation>
