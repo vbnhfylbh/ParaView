@@ -299,16 +299,17 @@ int main(int argc, char* argv[])
       << "}" << endl << endl;
     }
 
-  ot.Stream
+    ot.Stream
     << endl << endl
     << "#endif" << endl;
-  FILE* fp = fopen(output.c_str(), "w");
-  if ( !fp )
-    {
-    cout << "Cannot open output file: " << output.c_str() << endl;
-    return 1;
+
+    ofstream out;
+    out.open(output.c_str());
+    if (!out) {
+        cout << "Cannot open output file: " << output.c_str() << endl;
+        return 1;
     }
-  fprintf(fp, "%s", ot.Stream.str().c_str());
-  fclose(fp);
-  return 0;
+    out << ot.Stream.str();
+    out.close();
+    return 0;
 }
