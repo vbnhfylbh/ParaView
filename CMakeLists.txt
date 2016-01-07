@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.9)
-add_definitions(-D_UNICODE)
+
 if (APPLE)
   if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
     set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "By default, build for 64-bit Leopard")
