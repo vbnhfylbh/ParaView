@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <ServerManagerConfiguration>
   <ProxyGroup name="internal_sources">
     <!--  FLASH AMR Particles Reader -->
@@ -5735,11 +5735,11 @@
     <!-- Beginning of OpenFOAM Reader -->
     <SourceProxy class="vtkPOpenFOAMReader"
                  name="OpenFOAMReader">
-      <Documentation long_help="Р§РёС‚Р°РµС‚ С„Р°Р№Р»С‹ РІ С„РѕСЂРјР°С‚Рµ OpenFOAM, СЃРѕР·РґР°РµС‚ РјСѓР»СЊС‚РёР±Р»РѕС‡РЅС‹Р№ РЅР°Р±РѕСЂ РґР°РЅРЅС‹С…."
-                     short_help="Р§РёС‚Р°РµС‚ С„Р°Р№Р»С‹ РІ С„РѕСЂРјР°С‚Рµ OpenFOAM.">OpenFOAMReader С‡РёС‚Р°РµС‚
-                     С„Р°Р№Р»С‹ РІ С„РѕСЂРјР°С‚Рµ OpenFOAM Рё СЃРѕР·РґР°РµС‚ РјСѓР»СЊС‚РёР±Р»РѕС‡РЅС‹Рµ
-                     РЅР°Р±РѕСЂС‹ РґР°РЅРЅС‹С…. РџРѕРґРґРµСЂР¶РёРІР°СЋС‚СЃСЏ СЂР°СЃС‡РµС‚РЅС‹Рµ СЃРµС‚РєРё Рё Р·Р°РІРёСЃРёРјС‹Рµ
-                     РѕС‚ РІСЂРµРјРµРЅРё РґР°РЅРЅС‹Рµ. РџРѕРґСЂРѕР±РЅРѕРµ РѕРїРёСЃР°РЅРёРµ С„РѕСЂРјР°С‚Р° С„Р°Р№Р»РѕРІ OpenFOAM РЅР°С…РѕРґРёС‚СЃСЏ РЅР°
+      <Documentation long_help="Читает файлы в формате OpenFOAM, создает мультиблочный набор данных."
+                     short_help="Читает файлы в формате OpenFOAM.">OpenFOAMReader читает
+                     файлы в формате OpenFOAM и создает мультиблочные
+                     наборы данных. Поддерживаются расчетные сетки и зависимые
+                     от времени данные. Подробное описание формата файлов OpenFOAM находится на
                      http://www.openfoam.com/docs/user/basic-file-format.php</Documentation>
       <StringVectorProperty animateable="0"
                             command="SetFileName"
@@ -5753,44 +5753,44 @@
       <Property animateable="0"
                 command="SetRefresh"
                 name="Refresh"
-                label="РћР±РЅРѕРІРёС‚СЊ">
-        <Documentation>РћР±РЅРѕРІРёС‚СЊ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РІСЂРµРјРµРЅРё Рё РјРµС‚Р°РґР°РЅРЅС‹Рµ СЃРїРёСЃРєР° РІС‹РґРµР»РµРЅРЅС‹С… СЌР»РµРјРµРЅС‚РѕРІ.
-        РџРѕР»РµР·РЅРѕ РїСЂРё РЅР°Р±Р»СЋРґРµРЅРёРё Р·Р° СЂР°СЃС‡РµС‚РѕРј.</Documentation>
+                label="Обновить">
+        <Documentation>Обновить информацию о времени и метаданные списка выделенных элементов.
+        Полезно при наблюдении за расчетом.</Documentation>
       </Property>
       <IntVectorProperty animateable="0"
                          command="SetCaseType"
                          default_values="1"
                          name="CaseType"
-                         label="РўРёРї РїСЂРѕРµРєС‚Р°"
+                         label="Тип проекта"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
-          <Entry text="Р§Р°СЃС‚Рё"
+          <Entry text="Части"
                  value="0" />
-          <Entry text="РЎР±РѕСЂРєР°"
+          <Entry text="Сборка"
                  value="1" />
         </EnumerationDomain>
-        <Documentation>РЎРІРѕР№СЃС‚РІРѕ СѓРєР°Р·С‹РІР°РµС‚ С‚РёРї СЂР°СЃС‡РµС‚РЅРѕР№ СЃРµС‚РєРё РґР»СЏ С‡С‚РµРЅРёСЏ
-            - РѕС‚РґРµР»СЊРЅС‹Рµ С‡Р°СЃС‚Рё РёР»Рё РЅРµРґРµР»РёРјР°СЏ СЃР±РѕСЂРєР°</Documentation>
+        <Documentation>Свойство указывает тип расчетной сетки для чтения
+            - отдельные части или неделимая сборка</Documentation>
       </IntVectorProperty>
       <IntVectorProperty animateable="0"
                          command="SetCreateCellToPoint"
                          default_values="1"
-                         label="РџСЂРµРґСЃС‚Р°РІРёС‚СЊ РґР°РЅРЅС‹Рµ РѕР±СЉРµРјРЅС‹С… СЌР»РµРјРµРЅС‚РѕРІ РєР°Рє С‚РѕС‡РєРё"
+                         label="Представить данные объемных элементов как точки"
                          name="CreateCellToPoint"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
-        <Documentation>РџСЂРµРґСЃС‚Р°РІРёС‚СЊ РґР°РЅРЅС‹Рµ РѕР±СЉРµРјРЅС‹С… СЌР»РµРјРµРЅС‚РѕРІ РєР°Рє С‚РѕС‡РєРё. Р—Р°РјРµС‡Р°РЅРёРµ: С„РёР»СЊС‚СЂ
-        РЅРµ РёРЅРІРµСЂС‚РёСЂСѓРµС‚ РІРµСЃР° СЂР°СЃСЃС‚РѕСЏРЅРёР№.</Documentation>
+        <Documentation>Представить данные объемных элементов как точки. Замечание: фильтр
+        не инвертирует веса расстояний.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty animateable="0"
                          command="SetAddDimensionsToArrayNames"
                          default_values="0"
-                         label="РџРѕРєР°Р·С‹РІР°С‚СЊ РµРґРёРЅРёС†С‹ РёР·РјРµСЂРµРЅРёСЏ РґР»СЏ РјР°СЃСЃРёРІРѕРІ РґР°РЅРЅС‹С…"
+                         label="Показывать единицы измерения для массивов данных"
                          name="AddDimensionsToArrayNames"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
-        <Documentation>Р§РёС‚Р°С‚СЊ РµРґРёРЅРёС†С‹ РёР·РјРµСЂРµРЅРёР№ РёР· РґР°РЅРЅС‹С… РїРѕР»РµР№ Рё РґРѕР±Р°РІР»СЏС‚СЊ РёС…
-        Рє РјР°СЃСЃРёРІР°Рј РґР°РЅРЅС‹С… РІ СѓРґРѕР±РЅРѕР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ С„РѕСЂРјРµ.</Documentation>
+        <Documentation>Читать единицы измерений из данных полей и добавлять их
+        к массивам данных в удобной пользователю форме.</Documentation>
       </IntVectorProperty>
       <DoubleVectorProperty information_only="1"
                             name="TimestepValues"
@@ -5806,7 +5806,7 @@
                             element_types="2 0"
                             information_property="PatchArrayInfo"
                             name="MeshRegions"
-                            label="РљРѕРјРїРѕРЅРµРЅС‚С‹ СЂР°СЃС‡РµС‚РЅРѕР№ СЃРµС‚РєРё"
+                            label="Компоненты расчетной сетки"
                             number_of_elements="0"
                             number_of_elements_per_command="2"
                             repeat_command="1">
@@ -5826,7 +5826,7 @@
                             element_types="2 0"
                             information_property="CellArrayInfo"
                             name="CellArrays"
-                            label="РњР°СЃСЃРёРІС‹ СЌР»РµРјРµРЅС‚РѕРІ СЃРµС‚РєРё"
+                            label="Массивы элементов сетки"
                             number_of_elements="0"
                             number_of_elements_per_command="2"
                             repeat_command="1">
@@ -5846,7 +5846,7 @@
                             element_types="2 0"
                             information_property="PointArrayInfo"
                             name="PointArrays"
-                            label="РњР°СЃСЃРёРІС‹ С‚РѕС‡РµРє СЃРµС‚РєРё"
+                            label="Массивы точек сетки"
                             number_of_elements="0"
                             number_of_elements_per_command="2"
                             repeat_command="1">
@@ -5866,7 +5866,7 @@
                             element_types="2 0"
                             information_property="LagrangianArrayInfo"
                             name="LagrangianArrays"
-                            label="Р›Р°РіСЂР°РЅР¶РµРІС‹ РјР°СЃСЃРёРІС‹"
+                            label="Лагранжевы массивы"
                             number_of_elements="0"
                             number_of_elements_per_command="2"
                             repeat_command="1">
@@ -5880,51 +5880,51 @@
       <IntVectorProperty animateable="0"
                          command="SetCacheMesh"
                          default_values="1"
-                         label="РљСЌС€РёСЂРѕРІР°С‚СЊ РґР°РЅРЅС‹Рµ СЃРµС‚РєРё"
+                         label="Кэшировать данные сетки"
                          name="CacheMesh"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
-        <Documentation>РљСЌС€РёСЂРѕРІР°С‚СЊ СЃРµС‚РєСѓ OpenFOAM РјРµР¶РґСѓ РІС‹РґРµР»РµРЅРёСЏРјРё
-        РІ РёРЅС‚РµСЂС„РµР№СЃРµ.</Documentation>
+        <Documentation>Кэшировать сетку OpenFOAM между выделениями
+        в интерфейсе.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty animateable="0"
                          command="SetDecomposePolyhedra"
                          default_values="1"
-                         label="Р Р°Р·Р±РёРІР°С‚СЊ РјРЅРѕРіРѕРіСЂР°РЅРЅРёРєРё"
+                         label="Разбивать многогранники"
                          name="DecomposePolyhedra"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
-        <Documentation>Р Р°Р·Р±РёРІР°С‚СЊ РјРЅРѕРіРѕРіСЂР°РЅРЅРёРєРё РЅР° С‡РµС‚С‹СЂРµС…РіСЂР°РЅРЅРёРєРё Рё
-        РїРёСЂР°РјРёРґС‹.</Documentation>
+        <Documentation>Разбивать многогранники на четырехгранники и
+        пирамиды.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty animateable="0"
                          command="SetListTimeStepsByControlDict"
                          default_values="0"
-                         label="РћС‚РѕР±СЂР°Р¶Р°С‚СЊ С€Р°РіРё РїРѕ РІСЂРµРјРµРЅРё РІ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРё СЃ РЅР°СЃС‚СЂРѕР№РєР°РјРё РїСЂРѕРµРєС‚Р°"
+                         label="Отображать шаги по времени в соответствии с настройками проекта"
                          name="ListTimeStepsByControlDict"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
-        <Documentation>РћС‚РѕР±СЂР°Р¶Р°С‚СЊ С€Р°РіРё РїРѕ РІСЂРµРјРµРЅРё РІ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРё СЃ
-        РЅР°СЃС‚СЂРѕР№РєР°РјРё РїСЂРѕРµРєС‚Р°.</Documentation>
+        <Documentation>Отображать шаги по времени в соответствии с
+        настройками проекта.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty animateable="0"
                          command="SetPositionsIsIn13Format"
                          default_values="0"
-                         label="Р›Р°РіСЂР°РЅР¶РµРІС‹ С‚РѕС‡РєРё Р·Р°РґР°РЅС‹ РІ Р±РёРЅР°СЂРЅРѕРј С„РѕСЂРјР°С‚Рµ OpenFOAM 1.3"
+                         label="Лагранжевы точки заданы в бинарном формате OpenFOAM 1.3"
                          name="PositionsIsIn13Format"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
-        <Documentation>Р—Р°РґР°РЅС‹ Р»Рё Р›Р°РіСЂР°РЅР¶РµРІС‹ С‚РѕС‡РєРё РІ Р±РёРЅР°СЂРЅРѕРј С„РѕСЂРјР°С‚Рµ
+        <Documentation>Заданы ли Лагранжевы точки в бинарном формате
         OpenFOAM 1.3.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty animateable="0"
                          command="SetReadZones"
                          default_values="0"
-                         label="Р§РёС‚Р°С‚СЊ Р·РѕРЅС‹"
+                         label="Читать зоны"
                          name="ReadZones"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
-        <Documentation>Р§РёС‚Р°С‚СЊ Р»Рё Р·РѕРЅС‹ С‚РѕС‡РµРє/РіСЂР°РЅРµР№/СЌР»РµРјРµРЅС‚РѕРІ?</Documentation>
+        <Documentation>Читать ли зоны точек/граней/элементов?</Documentation>
       </IntVectorProperty>
       <Hints>
         <ReaderFactory extensions="foam"

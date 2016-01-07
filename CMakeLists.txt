@@ -201,7 +201,7 @@ endif()
 #------------------------------------------------------------------------------
 # Define ParaView specific options.
 #------------------------------------------------------------------------------
-set(default_testing ON)
+set(default_testing OFF)
 if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.ExternalData/README.rst")
   # Source tarball without the data, so turn off testing.
   set(default_testing OFF)

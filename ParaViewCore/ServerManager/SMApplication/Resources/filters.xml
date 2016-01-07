@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <ServerManagerConfiguration>
   <ProxyGroup name="internal_filters">
     <!-- ==================================================================== -->
@@ -2139,7 +2139,7 @@ found and the point will be rejected.</Documentation>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkPVArrayCalculator"
                  name="Calculator"
-                 label="ÐšÐ°Ð»ÑŒÐºÑƒÐ»ÑÑ‚Ð¾Ñ€">
+                 label="Êàëüêóëÿòîð">
       <Documentation long_help="Compute new attribute arrays as function of existing arrays."
                      short_help="Compute new attribute arrays.">
 The Calculator filter computes a new data array or new point
@@ -2222,11 +2222,11 @@ type as the input.</Documentation>
       <IntVectorProperty command="SetAttributeMode"
                          default_values="1"
                          name="AttributeMode"
-                         label="Ð¢Ð¸Ð¿ Ð´Ð°Ð½Ð½Ñ‹Ñ…"
+                         label="Òèï äàííûõ"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
-          <Entry text="Ð¢Ð¾Ñ‡ÐºÐ¸" value="1" />
-          <Entry text="ÐžÐ±ÑŠÐµÐ¼Ð½Ñ‹Ðµ ÑÐ»ÐµÐ¼ÐµÐ½Ñ‚Ñ‹" value="2" />
+          <Entry text="Òî÷êè" value="1" />
+          <Entry text="Îáúåìíûå ýëåìåíòû" value="2" />
         </EnumerationDomain>
         <Documentation>This property determines whether the computation is to
         be performed on point-centered or cell-centered data.</Documentation>
@@ -14456,7 +14456,7 @@ source.</Documentation>
                  value="1" />
         </EnumerationDomain>
         <Documentation>This property specifies the mode of iteration, either a user-provided number
-        of periods, or the maximum number of periods to rotate to 360Â°. </Documentation>
+        of periods, or the maximum number of periods to rotate to 360°. </Documentation>
       </IntVectorProperty>
 
       <IntVectorProperty command="SetNumberOfPeriods"
