@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="windows-1251"?>
-<ServerManagerConfiguration>
+п»ї<ServerManagerConfiguration>
   <ProxyGroup name="sources">
     <!-- ==================================================================== -->
     <SourceProxy class="vtkAMRGaussianPulseSource"
@@ -645,7 +644,7 @@
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkCylinderSource"
-                 label="Цилиндр"
+                 label="Р¦РёР»РёРЅРґСЂ"
                  name="CylinderSource">
       <Documentation long_help="Create a 3D cylinder of a given radius and height."
                      short_help="3D cylinder of a given radius and height">The
@@ -656,7 +655,7 @@
       <IntVectorProperty command="SetResolution"
                          default_values="6"
                          name="Resolution"
-                         label="Разрешение"
+                         label="Р Р°Р·СЂРµС€РµРЅРёРµ"
                          number_of_elements="1"
                          panel_visibility="default">
         <IntRangeDomain max="512"

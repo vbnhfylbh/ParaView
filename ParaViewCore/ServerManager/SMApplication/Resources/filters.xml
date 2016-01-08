@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="windows-1251"?>
-<ServerManagerConfiguration>
+п»ї<ServerManagerConfiguration>
   <ProxyGroup name="internal_filters">
     <!-- ==================================================================== -->
     <SourceProxy class="vtkAppendArcLength"
@@ -2139,7 +2138,7 @@ found and the point will be rejected.</Documentation>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkPVArrayCalculator"
                  name="Calculator"
-                 label="Калькулятор">
+                 label="РљР°Р»СЊРєСѓР»СЏС‚РѕСЂ">
       <Documentation long_help="Compute new attribute arrays as function of existing arrays."
                      short_help="Compute new attribute arrays.">
 The Calculator filter computes a new data array or new point
@@ -2222,11 +2221,11 @@ type as the input.</Documentation>
       <IntVectorProperty command="SetAttributeMode"
                          default_values="1"
                          name="AttributeMode"
-                         label="Тип данных"
+                         label="РўРёРї РґР°РЅРЅС‹С…"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
-          <Entry text="Точки" value="1" />
-          <Entry text="Объемные элементы" value="2" />
+          <Entry text="РўРѕС‡РєРё" value="1" />
+          <Entry text="РћР±СЉРµРјРЅС‹Рµ СЌР»РµРјРµРЅС‚С‹" value="2" />
         </EnumerationDomain>
         <Documentation>This property determines whether the computation is to
         be performed on point-centered or cell-centered data.</Documentation>
@@ -14456,7 +14455,7 @@ source.</Documentation>
                  value="1" />
         </EnumerationDomain>
         <Documentation>This property specifies the mode of iteration, either a user-provided number
-        of periods, or the maximum number of periods to rotate to 360°. </Documentation>
+        of periods, or the maximum number of periods to rotate to 360В°. </Documentation>
       </IntVectorProperty>
 
       <IntVectorProperty command="SetNumberOfPeriods"
