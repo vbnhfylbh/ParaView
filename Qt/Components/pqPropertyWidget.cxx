@@ -42,6 +42,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMDomain.h"
 #include "vtkSMProperty.h"
 
+#ifndef UNICODE_TEXT
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate("pqPropertyWidget", QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //-----------------------------------------------------------------------------
 pqPropertyWidget::pqPropertyWidget(vtkSMProxy *smProxy, QWidget *parentObject)
   : QWidget(parentObject),
@@ -123,7 +128,7 @@ QString pqPropertyWidget::getTooltip(vtkSMProperty* smproperty)
 void pqPropertyWidget::setProperty(vtkSMProperty *smproperty)
 {
   this->Property = smproperty;
-  this->setToolTip(pqPropertyWidget::getTooltip(smproperty));
+  this->setToolTip(UNICODE_TEXT(pqPropertyWidget::getTooltip(smproperty)));
   if ((smproperty->GetHints() &&
        smproperty->GetHints()->FindNestedElementByName("RestartRequired")))
     {

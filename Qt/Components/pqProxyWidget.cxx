@@ -87,6 +87,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <vector>
 
+#ifndef UNICODE_TEXT
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate("pqProxyWidget", QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //-----------------------------------------------------------------------------------
 namespace
 {
@@ -190,8 +195,7 @@ namespace
       item->PropertyWidget = widget;
       if (!label.isEmpty() && widget->showLabel())
         {
-        QLabel* labelWdg = new QLabel(
-          QString("<p>%1</p>").arg(label), widget->parentWidget());
+        QLabel* labelWdg = new QLabel(UNICODE_TEXT(QString("<p>%1</p>").arg(label)), widget->parentWidget());
         labelWdg->setWordWrap(true);
         labelWdg->setAlignment(Qt::AlignLeft|Qt::AlignTop);
         item->LabelWidget = labelWdg;
@@ -521,8 +525,7 @@ QWidget* pqProxyWidget::newGroupLabelWidget(const QString& labelText, QWidget* p
   hbox->setContentsMargins(0, pqPropertiesPanel::suggestedVerticalSpacing(), 0, 0);
   hbox->setSpacing(0);
 
-  QLabel* label = new QLabel(
-    QString("<html><b>%1</b></html>").arg(labelText), widget);
+  QLabel* label = new QLabel(UNICODE_TEXT(QString("<html><b>%1</b></html>").arg(labelText)), widget);
   label->setWordWrap(true);
   label->setAlignment(Qt::AlignBottom|Qt::AlignLeft);
   hbox->addWidget(label);
@@ -1088,6 +1091,7 @@ void pqProxyWidget::createPropertyWidgets(const QStringList &properties)
       .arg(xmlLabel).arg(xmlDocumentation) :
       QString(xmlLabel);
 
+    itemLabel = UNICODE_TEXT(itemLabel);
     pqProxyWidgetItem *item = property_group_tag == -1?
       pqProxyWidgetItem::newItem(propertyWidget, QString(itemLabel), this) :
       pqProxyWidgetItem::newMultiItemGroupItem(
@@ -1252,7 +1256,7 @@ bool pqProxyWidget::filterWidgets(bool show_advanced, const QString& filterText)
   if (dtype != NONE)
     {
     QString doc = this->documentationText(smProxy, dtype);
-    this->Internals->ProxyDocumentationLabel->setText("<p>" + doc + "</p>");
+    this->Internals->ProxyDocumentationLabel->setText(UNICODE_TEXT("<p>" + doc + "</p>"));
     this->Internals->ProxyDocumentationLabel->setVisible(!doc.isEmpty());
     gridLayout->addWidget(this->Internals->ProxyDocumentationLabel, row_index, 0, 1, 2);
     row_index++;

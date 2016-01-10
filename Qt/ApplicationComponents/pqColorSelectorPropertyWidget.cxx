@@ -39,6 +39,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QVBoxLayout>
 #include <QLabel>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //-----------------------------------------------------------------------------
 pqColorSelectorPropertyWidget::pqColorSelectorPropertyWidget(
   vtkSMProxy *smProxy, vtkSMProperty *smProperty, bool withPalette, QWidget *pWidget)
@@ -57,8 +63,7 @@ pqColorSelectorPropertyWidget::pqColorSelectorPropertyWidget(
 
   if (useDocumentationForLabels)
     {
-    QLabel* label = new QLabel(
-      QString("<p>%1</p>").arg(pqProxyWidget::documentationText(smProperty)));
+    QLabel* label = new QLabel(UNICODE_TEXT(QString("<p>%1</p>").arg(pqProxyWidget::documentationText(smProperty))));
     label->setWordWrap(true);
     label->setAlignment(Qt::AlignLeft | Qt::AlignTop);
     vbox->addWidget(label, /*stretch=*/1);

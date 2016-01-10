@@ -59,6 +59,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QHBoxLayout>
 #include <QIntValidator>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
+
 pqIntVectorPropertyWidget::pqIntVectorPropertyWidget(vtkSMProperty *smproperty,
                                                      vtkSMProxy *smProxy,
                                                      QWidget *parentObject)
@@ -100,17 +107,15 @@ pqIntVectorPropertyWidget::pqIntVectorPropertyWidget(vtkSMProperty *smproperty,
     this->setChangeAvailableAsChangeFinished(true);
     layoutLocal->addWidget(checkBox);
 
-    if (useDocumentationForLabels)
-      {
-      pqLabel* label = new pqLabel(
-        QString("<p><b>%1</b>: %2</p>")
-        .arg(smproperty->GetXMLLabel())
-        .arg(pqProxyWidget::documentationText(smproperty)));
-      label->setObjectName("CheckBoxLabel");
-      label->setWordWrap(true);
-      label->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-      label->connect(label, SIGNAL(clicked()), checkBox, SLOT(click()));
-      layoutLocal->addWidget(label, /*stretch=*/1);
+      if (useDocumentationForLabels) {
+        pqLabel * label = new pqLabel(UNICODE_TEXT(QString("<p><b>%1</b>: %2</p>")
+                                                           .arg(smproperty->GetXMLLabel())
+                                                           .arg(pqProxyWidget::documentationText(smproperty))));
+        label->setObjectName("CheckBoxLabel");
+        label->setWordWrap(true);
+        label->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+        label->connect(label, SIGNAL(clicked()), checkBox, SLOT(click()));
+        layoutLocal->addWidget(label, /*stretch=*/1);
       }
     this->setShowLabel(false);
 

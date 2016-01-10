@@ -58,7 +58,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef UNICODE_TEXT
 #include <typeinfo>
 #include <QApplication>
-#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), text.toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
 #endif
 
 class pqProxyGroupMenuManager::pqInternal
@@ -414,12 +414,12 @@ void pqProxyGroupMenuManager::populateMenu()
 #else
   QString combo = "\tCtrl+Space";
 #endif
-  QString search = "\xD0\x9F\xD0\xBE\xD0\xB8\xD1\x81\xD0\xBA\x2E\x2E\x2E";
+  QString search = "\xD0\x9F\xD0\xBE\xD0\xB8\xD1\x81\xD0\xBA\x2E\x2E\x2E" + combo;
   search += combo;
   this->Internal->SearchAction = _menu->addAction(UNICODE_TEXT(search), this, SLOT(quickLaunch()));
   if (this->RecentlyUsedMenuSize > 0) {
-      QString tmp = "\x26\xD0\x9F\xD0\xBE\xD1\x81\xD0\xBB\xD0\xB5\xD0\xB4\xD0\xBD\xD0\xB8\xD0\xB5";
-      QMenu * recentMenu = _menu->addMenu(UNICODE_TEXT(tmp)) << pqSetName("Recent");
+      QMenu * recentMenu = _menu->addMenu(UNICODE_TEXT("\x26\xD0\x9F\xD0\xBE\xD1\x81\xD0\xBB\xD0\xB5\xD0\xB4\xD0\xBD\xD0\xB8\xD0\xB5"))
+                           << pqSetName("Recent");
       this->loadRecentlyUsedItems();
       this->populateRecentlyUsedMenu(recentMenu);
   }
@@ -444,8 +444,7 @@ void pqProxyGroupMenuManager::populateMenu()
   // Add alphabetical list.
   QMenu* alphabeticalMenu = _menu;
   if (this->Internal->Categories.size() > 0 || this->RecentlyUsedMenuSize > 0) {
-      QString tmp = "\x26\xD0\x9F\xD0\xBE\x20\xD0\xB0\xD0\xBB\xD1\x84\xD0\xB0\xD0\xB2\xD0\xB8\xD1\x82\xD1\x83";
-      alphabeticalMenu = _menu->addMenu(UNICODE_TEXT(tmp))
+      alphabeticalMenu = _menu->addMenu(UNICODE_TEXT("\x26\xD0\x9F\xD0\xBE\x20\xD0\xB0\xD0\xBB\xD1\x84\xD0\xB0\xD0\xB2\xD0\xB8\xD1\x82\xD1\x83"))
                          << pqSetName("Alphabetical");
   }
 
