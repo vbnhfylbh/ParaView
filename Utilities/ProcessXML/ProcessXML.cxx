@@ -271,5 +271,13 @@ int main(int argc, char *argv[]) {
     << endl << endl
     << "#endif" << endl;
 
+    ofstream out;
+    out.open(output.c_str());
+    if (!out) {
+        cout << "Cannot open output file: " << output.c_str() << endl;
+        return 1;
+    }
+    out << ot.Stream.str();
+    out.close();
     return 0;
 }

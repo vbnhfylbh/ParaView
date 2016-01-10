@@ -55,6 +55,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QSet>
 #include <QStringList>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), text.toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 class pqProxyGroupMenuManager::pqInternal
 {
 public:
@@ -404,17 +410,19 @@ void pqProxyGroupMenuManager::populateMenu()
   _menu->clear();
 
 #ifdef Q_WS_MAC
-  this->Internal->SearchAction = _menu->addAction("Search...\tAlt+Space", this, SLOT(quickLaunch()));
+  QString combo = "\tAlt+Space"
 #else
-  this->Internal->SearchAction = _menu->addAction("Search...\tCtrl+Space", this, SLOT(quickLaunch()));
+  QString combo = "\tCtrl+Space";
 #endif
-
-  if (this->RecentlyUsedMenuSize > 0)
-    {
-    QMenu* recentMenu = _menu->addMenu("&Recent") << pqSetName("Recent");
-    this->loadRecentlyUsedItems();
-    this->populateRecentlyUsedMenu(recentMenu);
-    }
+  QString search = "\xD0\x9F\xD0\xBE\xD0\xB8\xD1\x81\xD0\xBA\x2E\x2E\x2E";
+  search += combo;
+  this->Internal->SearchAction = _menu->addAction(UNICODE_TEXT(search), this, SLOT(quickLaunch()));
+  if (this->RecentlyUsedMenuSize > 0) {
+      QString tmp = "\x26\xD0\x9F\xD0\xBE\xD1\x81\xD0\xBB\xD0\xB5\xD0\xB4\xD0\xBD\xD0\xB8\xD0\xB5";
+      QMenu * recentMenu = _menu->addMenu(UNICODE_TEXT(tmp)) << pqSetName("Recent");
+      this->loadRecentlyUsedItems();
+      this->populateRecentlyUsedMenu(recentMenu);
+  }
 
   // Add categories.
   pqInternal::CategoryInfoMap::iterator categoryIter =
@@ -424,7 +432,7 @@ void pqProxyGroupMenuManager::populateMenu()
     QList<QAction*> action_list = this->actions(categoryIter.key());
     if( action_list.size() > 0)
       {
-      QMenu* categoryMenu = _menu->addMenu(categoryIter.value().Label)
+      QMenu* categoryMenu = _menu->addMenu(UNICODE_TEXT(categoryIter.value().Label))
            << pqSetName(categoryIter.key());
       foreach (QAction* action, action_list)
         {
@@ -435,11 +443,11 @@ void pqProxyGroupMenuManager::populateMenu()
 
   // Add alphabetical list.
   QMenu* alphabeticalMenu = _menu;
-  if (this->Internal->Categories.size() > 0 || this->RecentlyUsedMenuSize > 0)
-    {
-    alphabeticalMenu = _menu->addMenu("&Alphabetical")
-      << pqSetName("Alphabetical");
-    }
+  if (this->Internal->Categories.size() > 0 || this->RecentlyUsedMenuSize > 0) {
+      QString tmp = "\x26\xD0\x9F\xD0\xBE\x20\xD0\xB0\xD0\xBB\xD1\x84\xD0\xB0\xD0\xB2\xD0\xB8\xD1\x82\xD1\x83";
+      alphabeticalMenu = _menu->addMenu(UNICODE_TEXT(tmp))
+                         << pqSetName("Alphabetical");
+  }
 
   pqInternal::ProxyInfoMap::iterator proxyIter =
     this->Internal->Proxies.begin();
@@ -508,7 +516,7 @@ QAction* pqProxyGroupMenuManager::getAction(
     // Add action in the pool for the QuickSearch...
     this->Internal->Widget.addAction(action);
 
-    action->setText(label);
+    action->setText(UNICODE_TEXT(label));
     QString icon = this->Internal->Proxies[key].Icon;
 
     // Try to add some default icons if none is specified.
