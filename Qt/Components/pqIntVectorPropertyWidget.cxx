@@ -101,16 +101,16 @@ pqIntVectorPropertyWidget::pqIntVectorPropertyWidget(vtkSMProperty *smproperty,
   if(vtkSMBooleanDomain::SafeDownCast(domain))
     {
     QCheckBox *checkBox = new QCheckBox(
-      useDocumentationForLabels? "" : smproperty->GetXMLLabel(), this);
+      useDocumentationForLabels? "" : UNICODE_TEXT(smproperty->GetXMLLabel()), this);
     checkBox->setObjectName("CheckBox");
     this->addPropertyLink(checkBox, "checked", SIGNAL(toggled(bool)), ivp);
     this->setChangeAvailableAsChangeFinished(true);
     layoutLocal->addWidget(checkBox);
 
       if (useDocumentationForLabels) {
-        pqLabel * label = new pqLabel(UNICODE_TEXT(QString("<p><b>%1</b>: %2</p>")
+        pqLabel * label = new pqLabel(QString("<p><b>%1</b>: %2</p>")
                                                            .arg(smproperty->GetXMLLabel())
-                                                           .arg(pqProxyWidget::documentationText(smproperty))));
+                                                           .arg(pqProxyWidget::documentationText(smproperty)));
         label->setObjectName("CheckBoxLabel");
         label->setWordWrap(true);
         label->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -135,8 +135,9 @@ pqIntVectorPropertyWidget::pqIntVectorPropertyWidget(vtkSMProperty *smproperty,
       treeWidget->setMaximumRowCountBeforeScrolling(smproperty);
 
       QTreeWidgetItem* header = new QTreeWidgetItem();
-      header->setData(0, Qt::DisplayRole, smproperty->GetXMLLabel());
+      header->setData(0, Qt::DisplayRole, UNICODE_TEXT(smproperty->GetXMLLabel()));
       treeWidget->setHeaderItem(header);
+      treeWidget->setHeaderLabel(UNICODE_TEXT(smproperty->GetXMLLabel()));
 
       // helper makes it easier to select multiple entries.
       pqTreeWidgetSelectionHelper* helper =
@@ -165,7 +166,7 @@ pqIntVectorPropertyWidget::pqIntVectorPropertyWidget(vtkSMProperty *smproperty,
       comboBox->setObjectName("ComboBox");
       for(unsigned int i = 0; i < ed->GetNumberOfEntries(); i++)
         {
-        comboBox->addItem(ed->GetEntryText(i));
+        comboBox->addItem(UNICODE_TEXT(ed->GetEntryText(i)));
         }
       pqSignalAdaptorComboBox *adaptor = new pqSignalAdaptorComboBox(comboBox);
       this->addPropertyLink(adaptor,
@@ -186,7 +187,7 @@ pqIntVectorPropertyWidget::pqIntVectorPropertyWidget(vtkSMProperty *smproperty,
     {
     pqTreeWidget *treeWidget = new pqTreeWidget(this);
     treeWidget->setObjectName("TreeWidget");
-    treeWidget->setHeaderLabel(smproperty->GetXMLLabel());
+    treeWidget->setHeaderLabel(UNICODE_TEXT(smproperty->GetXMLLabel()));
     treeWidget->setMaximumRowCountBeforeScrolling(smproperty);
 
     pqSignalAdaptorCompositeTreeWidget *adaptor =

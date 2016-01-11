@@ -81,6 +81,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqPythonSyntaxHighlighter.h"
 #endif
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
+
 pqStringVectorPropertyWidget::pqStringVectorPropertyWidget(vtkSMProperty *smProperty,
                                                            vtkSMProxy *smProxy,
                                                            QWidget *pWidget)
@@ -222,7 +229,7 @@ pqStringVectorPropertyWidget::pqStringVectorPropertyWidget(vtkSMProperty *smProp
         new pqExodusIIVariableSelectionWidget(this);
       selectorWidget->setObjectName("ArraySelectionWidget");
       selectorWidget->setRootIsDecorated(false);
-      selectorWidget->setHeaderLabel(smProperty->GetXMLLabel());
+      selectorWidget->setHeaderLabel(UNICODE_TEXT(smProperty->GetXMLLabel()));
       selectorWidget->setMaximumRowCountBeforeScrolling(smProperty);
 
       // hide widget label
@@ -322,7 +329,7 @@ pqStringVectorPropertyWidget::pqStringVectorPropertyWidget(vtkSMProperty *smProp
       new pqExodusIIVariableSelectionWidget(this);
     selectorWidget->setObjectName("ArraySelectionWidget");
     selectorWidget->setRootIsDecorated(false);
-    selectorWidget->setHeaderLabel(smProperty->GetXMLLabel());
+    selectorWidget->setHeaderLabel(UNICODE_TEXT(smProperty->GetXMLLabel()));
     selectorWidget->setMaximumRowCountBeforeScrolling(smProperty);
 
     this->addPropertyLink(
@@ -369,7 +376,7 @@ pqStringVectorPropertyWidget::pqStringVectorPropertyWidget(vtkSMProperty *smProp
     QHBoxLayout* hbox = new QHBoxLayout(this);
     hbox->setMargin(0);
     hbox->setSpacing(0);
-    QLabel* label = new QLabel(smProperty->GetXMLLabel(), w);
+    QLabel* label = new QLabel(UNICODE_TEXT(smProperty->GetXMLLabel()), w);
     hbox->addWidget(label);
     hbox->addStretch();
 
@@ -432,7 +439,7 @@ pqStringVectorPropertyWidget::pqStringVectorPropertyWidget(vtkSMProperty *smProp
 
     for(unsigned int i = 0; i < enumerationDomain->GetNumberOfEntries(); i++)
       {
-      comboBox->addItem(enumerationDomain->GetEntryText(i));
+      comboBox->addItem(UNICODE_TEXT(enumerationDomain->GetEntryText(i)));
       }
 
     vbox->addWidget(comboBox);
@@ -465,7 +472,7 @@ pqStringVectorPropertyWidget::pqStringVectorPropertyWidget(vtkSMProperty *smProp
 
       if (!placeholderText.isEmpty())
         {
-        lineEdit->setPlaceholderText(placeholderText);
+        lineEdit->setPlaceholderText(UNICODE_TEXT(placeholderText));
         }
 
       vbox->addWidget(lineEdit);

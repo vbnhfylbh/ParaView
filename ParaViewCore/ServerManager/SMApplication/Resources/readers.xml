@@ -5743,11 +5743,11 @@
       <StringVectorProperty animateable="0"
                             command="SetFileName"
                             name="FileName"
+                            label="Файл"
                             number_of_elements="1"
                             panel_visibility="advanced">
         <FileListDomain name="files" />
-        <Documentation>This property specifies the file name for the
-        reader.</Documentation>
+        <Documentation>Имя файла для чтения.</Documentation>
       </StringVectorProperty>
       <Property animateable="0"
                 command="SetRefresh"
@@ -5889,11 +5889,11 @@
       <IntVectorProperty animateable="0"
                          command="SetDecomposePolyhedra"
                          default_values="1"
-                         label="Разбивать многогранники"
+                         label="Декомпозировать многогранники"
                          name="DecomposePolyhedra"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
-        <Documentation>Разбивать многогранники на четырехгранники и
+        <Documentation>Декомпозировать многогранники на четырехгранники и
         пирамиды.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty animateable="0"
