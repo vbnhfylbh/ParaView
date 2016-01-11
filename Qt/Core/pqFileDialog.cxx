@@ -56,6 +56,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vtksys/SystemTools.hxx>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 class pqFileComboBox : public QComboBox
 {
 public:
@@ -539,8 +545,10 @@ void pqFileDialog::setFileMode(pqFileDialog::FileMode mode)
     {
     //only set the tooltip and window title the first time through
     this->Implementation->ShowMultipleFileHelp = true;
-    this->setWindowTitle(this->windowTitle() + "  (open multiple files with <ctrl> key.)");
-    this->setToolTip("open multiple files with <ctrl> key.");
+    QString toolTip = UNICODE_TEXT(
+            "\xD0\x94\xD0\xBB\xD1\x8F\x20\xD0\xB2\xD1\x8B\xD0\xB1\xD0\xBE\xD1\x80\xD0\xB0\x20\xD0\xBD\xD0\xB5\xD1\x81\xD0\xBA\xD0\xBE\xD0\xBB\xD1\x8C\xD0\xBA\xD0\xB8\xD1\x85\x20\xD1\x84\xD0\xB0\xD0\xB9\xD0\xBB\xD0\xBE\xD0\xB2\x20\xD0\xB8\xD1\x81\xD0\xBF\xD0\xBE\xD0\xBB\xD1\x8C\xD0\xB7\xD1\x83\xD0\xB9\xD1\x82\xD0\xB5\x20\x3C\x63\x74\x72\x6C\x3E\x2E");
+    this->setWindowTitle(this->windowTitle() + "  (" + toolTip + ")");
+    this->setToolTip(toolTip);
     }
   this->Implementation->Ui.Files->setSelectionMode(selectionMode);
   this->Implementation->Ui.Favorites->setSelectionMode(selectionMode);

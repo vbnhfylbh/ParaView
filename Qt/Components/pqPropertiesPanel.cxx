@@ -64,6 +64,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <iostream>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 namespace
 {
 
@@ -528,8 +534,7 @@ void pqPropertiesPanel::updatePropertiesPanel(pqPipelineSource *source)
   // update widgets.
   if (source)
     {
-    this->Internals->Ui.PropertiesButton->setText(
-      QString("Properties (%1)").arg(source->getSMName()));
+    this->Internals->Ui.PropertiesButton->setText(UNICODE_TEXT(QString("\xD0\xA1\xD0\xB2\xD0\xBE\xD0\xB9\xD1\x81\xD1\x82\xD0\xB2\xD0\xB0 (%1)").arg(source->getSMName())));
     this->Internals->SourceWidgets[source]->showWidgets(
       this->Internals->Ui.SearchBox->isAdvancedSearchActive(),
       this->Internals->Ui.SearchBox->text());
@@ -541,7 +546,7 @@ void pqPropertiesPanel::updatePropertiesPanel(pqPipelineSource *source)
     }
   else
     {
-    this->Internals->Ui.PropertiesButton->setText("Properties");
+    this->Internals->Ui.PropertiesButton->setText(UNICODE_TEXT("\xD0\xA1\xD0\xB2\xD0\xBE\xD0\xB9\xD1\x81\xD1\x82\xD0\xB2\xD0\xB0"));
     }
   this->updateButtonEnableState();
 }
@@ -596,15 +601,15 @@ void pqPropertiesPanel::updateDisplayPanel(pqDataRepresentation* repr)
 
   if (repr)
     {
-    this->Internals->Ui.DisplayButton->setText(
-      QString("Display (%1)").arg(repr->getProxy()->GetXMLName()));
+    this->Internals->Ui.DisplayButton->setText(UNICODE_TEXT(
+      QString("\xD0\x9E\xD1\x82\xD0\xBE\xD0\xB1\xD1\x80\xD0\xB0\xD0\xB6\xD0\xB5\xD0\xBD\xD0\xB8\xD0\xB5 (%1)").arg(repr->getProxy()->GetXMLName())));
     this->Internals->DisplayWidgets->showWidgets(
       this->Internals->Ui.SearchBox->isAdvancedSearchActive(),
       this->Internals->Ui.SearchBox->text());
     }
   else
     {
-    this->Internals->Ui.DisplayButton->setText("Display");
+    this->Internals->Ui.DisplayButton->setText(UNICODE_TEXT("\xD0\x9E\xD1\x82\xD0\xBE\xD0\xB1\xD1\x80\xD0\xB0\xD0\xB6\xD0\xB5\xD0\xBD\xD0\xB8\xD0\xB5"));
     }
 
   this->updateButtonEnableState();
@@ -649,15 +654,15 @@ void pqPropertiesPanel::updateViewPanel (pqView* argView)
     // update the label and show the widgets
     vtkSMViewProxy* proxy = _view->getViewProxy();
     const char* label = proxy->GetXMLLabel ();
-    this->Internals->Ui.ViewButton->setText(
-      QString ("View (%1)").arg (label != 0 ? label : _view->getViewType ()));
+    this->Internals->Ui.ViewButton->setText(UNICODE_TEXT(
+      QString ("\xD0\xA1\xD1\x86\xD0\xB5\xD0\xBD\xD0\xB0 (%1)").arg (label != 0 ? label : _view->getViewType ())));
     this->Internals->ViewWidgets->showWidgets(
       this->Internals->Ui.SearchBox->isAdvancedSearchActive(),
       this->Internals->Ui.SearchBox->text());
     }
   else
     {
-    this->Internals->Ui.ViewButton->setText("View");
+    this->Internals->Ui.ViewButton->setText(UNICODE_TEXT("\xD0\xA1\xD1\x86\xD0\xB5\xD0\xBD\xD0\xB0"));
     }
 
   this->updateButtonEnableState();

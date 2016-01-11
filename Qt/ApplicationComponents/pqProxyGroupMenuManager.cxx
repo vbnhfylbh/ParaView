@@ -414,9 +414,7 @@ void pqProxyGroupMenuManager::populateMenu()
 #else
   QString combo = "\tCtrl+Space";
 #endif
-  QString search = "\xD0\x9F\xD0\xBE\xD0\xB8\xD1\x81\xD0\xBA\x2E\x2E\x2E" + combo;
-  search += combo;
-  this->Internal->SearchAction = _menu->addAction(UNICODE_TEXT(search), this, SLOT(quickLaunch()));
+  this->Internal->SearchAction = _menu->addAction(UNICODE_TEXT("\xD0\x9F\xD0\xBE\xD0\xB8\xD1\x81\xD0\xBA\x2E\x2E\x2E" + combo), this, SLOT(quickLaunch()));
   if (this->RecentlyUsedMenuSize > 0) {
       QMenu * recentMenu = _menu->addMenu(UNICODE_TEXT("\x26\xD0\x9F\xD0\xBE\xD1\x81\xD0\xBB\xD0\xB5\xD0\xB4\xD0\xBD\xD0\xB8\xD0\xB5"))
                            << pqSetName("Recent");
