@@ -38,6 +38,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QLineEdit>
 #include <QToolButton>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 // ParaView
 #include "pqFileDialog.h"
 
@@ -160,7 +166,7 @@ void pqFileChooserWidget::chooseFile()
   filters += ";;All files (*)";
 
   pqFileDialog* dialog = new pqFileDialog(this->Server,
-    this, tr("Open File:"), QString(), filters);
+    this, UNICODE_TEXT("\xD0\x9E\xD1\x82\xD0\xBA\xD1\x80\xD1\x8B\xD1\x82\xD1\x8C\x20\xD1\x84\xD0\xB0\xD0\xB9\xD0\xBB\x3A"), QString(), filters);
   if(this->UseDirectoryMode)
     {
     dialog->setFileMode(pqFileDialog::Directory);

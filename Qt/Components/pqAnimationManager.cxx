@@ -81,6 +81,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <sstream>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 #define SEQUENCE 0
 #define REALTIME 1
 #define SNAP_TO_TIMESTEPS 2
@@ -551,7 +557,7 @@ bool pqAnimationManager::saveAnimation()
   pqFileDialog *file_dialog = new pqFileDialog(
     disconnect_and_save?  scene->getServer() : 0,
     parent_window,
-    tr("Save Animation"), QString(), filters);
+    UNICODE_TEXT("\xD0\xA1\xD0\xBE\xD1\x85\xD1\x80\xD0\xB0\xD0\xBD\xD0\xB8\xD1\x82\xD1\x8C\x20\xD0\xB2\xD0\xB8\xD0\xB4\xD0\xB5\xD0\xBE"), QString(), filters);
   file_dialog->setRecentlyUsedExtension(this->AnimationExtension);
   file_dialog->setObjectName("FileSaveAnimationDialog");
   file_dialog->setFileMode(pqFileDialog::AnyFile);

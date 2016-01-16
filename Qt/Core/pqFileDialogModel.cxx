@@ -58,6 +58,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqSMAdaptor.h"
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //////////////////////////////////////////////////////////////////////
 // pqFileDialogModelFileInfo
 
@@ -74,8 +80,8 @@ public:
            vtkPVFileInformation::FileTypes t, const bool &h,
            const QList<pqFileDialogModelFileInfo>& g =
            QList<pqFileDialogModelFileInfo>()) :
-    Label(l),
-    FilePath(filepath),
+    Label(UNICODE_TEXT(l)),
+    FilePath(UNICODE_TEXT(filepath)),
     Type(t),
     Hidden(h),
     Group(g)

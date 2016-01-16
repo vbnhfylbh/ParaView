@@ -5899,12 +5899,12 @@
       <IntVectorProperty animateable="0"
                          command="SetListTimeStepsByControlDict"
                          default_values="0"
-                         label="Отображать шаги по времени в соответствии с настройками проекта"
+                         label="Отображать шаги по времени в соответствии с настройками OpenFOAM"
                          name="ListTimeStepsByControlDict"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
         <Documentation>Отображать шаги по времени в соответствии с
-        настройками проекта.</Documentation>
+        настройками OpenFOAM.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty animateable="0"
                          command="SetPositionsIsIn13Format"

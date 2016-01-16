@@ -48,6 +48,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QDebug>
 
+#ifndef UNICODE_TEXT
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate("pqLoadDataReaction", QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 #include "vtkStringList.h"
 
 //-----------------------------------------------------------------------------
@@ -84,7 +89,7 @@ QList<pqPipelineSource*> pqLoadDataReaction::loadData()
   filters += "All files (*)";
   pqFileDialog fileDialog(server,
     pqCoreUtilities::mainWidget(),
-    tr("Open File:"), QString(), filters);
+     UNICODE_TEXT("\xD0\x9E\xD1\x82\xD0\xBA\xD1\x80\xD1\x8B\xD1\x82\xD1\x8C\x20\xD1\x84\xD0\xB0\xD0\xB9\xD0\xBB\x3A"), QString(), filters);
   fileDialog.setObjectName("FileOpenDialog");
   fileDialog.setFileMode(pqFileDialog::ExistingFiles);
   QList<pqPipelineSource*> sources;
@@ -132,7 +137,7 @@ pqPipelineSource* pqLoadDataReaction::loadData(const QList<QStringList>& files)
   foreach(file,files)
     {
     QPair<QString,QString> readerInfo; //type,group    
-    QString filename(file[0]);
+    QString filename(UNICODE_TEXT(file[0]));
     QFileInfo fi(filename);
 
     if (!pqLoadDataReaction::TestFileReadability(filename,server,readerFactory))

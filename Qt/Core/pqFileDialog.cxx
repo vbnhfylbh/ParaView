@@ -57,9 +57,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vtksys/SystemTools.hxx>
 
 #ifndef UNICODE_TEXT
-#include <typeinfo>
 #include <QApplication>
-#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#define UNICODE_TEXT(text) QApplication::translate("pqFileDialog", QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
 #endif
 
 class pqFileComboBox : public QComboBox
@@ -510,7 +509,7 @@ void pqFileDialog::onContextMenuRequested(const QPoint &menuPos)
     menu.addAction(actionNewDir);
     }
 
-  QAction *actionHiddenFiles = new QAction("Show Hidden Files",this);
+  QAction *actionHiddenFiles = new QAction(UNICODE_TEXT("\xD0\x9F\xD0\xBE\xD0\xBA\xD0\xB0\xD0\xB7\xD1\x8B\xD0\xB2\xD0\xB0\xD1\x82\xD1\x8C\x20\xD1\x81\xD0\xBA\xD1\x80\xD1\x8B\xD1\x82\xD1\x8B\xD0\xB5\x20\xD1\x84\xD0\xB0\xD0\xB9\xD0\xBB\xD1\x8B"),this);
   actionHiddenFiles->setCheckable( true );
   actionHiddenFiles->setChecked( this->Implementation->FileFilter.getShowHidden());
   QObject::connect(actionHiddenFiles, SIGNAL(triggered(bool)),
