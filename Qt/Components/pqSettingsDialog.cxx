@@ -59,6 +59,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QSpacerItem>
 #include <QVBoxLayout>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 class pqSettingsDialog::pqInternals
 {
 public:
@@ -147,7 +153,7 @@ pqSettingsDialog::pqSettingsDialog(QWidget* parentObject, Qt::WindowFlags f)
     // show panel widgets
     widget->updatePanel();
 
-    int tabIndex = ui.tabBar->addTab(proxy->GetXMLLabel());
+    int tabIndex = ui.tabBar->addTab(UNICODE_TEXT(proxy->GetXMLLabel()));
     int stackIndex = ui.stackedWidget->addWidget(scrollArea);
     this->Internals->TabToStackedWidgets[tabIndex] = stackIndex;
 

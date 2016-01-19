@@ -195,7 +195,7 @@ namespace
       item->PropertyWidget = widget;
       if (!label.isEmpty() && widget->showLabel())
         {
-        QLabel* labelWdg = new QLabel(UNICODE_TEXT(QString("<p>%1</p>").arg(label)), widget->parentWidget());
+        QLabel* labelWdg = new QLabel(QString("<p>%1</p>").arg(label), widget->parentWidget());
         labelWdg->setWordWrap(true);
         labelWdg->setAlignment(Qt::AlignLeft|Qt::AlignTop);
         item->LabelWidget = labelWdg;
@@ -525,7 +525,7 @@ QWidget* pqProxyWidget::newGroupLabelWidget(const QString& labelText, QWidget* p
   hbox->setContentsMargins(0, pqPropertiesPanel::suggestedVerticalSpacing(), 0, 0);
   hbox->setSpacing(0);
 
-  QLabel* label = new QLabel(UNICODE_TEXT(QString("<html><b>%1</b></html>").arg(labelText)), widget);
+  QLabel* label = new QLabel(QString("<html><b>%1</b></html>").arg(labelText), widget);
   label->setWordWrap(true);
   label->setAlignment(Qt::AlignBottom|Qt::AlignLeft);
   hbox->addWidget(label);
@@ -551,7 +551,7 @@ public:
       vtkNew<vtkSMPropertyIterator> propertyIter;
       this->Properties = vtkStringList::New();
       propertyIter->SetProxy(smproxy);
-      
+
       for (propertyIter->Begin(); !propertyIter->IsAtEnd(); propertyIter->Next())
         {
         QString propertyKeyName = propertyIter->GetKey();
@@ -607,7 +607,7 @@ pqProxyWidget::pqProxyWidget(
 
 //-----------------------------------------------------------------------------
 pqProxyWidget::pqProxyWidget(
-  vtkSMProxy* smproxy, const QStringList &properties, QWidget *parentObject, 
+  vtkSMProxy* smproxy, const QStringList &properties, QWidget *parentObject,
   Qt::WindowFlags wflags)
   : Superclass(parentObject, wflags)
 {
@@ -1089,9 +1089,7 @@ void pqProxyWidget::createPropertyWidgets(const QStringList &properties)
     QString itemLabel = this->UseDocumentationForLabels?
       QString("<p><b>%1</b>: %2</p>")
       .arg(xmlLabel).arg(xmlDocumentation) :
-      QString(xmlLabel);
-
-    itemLabel = UNICODE_TEXT(itemLabel);
+      QString(UNICODE_TEXT(xmlLabel));
     pqProxyWidgetItem *item = property_group_tag == -1?
       pqProxyWidgetItem::newItem(propertyWidget, QString(itemLabel), this) :
       pqProxyWidgetItem::newMultiItemGroupItem(
@@ -1126,7 +1124,7 @@ void pqProxyWidget::create3DWidgets()
 
   QList<pq3DWidget*> widgets3d = pq3DWidget::createWidgets(smProxy, smProxy);
   foreach (pq3DWidget *widget3d, widgets3d)
-    { 
+    {
     pq3DWidgetPropertyWidget* wdg = new pq3DWidgetPropertyWidget(widget3d, this);
     pqProxyWidgetItem *item = pqProxyWidgetItem::newItem(wdg, QString(), this);
     widget3d->resetBounds();
@@ -1256,7 +1254,7 @@ bool pqProxyWidget::filterWidgets(bool show_advanced, const QString& filterText)
   if (dtype != NONE)
     {
     QString doc = this->documentationText(smProxy, dtype);
-    this->Internals->ProxyDocumentationLabel->setText(UNICODE_TEXT("<p>" + doc + "</p>"));
+    this->Internals->ProxyDocumentationLabel->setText("<p>" + doc + "</p>");
     this->Internals->ProxyDocumentationLabel->setVisible(!doc.isEmpty());
     gridLayout->addWidget(this->Internals->ProxyDocumentationLabel, row_index, 0, 1, 2);
     row_index++;

@@ -40,6 +40,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QPushButton>
 #include <QtDebug>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 class pqIntMaskPropertyWidget::pqInternals
 {
 public:
@@ -70,7 +76,7 @@ pqIntMaskPropertyWidget::pqIntMaskPropertyWidget(
   Internals(new pqInternals(this))
 {
   this->setShowLabel(false);
-  this->Internals->Button->setText(smproperty->GetXMLLabel());
+  this->Internals->Button->setText(UNICODE_TEXT(smproperty->GetXMLLabel()));
 
   vtkPVXMLElement* hints = smproperty->GetHints()?
     smproperty->GetHints()->FindNestedElementByName("Mask") : NULL;

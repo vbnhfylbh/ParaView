@@ -40,6 +40,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QVBoxLayout>
 #include <QPushButton>
 
+
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
+
 pqCommandButtonPropertyWidget::pqCommandButtonPropertyWidget(vtkSMProxy *smProxy,
                                                              vtkSMProperty *proxyProperty,
                                                              QWidget *pWidget)
@@ -50,7 +58,7 @@ pqCommandButtonPropertyWidget::pqCommandButtonPropertyWidget(vtkSMProxy *smProxy
   l->setSpacing(0);
   l->setMargin(0);
 
-  QPushButton *button = new QPushButton(proxyProperty->GetXMLLabel());
+  QPushButton *button = new QPushButton(UNICODE_TEXT(proxyProperty->GetXMLLabel()));
   connect(button, SIGNAL(clicked()), this, SLOT(buttonClicked()));
   l->addWidget(button);
 

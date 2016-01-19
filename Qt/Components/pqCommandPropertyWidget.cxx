@@ -38,6 +38,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QPushButton>
 #include <QtDebug>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //-----------------------------------------------------------------------------
 pqCommandPropertyWidget::pqCommandPropertyWidget(vtkSMProperty *smproperty,
   vtkSMProxy *smproxy, QWidget *parentObject)
@@ -50,7 +56,7 @@ pqCommandPropertyWidget::pqCommandPropertyWidget(vtkSMProperty *smproperty,
     return;
     }
 
-  QPushButton *button = new QPushButton(smproperty->GetXMLLabel(), this);
+  QPushButton *button = new QPushButton(UNICODE_TEXT(smproperty->GetXMLLabel()), this);
   button->setObjectName("PushButton");
   QObject::connect(button, SIGNAL(clicked()), this, SLOT(buttonClicked()));
 

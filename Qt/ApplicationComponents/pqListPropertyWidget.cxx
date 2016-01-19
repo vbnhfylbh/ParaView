@@ -42,6 +42,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QTableWidget>
 #include <QLineEdit>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 namespace
 {
   class pqListPropertyWidgetDelegate : public QItemDelegate
@@ -91,7 +97,7 @@ pqListPropertyWidget::pqListPropertyWidget(
   this->TableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
   QStringList headerLabels;
-  headerLabels << smproperty->GetXMLLabel();
+  headerLabels << UNICODE_TEXT(smproperty->GetXMLLabel());
   this->TableWidget->setHorizontalHeaderLabels(headerLabels);
 
   QHBoxLayout* hbox = new QHBoxLayout(this);
@@ -133,7 +139,7 @@ void pqListPropertyWidget::setValue(const QList<QVariant>& values)
     QTableWidgetItem* item = this->TableWidget->item(cc, 0);
     if (item)
       {
-      item->setText(values[cc].toString());
+      item->setText(UNICODE_TEXT(values[cc].toString()));
       }
     else
       {

@@ -135,7 +135,7 @@ pqIntVectorPropertyWidget::pqIntVectorPropertyWidget(vtkSMProperty *smproperty,
       treeWidget->setMaximumRowCountBeforeScrolling(smproperty);
 
       QTreeWidgetItem* header = new QTreeWidgetItem();
-      header->setData(0, Qt::DisplayRole, UNICODE_TEXT(smproperty->GetXMLLabel()));
+      header->setData(0, Qt::DisplayRole, smproperty->GetXMLLabel());
       treeWidget->setHeaderItem(header);
       treeWidget->setHeaderLabel(UNICODE_TEXT(smproperty->GetXMLLabel()));
 

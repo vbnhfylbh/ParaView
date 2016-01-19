@@ -99,6 +99,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqTreeWidgetSelectionHelper.h"
 #include "pqWidgetRangeDomain.h"
 
+#ifndef UNICODE_TEXT
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate("pqNamedWidgets", QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //-----------------------------------------------------------------------------
 void pqNamedWidgets::link(QWidget* parent, pqSMProxy proxy, 
   pqPropertyManager* property_manager,
@@ -801,7 +806,7 @@ static QLabel* createPanelLabel(QWidget* parent, QString text, QString pname)
 {
   QLabel* label = new QLabel(parent);
   label->setObjectName(QString("_labelFor")+pname);
-  label->setText(text);
+  label->setText(UNICODE_TEXT(text));
   label->setWordWrap(true);
   return label;
 }
@@ -954,7 +959,7 @@ void pqNamedWidgets::createWidgets(QGridLayout* panelLayout, vtkSMProxy* pxy, bo
         {
         // check box for true/false
         QCheckBox* check;
-        check = new QCheckBox(propertyLabel, 
+        check = new QCheckBox(UNICODE_TEXT(propertyLabel),
                               panelLayout->parentWidget());
         if(informationOnly)
           {
