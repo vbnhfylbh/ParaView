@@ -41,6 +41,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QComboBox>
 #include <QVBoxLayout>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //-----------------------------------------------------------------------------
 pqViewTypePropertyWidget::pqViewTypePropertyWidget(
   vtkSMProxy* smproxy, vtkSMProperty* smproperty, QWidget* parentObject)
@@ -110,7 +116,7 @@ void pqViewTypePropertyWidget::setValue(const QString& val)
     {
     // add the value being specified to the combo-box.
     index = this->ComboBox->count();
-    this->ComboBox->addItem(val, val);
+    this->ComboBox->addItem(UNICODE_TEXT(val), UNICODE_TEXT(val));
     }
   this->ComboBox->setCurrentIndex(index);
 }

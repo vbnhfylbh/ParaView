@@ -43,6 +43,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QPointer>
 #include <QSet>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 #include <cstdlib>
 
 //=============================================================================
@@ -98,12 +104,12 @@ public:
 
   bool setRepresentationText(const QString& text)
     {
-    int idx = this->comboBox->findText(text);
+    int idx = this->comboBox->findText(UNICODE_TEXT(text));
     if (idx != -1)
       {
       bool prev = this->comboBox->blockSignals(true);
       this->comboBox->setCurrentIndex(idx);
-      this->RepresentationText = text;
+      this->RepresentationText = UNICODE_TEXT(text);
       this->comboBox->blockSignals(prev);
       }
     return (idx != -1);
@@ -189,7 +195,7 @@ void pqDisplayRepresentationWidget::setRepresentation(vtkSMProxy* proxy)
 //-----------------------------------------------------------------------------
 void pqDisplayRepresentationWidget::setRepresentationText(const QString& text)
 {
-  this->Internal->setRepresentationText(text);
+  this->Internal->setRepresentationText(UNICODE_TEXT(text));
 }
 
 //-----------------------------------------------------------------------------
@@ -204,7 +210,7 @@ void pqDisplayRepresentationWidget::comboBoxChanged(const QString& text)
 {
   // NOTE: this method doesn't get called when
   // pqDisplayRepresentationWidget::setRepresentationText() is called.
-  if (this->Internal->WarnOnRepresentationChange.contains(text))
+  if (this->Internal->WarnOnRepresentationChange.contains(UNICODE_TEXT(text)))
     {
     bool confirmed = pqCoreUtilities::promptUser(
       QString("pqDisplayRepresentationWidget_type_%1").arg(text),
@@ -217,8 +223,8 @@ void pqDisplayRepresentationWidget::comboBoxChanged(const QString& text)
 
     if (!confirmed)
       {
-      this->Internal->setRepresentationText(
-        this->Internal->representationText());
+      this->Internal->setRepresentationText(UNICODE_TEXT(
+        this->Internal->representationText()));
       return;
       }
     }
