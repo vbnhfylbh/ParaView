@@ -54,66 +54,71 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <assert.h>
 
+#ifndef UNICODE_TEXT
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate("pqProxyWidget", QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 class pqComboBoxDomain::pqInternal
 {
 public:
-  pqInternal()
+    pqInternal()
     {
-    this->Connection = vtkEventQtSlotConnect::New();
-    this->MarkedForUpdate = false;
+      this->Connection = vtkEventQtSlotConnect::New();
+      this->MarkedForUpdate = false;
     }
-  ~pqInternal()
+    ~pqInternal()
     {
-    this->Connection->Delete();
+      this->Connection->Delete();
     }
-  vtkSmartPointer<vtkSMProperty> Property;
-  vtkSmartPointer<vtkSMDomain> Domain;
-  vtkEventQtSlotConnect* Connection;
-  QString DomainName;
-  QStringList UserStrings;
-  bool MarkedForUpdate;
+    vtkSmartPointer<vtkSMProperty> Property;
+    vtkSmartPointer<vtkSMDomain> Domain;
+    vtkEventQtSlotConnect* Connection;
+    QString DomainName;
+    QStringList UserStrings;
+    bool MarkedForUpdate;
 };
-  
+
 
 pqComboBoxDomain::pqComboBoxDomain(QComboBox* p, vtkSMProperty* prop,
                                    const QString& domainName)
-  : QObject(p)
+        : QObject(p)
 {
   this->Internal = new pqInternal();
   this->Internal->Property = prop;
-  this->Internal->DomainName = domainName;
+  this->Internal->DomainName = UNICODE_TEXT(domainName);
 
   if(!domainName.isEmpty())
-    {
+  {
     this->Internal->Domain = prop->GetDomain(domainName.toLatin1().data());
-    }
+  }
   else
-    {
+  {
     // get domain
     vtkSMDomainIterator* iter = prop->NewDomainIterator();
     iter->Begin();
     while(!iter->IsAtEnd() && !this->Internal->Domain)
-      {
+    {
       if(vtkSMEnumerationDomain::SafeDownCast(iter->GetDomain()) ||
          vtkSMStringListDomain::SafeDownCast(iter->GetDomain()) ||
          vtkSMArrayListDomain::SafeDownCast(iter->GetDomain()))
-        {
+      {
         this->Internal->Domain = iter->GetDomain();
-        }
-      iter->Next();
       }
-    iter->Delete();
+      iter->Next();
     }
+    iter->Delete();
+  }
 
   if(this->Internal->Domain)
-    {
-    this->Internal->Connection->Connect(this->Internal->Domain, 
+  {
+    this->Internal->Connection->Connect(this->Internal->Domain,
                                         vtkCommand::DomainModifiedEvent,
                                         this,
                                         SLOT(domainChanged()));
     this->internalDomainChanged();
-    }
-  
+  }
+
 }
 
 pqComboBoxDomain::~pqComboBoxDomain()
@@ -123,24 +128,24 @@ pqComboBoxDomain::~pqComboBoxDomain()
 
 void pqComboBoxDomain::addString(const QString& str)
 {
-  this->Internal->UserStrings.push_back(str);
+  this->Internal->UserStrings.push_back(UNICODE_TEXT(str));
   this->domainChanged();
 }
 
 void pqComboBoxDomain::insertString(int index, const QString& str)
 {
-  this->Internal->UserStrings.insert(index, str);
+  this->Internal->UserStrings.insert(index, UNICODE_TEXT(str));
   this->domainChanged();
 }
 
 void pqComboBoxDomain::removeString(const QString& str)
 {
-  int index = this->Internal->UserStrings.indexOf(str);
+  int index = this->Internal->UserStrings.indexOf(UNICODE_TEXT(str));
   if (index >= 0)
-    {
+  {
     this->Internal->UserStrings.removeAt(index);
     this->domainChanged();
-    }
+  }
 }
 
 void pqComboBoxDomain::removeAllStrings()
@@ -156,7 +161,7 @@ vtkSMProperty* pqComboBoxDomain::getProperty()const
 
 vtkSMDomain* pqComboBoxDomain::getDomain()const
 {
-  return this->Internal->Domain;  
+  return this->Internal->Domain;
 }
 
 const QString& pqComboBoxDomain::getDomainName()const
@@ -172,9 +177,9 @@ const QStringList& pqComboBoxDomain::getUserStrings()const
 void pqComboBoxDomain::domainChanged()
 {
   if(this->Internal->MarkedForUpdate)
-    {
+  {
     return;
-    }
+  }
 
   this->markForUpdate(true);
   this->internalDomainChanged();
@@ -185,9 +190,9 @@ void pqComboBoxDomain::internalDomainChanged()
   QComboBox* combo = qobject_cast<QComboBox*>(this->parent());
   Q_ASSERT(combo != NULL);
   if(!combo)
-    {
+  {
     return;
-    }
+  }
 
   QList<QString> texts;
   QList<QVariant> data;
@@ -202,73 +207,73 @@ void pqComboBoxDomain::internalDomainChanged()
 
   type = pqSMAdaptor::getPropertyType(this->Internal->Property);
   if(type == pqSMAdaptor::ENUMERATION)
-    {
+  {
     QList<QVariant> enums;
     enums = pqSMAdaptor::getEnumerationPropertyDomain(this->Internal->Property);
     foreach(QVariant var, enums)
-      {
-      texts.append(var.toString());
-      data.append(var.toString());
-      }
-    cur_property_value = pqSMAdaptor::getEnumerationProperty(
-      this->Internal->Property);
-    }
-  else if(type == pqSMAdaptor::FIELD_SELECTION)
     {
+      texts.append(UNICODE_TEXT(var.toString()));
+      data.append(var.toString());
+    }
+    cur_property_value = pqSMAdaptor::getEnumerationProperty(
+            this->Internal->Property);
+  }
+  else if(type == pqSMAdaptor::FIELD_SELECTION)
+  {
     if (this->Internal->DomainName == "field_list")
-      {
+    {
       texts = pqSMAdaptor::getFieldSelectionModeDomain(this->Internal->Property);
       foreach (QString str, texts)
-        {
-        data.push_back(str);
-        }
-      }
-    else if(this->Internal->DomainName == "array_list")
       {
-      QList<QPair<QString, bool> > arrays = 
-        pqSMAdaptor::getFieldSelectionScalarDomainWithPartialArrays(
-          this->Internal->Property);
+        data.push_back(str);
+      }
+    }
+    else if(this->Internal->DomainName == "array_list")
+    {
+      QList<QPair<QString, bool> > arrays =
+              pqSMAdaptor::getFieldSelectionScalarDomainWithPartialArrays(
+                      this->Internal->Property);
       for (int kk=0; kk < arrays.size(); kk++)
-        {
+      {
         QPair<QString, bool> pair = arrays[kk];
         QString arrayName = pair.first;
         if (pair.second)
-          {
+        {
           arrayName += " (partial)";
-          }
+        }
         texts.append(arrayName);
         data.append(pair.first);
-        }
       }
-    cur_property_value =
-      pqSMAdaptor::getElementProperty(this->Internal->Property);
     }
+    cur_property_value =
+            pqSMAdaptor::getElementProperty(this->Internal->Property);
+  }
   else if(type == pqSMAdaptor::PROXYSELECTION ||
           type == pqSMAdaptor::PROXYLIST)
-    {
+  {
     QList<pqSMProxy> proxies = pqSMAdaptor::getProxyPropertyDomain(
-      this->Internal->Property);
+            this->Internal->Property);
     foreach(vtkSMProxy* pxy, proxies)
-      {
-      texts.append(pxy->GetXMLLabel());
-      data.append(pxy->GetXMLLabel());
-      }
-    pqSMProxy cur_value = pqSMAdaptor::getProxyProperty(
-      this->Internal->Property);
-    if (cur_value)
-      {
-      cur_property_value = cur_value->GetXMLLabel();
-      }
+    {
+      texts.append(UNICODE_TEXT(pxy->GetXMLLabel()));
+      data.append(UNICODE_TEXT(pxy->GetXMLLabel()));
     }
+    pqSMProxy cur_value = pqSMAdaptor::getProxyProperty(
+            this->Internal->Property);
+    if (cur_value)
+    {
+      cur_property_value = UNICODE_TEXT(cur_value->GetXMLLabel());
+    }
+  }
 
   foreach (QString userStr, this->Internal->UserStrings)
-    {
+  {
     if (!texts.contains(userStr))
-      {
+    {
       texts.push_front(userStr);
       data.push_front(userStr);
-      }
     }
+  }
 
   // texts and data must be of the same size.
   assert(texts.size() == data.size());
@@ -277,45 +282,45 @@ void pqComboBoxDomain::internalDomainChanged()
   QList<QVariant> oldData;
 
   for(int i=0; i<combo->count(); i++)
-    {
+  {
     oldData.append(combo->itemData(i));
-    }
+  }
 
   if (oldData != data)
-    {
+  {
     // save previous value to put back
     QVariant old;
     if (combo->count() > 0)
-      {
+    {
       old = combo->itemData(combo->currentIndex());
-      }
+    }
     else
-      {
+    {
       // the combo-box doesn't have any values currently, which implies that the
       // domain is being setup of the first time. However, it's still possible
       // that the property's value was already set (eg. undo/redo) so we need to
       // ensure that we use the property value rather than the item in the
       // combo-box.
       old = cur_property_value;
-      }
+    }
     bool prev = combo->blockSignals(true);
     combo->clear();
     for (int cc=0; cc < data.size(); cc++)
-      {
+    {
       combo->addItem(texts[cc], data[cc]);
-      }
+    }
     combo->setCurrentIndex(-1);
     combo->blockSignals(prev);
     int foundOld = combo->findData(old);
     if (foundOld >= 0)
-      {
+    {
       combo->setCurrentIndex(foundOld);
-      }
-    else
-      {
-      combo->setCurrentIndex(0);
-      }
     }
+    else
+    {
+      combo->setCurrentIndex(0);
+    }
+  }
   this->markForUpdate(false);
 }
 

@@ -104,12 +104,12 @@ public:
 
   bool setRepresentationText(const QString& text)
     {
-    int idx = this->comboBox->findText(UNICODE_TEXT(text));
+    int idx = this->comboBox->findText(text);
     if (idx != -1)
       {
       bool prev = this->comboBox->blockSignals(true);
       this->comboBox->setCurrentIndex(idx);
-      this->RepresentationText = UNICODE_TEXT(text);
+      this->RepresentationText = text;
       this->comboBox->blockSignals(prev);
       }
     return (idx != -1);
@@ -210,7 +210,7 @@ void pqDisplayRepresentationWidget::comboBoxChanged(const QString& text)
 {
   // NOTE: this method doesn't get called when
   // pqDisplayRepresentationWidget::setRepresentationText() is called.
-  if (this->Internal->WarnOnRepresentationChange.contains(UNICODE_TEXT(text)))
+  if (this->Internal->WarnOnRepresentationChange.contains(text))
     {
     bool confirmed = pqCoreUtilities::promptUser(
       QString("pqDisplayRepresentationWidget_type_%1").arg(text),
