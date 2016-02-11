@@ -902,7 +902,7 @@ void pqProxyWidget::createPropertyWidgets(const QStringList &properties)
       {
       groupProperties[group->GetProperty(static_cast<unsigned int>(j))] = group_tag;
       }
-    groupLabels[group_tag] = group->GetXMLLabel();
+    groupLabels[group_tag] = UNICODE_TEXT(group->GetXMLLabel());
 
     if (group->GetNumberOfProperties() == 0)
       {
@@ -954,10 +954,10 @@ void pqProxyWidget::createPropertyWidgets(const QStringList &properties)
 
         // save record of the property widget
         pqProxyWidgetItem* item = pqProxyWidgetItem::newGroupItem(
-          propertyWidget, group->GetXMLLabel(), this);
+          propertyWidget, UNICODE_TEXT(group->GetXMLLabel()), this);
         item->Advanced = QString(group->GetPanelVisibility()) == "advanced";
         item->SearchTags << group->GetPanelWidget()
-                         << group->GetXMLLabel();
+                         << UNICODE_TEXT(group->GetXMLLabel());
         // FIXME: Maybe SearchTags should have the labels for all the properties
         // in this group.
 

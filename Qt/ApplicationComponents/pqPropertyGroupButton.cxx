@@ -40,6 +40,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqProxy.h"
 #include "vtkSMProxy.h"
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 pqPropertyGroupButton::pqPropertyGroupButton(
   vtkSMProxy *smProxy, vtkSMPropertyGroup* smGroup,
   QWidget*parentObject)
@@ -50,7 +56,7 @@ pqPropertyGroupButton::pqPropertyGroupButton(
   layoutLocal->setMargin(pqPropertiesPanel::suggestedMargin());
   layoutLocal->setSpacing(pqPropertiesPanel::suggestedVerticalSpacing());
 
-  QPushButton *button = new QPushButton("Edit");
+  QPushButton *button = new QPushButton(UNICODE_TEXT("\xD0\x98\xD0\xB7\xD0\xBC\xD0\xB5\xD0\xBD\xD0\xB8\xD1\x82\xD1\x8C"));
   layoutLocal->addWidget(button);
   layoutLocal->addStretch();
 
