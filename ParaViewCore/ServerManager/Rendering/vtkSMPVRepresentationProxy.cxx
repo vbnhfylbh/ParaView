@@ -736,8 +736,8 @@ bool vtkSMPVRepresentationProxy::SetRepresentationType(const char* type)
       {
       throw CALL_SUPERCLASS;
       }
-
-    if (strcmp(type, "Volume") != 0 && strcmp(type, "Slice") != 0)
+    if (strcmp(type, "Volume") != 0 && strcmp(type, "РћР±СЉРµРј") != 0 && strcmp(type, "Объем") != 0
+      && strcmp(type, "Slice") != 0 && strcmp(type, "РЎРµС‡РµРЅРёРµ") != 0 && strcmp(type, "Сечение") != 0)
       {
       throw CALL_SUPERCLASS;
       }

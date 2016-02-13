@@ -109,7 +109,7 @@ public:
       {
       bool prev = this->comboBox->blockSignals(true);
       this->comboBox->setCurrentIndex(idx);
-      this->RepresentationText = text;
+      this->RepresentationText = this->comboBox->itemData(this->comboBox->currentIndex()).toString();
       this->comboBox->blockSignals(prev);
       }
     return (idx != -1);
