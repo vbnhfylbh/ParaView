@@ -79,7 +79,45 @@ set (Module_SRCS
   vtkTCPNetworkAccessManager.cxx
   vtkEnvironmentAnnotationFilter.cxx
 )
+include(vtkQt)
+if(VTK_QT_VERSION VERSION_GREATER "4")
+  find_package(Qt5 COMPONENTS Widgets REQUIRED QUIET)
+  include_directories(${Qt5Widgets_INCLUDE_DIRS})
+  add_definitions(${Qt5Widgets_DEFINITIONS})
 
+  qt5_wrap_cpp(QVTKLibMocSrcs ${QVTKMocHeaders})
+
+  set(QT_LIBRARIES ${Qt5Widgets_LIBRARIES})
+
+  # When this module is loaded by an app, load Qt too.
+  vtk_module_export_code_find_package(Qt5Widgets)
+else()
+  # import Qt4 build settings
+  set(QT_USE_QTNETWORK 1)
+  find_package(Qt4 REQUIRED QUIET)
+  mark_as_advanced(QT_QMAKE_EXECUTABLE)
+  include(${QT_USE_FILE})
+
+  qt4_wrap_cpp(QVTKLibMocSrcs ${QVTKMocHeaders})
+endif()
+
+foreach(opt
+    QT_RCC_EXECUTABLE
+    QT_MOC_EXECUTABLE
+    QT_UIC_EXECUTABLE
+    QT_QMAKE_EXECUTABLE
+    )
+  set(VTK_${opt} "${${opt}}")
+  list(APPEND vtkGUISupportQt_EXPORT_OPTIONS VTK_${opt})
+endforeach()
+
+set(${vtk-module}_NO_HeaderTest 1)
+vtk_module_library(${vtk-module}
+  ${QVTKLibSrcs} ${QVTKLibMocSrcs}
+  ${QVTKNonMocHeaders} ${QVTKMocHeaders}
+  )
+
+vtk_module_link_libraries(${vtk-module} LINK_PUBLIC ${QT_LIBRARIES})
 
 if (PARAVIEW_ENABLE_PYTHON)
   list(APPEND Module_SRCS

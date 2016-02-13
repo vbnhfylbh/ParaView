@@ -25,6 +25,12 @@
 
 #include "vtkStdString.h"
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 vtkStandardNewMacro(vtkSMStringListDomain);
 
 struct vtkSMStringListDomainInternals
@@ -114,7 +120,8 @@ int vtkSMStringListDomain::IsInDomain(const char* val, unsigned int& idx)
 
   for (unsigned int i=0; i<numStrings; i++)
     {
-    if (strcmp(val, this->GetString(i)) == 0)
+    if (strcmp(val, this->GetString(i)) == 0
+            || strcmp(val, UNICODE_TEXT(this->GetString(i)).toStdString().c_str()) == 0)
       {
       idx = i;
       return 1;

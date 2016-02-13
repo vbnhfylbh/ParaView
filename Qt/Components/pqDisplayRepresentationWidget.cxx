@@ -195,7 +195,7 @@ void pqDisplayRepresentationWidget::setRepresentation(vtkSMProxy* proxy)
 //-----------------------------------------------------------------------------
 void pqDisplayRepresentationWidget::setRepresentationText(const QString& text)
 {
-  this->Internal->setRepresentationText(UNICODE_TEXT(text));
+  this->Internal->setRepresentationText(text);
 }
 
 //-----------------------------------------------------------------------------
@@ -223,8 +223,7 @@ void pqDisplayRepresentationWidget::comboBoxChanged(const QString& text)
 
     if (!confirmed)
       {
-      this->Internal->setRepresentationText(UNICODE_TEXT(
-        this->Internal->representationText()));
+      this->Internal->setRepresentationText(this->Internal->representationText());
       return;
       }
     }
