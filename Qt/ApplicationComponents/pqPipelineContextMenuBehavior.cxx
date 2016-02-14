@@ -65,6 +65,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QPair>
 #include <QWidget>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 namespace
 {
   // converts array association/name pair to QVariant.
@@ -241,61 +247,57 @@ void pqPipelineContextMenuBehavior::buildMenu(pqDataRepresentation* repr,
 
       if(multipleBlocks)
         {
-        this->Menu->addAction(QString("%1 Blocks").arg(this->PickedBlocks.size()));
+        this->Menu->addAction(UNICODE_TEXT(QString("%1 \xD0\xA4\xD0\xB8\xD0\xB3\xD1\x83\xD1\x80\xD1\x8B").arg(this->PickedBlocks.size())));
         }
       else
         {
         QString blockName = this->lookupBlockName(blockIndex);
-        this->Menu->addAction(QString("Block '%1'").arg(blockName));
+        this->Menu->addAction(UNICODE_TEXT(QString("\xD0\xA4\xD0\xB8\xD0\xB3\xD1\x83\xD1\x80\xD0\xB0 '%1'").arg(blockName)));
         }
       this->Menu->addSeparator();
 
       QAction *hideBlockAction =
-        this->Menu->addAction(QString("Hide Block%1").arg(multipleBlocks ? "s" : ""));
+        this->Menu->addAction(UNICODE_TEXT(QString("\xD0\xA1\xD0\xBA\xD1\x80\xD1\x8B\xD1\x82\xD1\x8C\x20\xD1\x84\xD0\xB8\xD0\xB3\xD1\x83\xD1\x80%1").arg(multipleBlocks ? "\xD1\x8B" : "\xD1\x83")));
       this->connect(hideBlockAction, SIGNAL(triggered()),
                     this, SLOT(hideBlock()));
 
       QAction *showOnlyBlockAction =
-        this->Menu->addAction(QString("Show Only Block%1").arg(multipleBlocks ? "s" : ""));
+        this->Menu->addAction(UNICODE_TEXT(QString("\xD0\x9F\xD0\xBE\xD0\xBA\xD0\xB0\xD0\xB7\xD0\xB0\xD1\x82\xD1\x8C\x20\xD1\x82\xD0\xBE\xD0\xBB\xD1\x8C\xD0\xBA\xD0\xBE\x20\xD1\x84\xD0\xB8\xD0\xB3\xD1\x83\xD1\x80%1").arg(multipleBlocks ? "\xD1\x8B" : "\xD1\x83")));
       this->connect(showOnlyBlockAction, SIGNAL(triggered()),
                     this, SLOT(showOnlyBlock()));
 
       QAction *showAllBlocksAction =
-        this->Menu->addAction("Show All Blocks");
+        this->Menu->addAction(UNICODE_TEXT("\xD0\x9F\xD0\xBE\xD0\xBA\xD0\xB0\xD0\xB7\xD0\xB0\xD1\x82\xD1\x8C\x20\xD0\xB2\xD1\x81\xD0\xB5\x20\xD1\x84\xD0\xB8\xD0\xB3\xD1\x83\xD1\x80\xD1\x8B"));
       this->connect(showAllBlocksAction, SIGNAL(triggered()),
                     this, SLOT(showAllBlocks()));
 
       QAction *unsetVisibilityAction =
-        this->Menu->addAction(QString("Unset Block %1")
-            .arg(multipleBlocks ? "Visibilities" : "Visibility"));
+        this->Menu->addAction(UNICODE_TEXT(QString("\xD0\x92\xD0\xB8\xD0\xB4\xD0\xB8\xD0\xBC\xD0\xBE\xD1\x81\xD1\x82\xD1\x8C\x20\xD1\x84\xD0\xB8\xD0\xB3\xD1\x83\xD1\x80\x20\xD0\xBF\xD0\xBE\x2D\xD1\x83\xD0\xBC\xD0\xBE\xD0\xBB\xD1\x87\xD0\xB0\xD0\xBD\xD0\xB8\xD1\x8E")));
       this->connect(unsetVisibilityAction, SIGNAL(triggered()),
                     this, SLOT(unsetBlockVisibility()));
 
       this->Menu->addSeparator();
 
       QAction *setBlockColorAction =
-        this->Menu->addAction(QString("Set Block Color%1")
-          .arg(multipleBlocks ? "s" : ""));
+        this->Menu->addAction(UNICODE_TEXT(QString("\xD0\xA6\xD0\xB2\xD0\xB5\xD1\x82\x20\xD1\x84\xD0\xB8\xD0\xB3\xD1\x83\xD1\x80%1")
+          .arg(multipleBlocks ? "\xD1\x8B" : "")));
       this->connect(setBlockColorAction, SIGNAL(triggered()),
                     this, SLOT(setBlockColor()));
 
       QAction *unsetBlockColorAction =
-        this->Menu->addAction(QString("Unset Block Color%1")
-          .arg(multipleBlocks ? "s" : ""));
+        this->Menu->addAction(UNICODE_TEXT(QString("\xD0\xA6\xD0\xB2\xD0\xB5\xD1\x82\x20\xD1\x84\xD0\xB8\xD0\xB3\xD1\x83\xD1\x80\x20\xD0\xBF\xD0\xBE\x2D\xD1\x83\xD0\xBC\xD0\xBE\xD0\xBB\xD1\x87\xD0\xB0\xD0\xBD\xD0\xB8\xD1\x8E")));
       this->connect(unsetBlockColorAction, SIGNAL(triggered()),
                     this, SLOT(unsetBlockColor()));
 
       this->Menu->addSeparator();
 
       QAction *setBlockOpacityAction =
-        this->Menu->addAction(QString("Set Block %1")
-          .arg(multipleBlocks ? "Opacities" : "Opacity"));
+        this->Menu->addAction(UNICODE_TEXT(QString("\xD0\x9F\xD1\x80\xD0\xBE\xD0\xB7\xD1\x80\xD0\xB0\xD1\x87\xD0\xBD\xD0\xBE\xD1\x81\xD1\x82\xD1\x8C")));
       this->connect(setBlockOpacityAction, SIGNAL(triggered()),
                     this, SLOT(setBlockOpacity()));
 
       QAction *unsetBlockOpacityAction =
-        this->Menu->addAction(QString("Unset Block %1")
-            .arg(multipleBlocks ? "Opacities" : "Opacity"));
+        this->Menu->addAction(UNICODE_TEXT(QString("\xD0\x9F\xD1\x80\xD0\xBE\xD0\xB7\xD1\x80\xD0\xB0\xD1\x87\xD0\xBD\xD0\xBE\xD1\x81\xD1\x82\xD1\x8C\x20\xD1\x84\xD0\xB8\xD0\xB3\xD1\x83\xD1\x80\x20\xD0\xBF\xD0\xBE\x2D\xD1\x83\xD0\xBC\xD0\xBE\xD0\xBB\xD1\x87\xD0\xB0\xD0\xBD\xD0\xB8\xD1\x8E")));
       this->connect(unsetBlockOpacityAction, SIGNAL(triggered()),
                     this, SLOT(unsetBlockOpacity()));
 
@@ -303,10 +305,10 @@ void pqPipelineContextMenuBehavior::buildMenu(pqDataRepresentation* repr,
       }
 
     QAction* action;
-    action = this->Menu->addAction("Hide");
+    action = this->Menu->addAction(UNICODE_TEXT("\xD0\xA1\xD0\xBA\xD1\x80\xD1\x8B\xD1\x82\xD1\x8C"));
     QObject::connect(action, SIGNAL(triggered()), this, SLOT(hide()));
 
-    QMenu* reprMenu = this->Menu->addMenu("Representation")
+    QMenu* reprMenu = this->Menu->addMenu(UNICODE_TEXT("\xD0\x92\xD0\xB8\xD0\xB4"))
       << pqSetName("Representation");
 
     // populate the representation types menu.
@@ -316,7 +318,7 @@ void pqPipelineContextMenuBehavior::buildMenu(pqDataRepresentation* repr,
       repr->getProxy()->GetProperty("Representation"));
     foreach (QVariant rtype, rTypes)
       {
-      QAction* raction = reprMenu->addAction(rtype.toString());
+      QAction* raction = reprMenu->addAction(UNICODE_TEXT(rtype.toString()));
       raction->setCheckable(true);
       raction->setChecked(rtype == curRType);
       }
@@ -331,19 +333,19 @@ void pqPipelineContextMenuBehavior::buildMenu(pqDataRepresentation* repr,
 
     if (pipelineRepr)
       {
-      QMenu* colorFieldsMenu = this->Menu->addMenu("Color By")
+      QMenu* colorFieldsMenu = this->Menu->addMenu(UNICODE_TEXT("\xD0\xA0\xD0\xB0\xD1\x81\xD0\xBA\xD1\x80\xD0\xB0\xD1\x81\xD0\xB8\xD1\x82\xD1\x8C"))
         << pqSetName("ColorBy");
       this->buildColorFieldsMenu(pipelineRepr, colorFieldsMenu);
       }
 
-    action = this->Menu->addAction("Edit Color");
+    action = this->Menu->addAction(UNICODE_TEXT("\xD0\x92\xD1\x8B\xD0\xB1\xD1\x80\xD0\xB0\xD1\x82\xD1\x8C\x20\xD1\x86\xD0\xB2\xD0\xB5\xD1\x82"));
     new pqEditColorMapReaction(action);
 
     this->Menu->addSeparator();
     }
 
   // when nothing was picked we show the "link camera" menu.
-  this->Menu->addAction("Link Camera...",
+  this->Menu->addAction(UNICODE_TEXT("\xD0\x9F\xD1\x80\xD0\xB8\xD0\xB2\xD1\x8F\xD0\xB7\xD0\xB0\xD1\x82\xD1\x8C\x20\xD0\xBA\xD0\xB0\xD0\xBC\xD0\xB5\xD1\x80\xD1\x83..."),
     view, SLOT(linkToOtherView()));
 }
 
@@ -358,7 +360,7 @@ void pqPipelineContextMenuBehavior::buildColorFieldsMenu(
   QIcon pointDataIcon(":/pqWidgets/Icons/pqPointData16.png");
   QIcon solidColorIcon(":/pqWidgets/Icons/pqSolidColor16.png");
 
-  menu->addAction(solidColorIcon, "Solid Color")->setData(
+  menu->addAction(solidColorIcon, UNICODE_TEXT("\xD0\xA1\xD0\xBF\xD0\xBB\xD0\xBE\xD1\x88\xD0\xBD\xD0\xBE\xD0\xB9\x20\xD1\x86\xD0\xB2\xD0\xB5\xD1\x82"))->setData(
     convert(QPair<int, QString>()));
   vtkSMProperty* prop = pipelineRepr->getProxy()->GetProperty("ColorArrayName");
   vtkSMArrayListDomain* domain = prop?
