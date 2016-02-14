@@ -47,6 +47,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QToolButton>
 #include <QVBoxLayout>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 #if WIN32
 # include "process.h"
 # define getpid _getpid
@@ -94,24 +100,29 @@ pqViewFrame::pqViewFrame(QWidget* parentObject)
   // Create standard buttons.
   this->StandardToolButtons[SplitVertical] =
     this->createButton(new QAction(
-        QIcon(":/pqWidgets/Icons/pqSplitViewV12.png"), "Split Vertical", this)
-      << pqSetName("SplitVertical"));
+        QIcon(":/pqWidgets/Icons/pqSplitViewV12.png"),
+        UNICODE_TEXT("\xD0\x9D\xD0\xBE\xD0\xB2\xD0\xBE\xD0\xB5\x20\xD0\xBE\xD0\xBA\xD0\xBD\xD0\xBE\x20\xD0\xB2\xD0\xBD\xD0\xB8\xD0\xB7\xD1\x83"), this)
+        << pqSetName("SplitVertical"));
   this->StandardToolButtons[SplitHorizontal] =
     this->createButton(new QAction(
-        QIcon(":/pqWidgets/Icons/pqSplitViewH12.png"), "Split Horizontal", this)
-      << pqSetName("SplitHorizontal"));
+        QIcon(":/pqWidgets/Icons/pqSplitViewH12.png"),
+        UNICODE_TEXT("\xD0\x9D\xD0\xBE\xD0\xB2\xD0\xBE\xD0\xB5\x20\xD0\xBE\xD0\xBA\xD0\xBD\xD0\xBE\x20\xD1\x81\xD0\xBF\xD1\x80\xD0\xB0\xD0\xB2\xD0\xB0"), this)
+        << pqSetName("SplitHorizontal"));
   this->StandardToolButtons[Maximize] =
     this->createButton(new QAction(
         QIcon(this->style()->standardPixmap(QStyle::SP_TitleBarMaxButton)),
-        "Maximize", this) << pqSetName("Maximize"));
+        UNICODE_TEXT("\xD0\xA0\xD0\xB0\xD0\xB7\xD0\xB2\xD0\xB5\xD1\x80\xD0\xBD\xD1\x83\xD1\x82\xD1\x8C"), this)
+        << pqSetName("Maximize"));
   this->StandardToolButtons[Restore] =
     this->createButton(new QAction(
         QIcon(this->style()->standardPixmap(QStyle::SP_TitleBarNormalButton)),
-        "Restore", this) << pqSetName("Minimize"));
+        UNICODE_TEXT("\xD0\x92\xD0\xBE\xD1\x81\xD1\x81\xD1\x82\xD0\xB0\xD0\xBD\xD0\xBE\xD0\xB2\xD0\xB8\xD1\x82\xD1\x8C"), this)
+        << pqSetName("Minimize"));
   this->StandardToolButtons[Close] =
     this->createButton(new QAction(
         QIcon(this->style()->standardPixmap(QStyle::SP_TitleBarCloseButton)),
-        "Close", this) << pqSetName("Close"));
+        UNICODE_TEXT("\xD0\x97\xD0\xB0\xD0\xBA\xD1\x80\xD1\x8B\xD1\x82\xD1\x8C"), this)
+        << pqSetName("Close"));
 
   // Setup the title bar.
   ui.TitleBarLayout->insertWidget(0, this->ToolBar);

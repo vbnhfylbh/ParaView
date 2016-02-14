@@ -50,7 +50,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMProxyManager.h"
 #include "vtkSMSession.h"
 
-
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
 
 #include "ui_pqOutputWindow.h"
 
@@ -135,26 +139,26 @@ pqOutputWindow::pqOutputWindow(QWidget* Parent) :
   ui.setupUi(this);
   this->Implementation->TableModel->setView(ui.tableView);
   this->setObjectName("outputDialog");
-  this->setWindowTitle(tr("Output Messages"));
+  this->setWindowTitle(UNICODE_TEXT("\xD0\xA1\xD0\xBE\xD0\xBE\xD0\xB1\xD1\x89\xD0\xB5\xD0\xBD\xD0\xB8\xD1\x8F\x20\xD0\xBA\xD0\xBE\xD0\xBD\xD1\x81\xD0\xBE\xD0\xBB\xD0\xB8"));
 
   QObject::connect(ui.clearButton,
     SIGNAL(clicked(bool)), this, SLOT(clear()));
   QObject::connect(ui.checkBoxConsoleView,
                    SIGNAL(stateChanged(int)), this, SLOT(setConsoleView(int)));
   QMenu* filterMenu = new QMenu(this);
-  QAction* errorAction = new QAction (tr("Errors"), this);
+  QAction* errorAction = new QAction (UNICODE_TEXT("\xD0\x9E\xD1\x88\xD0\xB8\xD0\xB1\xD0\xBA\xD0\xB8"), this);
   errorAction->setCheckable(true);
   errorAction->setChecked(true);
   filterMenu->addAction (errorAction);
   QObject::connect(errorAction, SIGNAL(toggled(bool)),
                    this, SLOT(errorToggled(bool)));
-  QAction* warningAction = new QAction (tr("Warnings"), this);
+  QAction* warningAction = new QAction (UNICODE_TEXT("\xD0\x9F\xD1\x80\xD0\xB5\xD0\xB4\xD1\x83\xD0\xBF\xD1\x80\xD0\xB5\xD0\xB6\xD0\xB4\xD0\xB5\xD0\xBD\xD0\xB8\xD1\x8F"), this);
   warningAction->setCheckable(true);
   warningAction->setChecked(true);
   QObject::connect(warningAction, SIGNAL(toggled(bool)),
                    this, SLOT(warningToggled(bool)));
   filterMenu->addAction(warningAction);
-  QAction* debugAction = new QAction (tr("Debug"), this);
+  QAction* debugAction = new QAction (UNICODE_TEXT("\xD0\x9E\xD1\x82\xD0\xBB\xD0\xB0\xD0\xB4\xD0\xBA\xD0\xB0"), this);
   debugAction->setCheckable(true);
   debugAction->setChecked(true);
   QObject::connect(debugAction, SIGNAL(toggled(bool)),

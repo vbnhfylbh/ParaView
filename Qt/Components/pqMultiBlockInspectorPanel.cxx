@@ -50,6 +50,12 @@
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 #define FLAT_INDEX_ROLE Qt::UserRole
 #define LEAF_INDEX_ROLE (Qt::UserRole+1)
 
@@ -985,7 +991,7 @@ void pqMultiBlockInspectorPanel::onCustomContextMenuRequested(
   unsetVisibilityAction->setEnabled(hasOverriddenVisibilities);
 
   menu.addSeparator();
-  QAction *setColorAction = menu.addAction("Set Color...");
+  QAction *setColorAction = menu.addAction(UNICODE_TEXT("\xD0\xA6\xD0\xB2\xD0\xB5\xD1\x82"));
   QAction *unsetColorAction = menu.addAction("Unset Color");
   unsetColorAction->setEnabled(hasOverridenColor);
 

@@ -69,6 +69,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QSet>
 #include <QShortcut>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //-----------------------------------------------------------------------------
 pqStandardViewFrameActionsImplementation::pqStandardViewFrameActionsImplementation(QObject* parentObject)
   : QObject(parentObject)
@@ -246,7 +252,7 @@ void pqStandardViewFrameActionsImplementation::addGenericActions(
 
   /// Add convert-to menu.
   frame->contextMenu()->addSeparator();
-  QMenu* convertMenu = frame->contextMenu()->addMenu("Convert To ...");
+  QMenu* convertMenu = frame->contextMenu()->addMenu(UNICODE_TEXT("\xD0\x9A\xD0\xBE\xD0\xBD\xD0\xB2\xD0\xB5\xD1\x80\xD1\x82\xD0\xB8\xD1\x80\xD0\xBE\xD0\xB2\xD0\xB0\xD1\x82\xD1\x8C\x20\xD0\xB2..."));
   QObject::connect(convertMenu, SIGNAL(aboutToShow()),
     this, SLOT(aboutToShowConvertMenu()));
 
@@ -293,7 +299,7 @@ void pqStandardViewFrameActionsImplementation::addRenderViewActions(
   if (this->isButtonVisible("AdjustCamera", renderView))
     {
     QAction* adjustCameraAction = frame->addTitleBarAction(
-      QIcon(":/pqWidgets/Icons/pqEditCamera16.png"), "Adjust Camera");
+      QIcon(":/pqWidgets/Icons/pqEditCamera16.png"), UNICODE_TEXT("\xD0\x9D\xD0\xB0\xD1\x81\xD1\x82\xD1\x80\xD0\xBE\xD0\xB8\xD1\x82\xD1\x8C\x20\xD0\xBA\xD0\xB0\xD0\xBC\xD0\xB5\xD1\x80\xD1\x83"));
     adjustCameraAction->setObjectName("actionAdjustCamera");
     new pqEditCameraReaction(adjustCameraAction, renderView);
     }
@@ -425,7 +431,7 @@ void pqStandardViewFrameActionsImplementation::addRenderViewActions(
     QStyle* style = qApp->style();
     QAction* clearAction = frame->addTitleBarAction(
       style->standardIcon(QStyle::SP_DialogDiscardButton),
-      "Clear selection");
+      UNICODE_TEXT("\xD0\x9E\xD1\x87\xD0\xB8\xD1\x81\xD1\x82\xD0\xB8\xD1\x82\xD1\x8C\x20\xD0\xBE\xD0\xB1\xD0\xBB\xD0\xB0\xD1\x81\xD1\x82\xD1\x8C\x20\xD0\xB2\xD1\x8B\xD0\xB4\xD0\xB5\xD0\xBB\xD0\xB5\xD0\xBD\xD0\xB8\xD1\x8F"));
     clearAction->setObjectName("actionClearSelection");
     new pqRenderViewSelectionReaction(clearAction, renderView,
       pqRenderViewSelectionReaction::CLEAR_SELECTION);

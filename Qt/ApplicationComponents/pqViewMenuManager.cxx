@@ -40,6 +40,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QMenu>
 #include <QToolBar>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //-----------------------------------------------------------------------------
 pqViewMenuManager::pqViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   : Superclass(mainWindow)
@@ -78,7 +84,7 @@ void pqViewMenuManager::buildMenu()
     delete menu;
     }
 
-  QMenu* toolbars = this->Menu->addMenu("Toolbars")
+  QMenu* toolbars = this->Menu->addMenu(UNICODE_TEXT("\xD0\x9F\xD0\xB0\xD0\xBD\xD0\xB5\xD0\xBB\xD0\xB8\x20\xD0\xB8\xD0\xBD\xD1\x81\xD1\x82\xD1\x80\xD1\x83\xD0\xBC\xD0\xB5\xD0\xBD\xD1\x82\xD0\xBE\xD0\xB2"))
     << pqSetName("Toolbars");
   QList<QToolBar*> all_toolbars = this->Window->findChildren<QToolBar*>();
   qSort(all_toolbars.begin(), all_toolbars.end(), toolbarLessThan);
@@ -106,14 +112,14 @@ void pqViewMenuManager::buildMenu()
     pqApplicationCore::instance()->manager("MULTIVIEW_WIDGET"));
   if (viewManager)
     {
-    QAction* toggleDecoration = this->Menu->addAction("Toggle Borders");
+    QAction* toggleDecoration = this->Menu->addAction(UNICODE_TEXT("\xD0\x9F\xD0\xB0\xD0\xBD\xD0\xB5\xD0\xBB\xD1\x8C\x20\xD0\xB1\xD1\x8B\xD1\x81\xD1\x82\xD1\x80\xD0\xBE\xD0\xB3\xD0\xBE\x20\xD0\xB4\xD0\xBE\xD1\x81\xD1\x82\xD1\x83\xD0\xBF\xD0\xB0"));
     toggleDecoration->setObjectName("actionToggleWindowBorders");
     toggleDecoration->setShortcut(QKeySequence("Ctrl+D"));
     toggleDecoration->setToolTip("Hide window borders/decoration\
       to stage the scene for a screenshot");
     QObject::connect(toggleDecoration, SIGNAL(triggered()),
       viewManager, SLOT(toggleWidgetDecoration()));
-    QAction* fullscreen = this->Menu->addAction("Full Screen");
+    QAction* fullscreen = this->Menu->addAction(UNICODE_TEXT("\xD0\x92\xD0\xBE\x20\xD0\xB2\xD0\xB5\xD1\x81\xD1\x8C\x20\xD1\x8D\xD0\xBA\xD1\x80\xD0\xB0\xD0\xBD"));
     fullscreen->setObjectName("actionFullScreen");
     fullscreen->setShortcut(QKeySequence("F11"));
     QObject::connect(fullscreen, SIGNAL(triggered()),

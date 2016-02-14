@@ -5805,7 +5805,7 @@
                             element_types="2 0"
                             information_property="PatchArrayInfo"
                             name="MeshRegions"
-                            label="Компоненты расчетной сетки"
+                            label="Фигуры расчетной сетки"
                             number_of_elements="0"
                             number_of_elements_per_command="2"
                             repeat_command="1">

@@ -99,6 +99,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QMainWindow>
 #include <QMenu>
 
+#ifndef UNICODE_TEXT
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate("pqParaViewMenuBuilders", QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //-----------------------------------------------------------------------------
 void pqParaViewMenuBuilders::buildFileMenu(QMenu& menu)
 {
@@ -197,18 +202,18 @@ void pqParaViewMenuBuilders::buildFiltersMenu(QMenu& menu,
 //-----------------------------------------------------------------------------
 void pqParaViewMenuBuilders::buildToolsMenu(QMenu& menu)
 {
-  new pqCreateCustomFilterReaction(menu.addAction("Create Custom Filter...") <<
+  new pqCreateCustomFilterReaction(menu.addAction(UNICODE_TEXT("\xD0\xA1\xD0\xBE\xD0\xB7\xD0\xB4\xD0\xB0\xD1\x82\xD1\x8C\x20\xD1\x84\xD0\xB8\xD0\xBB\xD1\x8C\xD1\x82\xD1\x80...")) <<
     pqSetName("actionToolsCreateCustomFilter"));
-  new pqCameraLinkReaction(menu.addAction("Add Camera Link...") <<
+  new pqCameraLinkReaction(menu.addAction(UNICODE_TEXT("\xD0\x9F\xD1\x80\xD0\xB8\xD0\xB2\xD1\x8F\xD0\xB7\xD0\xB0\xD1\x82\xD1\x8C\x20\xD0\xBA\xD0\xB0\xD0\xBC\xD0\xB5\xD1\x80\xD1\x83...")) <<
     pqSetName("actionToolsAddCameraLink"));
   menu.addSeparator();
-  new pqManageCustomFiltersReaction(menu.addAction("Manage Custom Filters...")
+  new pqManageCustomFiltersReaction(menu.addAction(UNICODE_TEXT("\xD0\xA3\xD0\xBF\xD1\x80\xD0\xB0\xD0\xB2\xD0\xBB\xD0\xB5\xD0\xBD\xD0\xB8\xD0\xB5\x20\xD0\xBF\xD0\xBE\xD0\xBB\xD1\x8C\xD0\xB7\xD0\xBE\xD0\xB2\xD0\xB0\xD1\x82\xD0\xB5\xD0\xBB\xD1\x8C\xD1\x81\xD0\xBA\xD0\xB8\xD0\xBC\xD0\xB8\x20\xD1\x84\xD0\xB8\xD0\xBB\xD1\x8C\xD1\x82\xD1\x80\xD0\xB0\xD0\xBC\xD0\xB8..."))
     << pqSetName("actionToolsManageCustomFilters"));
-  new pqManageLinksReaction(menu.addAction("Manage Links...") <<
+  new pqManageLinksReaction(menu.addAction(UNICODE_TEXT("\xD0\xA3\xD0\xBF\xD1\x80\xD0\xB0\xD0\xB2\xD0\xBB\xD0\xB5\xD0\xBD\xD0\xB8\xD0\xB5\x20\xD0\xBF\xD1\x80\xD0\xB8\xD0\xB2\xD1\x8F\xD0\xB7\xD0\xBA\xD0\xB0\xD0\xBC\xD0\xB8\x20\xD0\xBA\xD0\xB0\xD0\xBC\xD0\xB5\xD1\x80\xD1\x8B...")) <<
     pqSetName("actionToolsManageLinks"));
   //<addaction name="actionToolsAddCameraLink" />
   // Add support for importing plugins only if ParaView was built shared.
-  new pqManagePluginsReaction(menu.addAction("Manage Plugins...") <<
+  new pqManagePluginsReaction(menu.addAction(UNICODE_TEXT("\xD0\xA3\xD0\xBF\xD1\x80\xD0\xB0\xD0\xB2\xD0\xBB\xD0\xB5\xD0\xBD\xD0\xB8\xD0\xB5\x20\xD0\xBF\xD0\xBB\xD0\xB0\xD0\xB3\xD0\xB8\xD0\xBD\xD0\xB0\xD0\xBC\xD0\xB8...")) <<
     pqSetName("actionManage_Plugins"));
 
 
@@ -296,10 +301,10 @@ void pqParaViewMenuBuilders::buildMacrosMenu
   pqPythonManager* manager = pqPVApplicationCore::instance()->pythonManager();
   if (manager)
     {
-    new pqMacroReaction(menu.addAction("Add new macro...")
+    new pqMacroReaction(menu.addAction(UNICODE_TEXT("\xD0\x9D\xD0\xBE\xD0\xB2\xD1\x8B\xD0\xB9\x20\xD0\xBC\xD0\xB0\xD0\xBA\xD1\x80\xD0\xBE\xD1\x81..."))
                         << pqSetName("actionMacroCreate"));
-    QMenu *editMenu = menu.addMenu("Edit...");
-    QMenu *deleteMenu = menu.addMenu("Delete...");
+    QMenu *editMenu = menu.addMenu(UNICODE_TEXT("\xD0\x98\xD0\xB7\xD0\xBC\xD0\xB5\xD0\xBD\xD0\xB8\xD1\x82\xD1\x8C..."));
+    QMenu *deleteMenu = menu.addMenu(UNICODE_TEXT("\xD0\xA3\xD0\xB4\xD0\xB0\xD0\xBB\xD0\xB8\xD1\x82\xD1\x8C..."));
     menu.addSeparator();
     manager->addWidgetForRunMacros(&menu);
     manager->addWidgetForEditMacros(editMenu);
@@ -311,13 +316,13 @@ void pqParaViewMenuBuilders::buildMacrosMenu
 //-----------------------------------------------------------------------------
 void pqParaViewMenuBuilders::buildHelpMenu(QMenu& menu)
 {
-  QAction * help = menu.addAction("Help") <<
+  QAction * help = menu.addAction(UNICODE_TEXT("\xD0\xA1\xD0\xBF\xD1\x80\xD0\xB0\xD0\xB2\xD0\xBA\xD0\xB0")) <<
     pqSetName("actionHelp");
   help->setShortcut(QKeySequence::HelpContents);
   new pqHelpReaction(help);
 
   new pqAboutDialogReaction(
-    menu.addAction("About...")
+    menu.addAction(UNICODE_TEXT("\xD0\x9E\x20\xD0\xBF\xD1\x80\xD0\xBE\xD0\xB3\xD1\x80\xD0\xB0\xD0\xBC\xD0\xBC\xD0\xB5..."))
     << pqSetName("actionAbout"));
 }
 
