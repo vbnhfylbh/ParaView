@@ -97,7 +97,7 @@
   </action>
   <action name="actionPBCreateCustomFilter">
    <property name="text">
-    <string>&amp;Создать пользовательский фильтр...</string>
+    <string>&amp;Создать фильтр...</string>
    </property>
   </action>
   <addaction name="actionPBOpen"/>

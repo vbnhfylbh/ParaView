@@ -29,127 +29,89 @@
 #
 #==========================================================================
 set (Module_SRCS
-  vtkCompleteArrays.cxx
-  vtkExtractsDeliveryHelper.cxx
-  vtkMPIMToNSocketConnection.cxx
-  vtkMPIMToNSocketConnectionPortInformation.cxx
-  vtkNetworkAccessManager.cxx
-  vtkPConvertSelection.cxx
-  vtkProcessModuleAutoMPI.cxx
-  vtkProcessModule.cxx
-  vtkPVAlgorithmPortsInformation.cxx
-  vtkPVArrayInformation.cxx
-  vtkPVClassNameInformation.cxx
-  vtkPVCompositeDataInformation.cxx
-  vtkPVCompositeDataInformationIterator.cxx
-  vtkPVDataInformation.cxx
-  vtkPVDataInformationHelper.cxx
-  vtkPVDataSetAttributesInformation.cxx
-  vtkPVDataSizeInformation.cxx
-  vtkPVDisableStackTraceSignalHandler.cxx
-  vtkPVEnableStackTraceSignalHandler.cxx
-  vtkPVExtractSelection.cxx
-  vtkPVExtractArraysOverTime.cxx
-  vtkPVGenericAttributeInformation.cxx
-  vtkPVInformation.cxx
-  vtkPVMemoryUseInformation.cxx
-  vtkPVMultiClientsInformation.cxx
-  vtkPVOptions.cxx
-  vtkPVOptionsXMLParser.cxx
-  vtkPVPlugin.cxx
-  vtkPVPluginLoader.cxx
-  vtkPVPluginsInformation.cxx
-  vtkPVPluginTracker.cxx
-  vtkPVProgressHandler.cxx
-  vtkPVPythonInformation.cxx
-  vtkPVPythonModule.cxx
-  vtkPVPythonOptions.cxx
-  vtkPVPythonPluginInterface.cxx
-  vtkPVServerInformation.cxx
-  vtkPVServerManagerPluginInterface.cxx
-  vtkPVServerOptions.cxx
-  vtkPVSession.cxx
-  vtkPVSILInformation.cxx
-  vtkPVSystemConfigInformation.cxx
-  vtkPVSystemInformation.cxx
-  vtkPVTemporalDataInformation.cxx
-  vtkPVTimerInformation.cxx
-  vtkSession.cxx
-  vtkSessionIterator.cxx
-  vtkTCPNetworkAccessManager.cxx
-  vtkEnvironmentAnnotationFilter.cxx
-)
-include(vtkQt)
-if(VTK_QT_VERSION VERSION_GREATER "4")
-  find_package(Qt5 COMPONENTS Widgets REQUIRED QUIET)
-  include_directories(${Qt5Widgets_INCLUDE_DIRS})
-  add_definitions(${Qt5Widgets_DEFINITIONS})
+        vtkCompleteArrays.cxx
+        vtkExtractsDeliveryHelper.cxx
+        vtkMPIMToNSocketConnection.cxx
+        vtkMPIMToNSocketConnectionPortInformation.cxx
+        vtkNetworkAccessManager.cxx
+        vtkPConvertSelection.cxx
+        vtkProcessModuleAutoMPI.cxx
+        vtkProcessModule.cxx
+        vtkPVAlgorithmPortsInformation.cxx
+        vtkPVArrayInformation.cxx
+        vtkPVClassNameInformation.cxx
+        vtkPVCompositeDataInformation.cxx
+        vtkPVCompositeDataInformationIterator.cxx
+        vtkPVDataInformation.cxx
+        vtkPVDataInformationHelper.cxx
+        vtkPVDataSetAttributesInformation.cxx
+        vtkPVDataSizeInformation.cxx
+        vtkPVDisableStackTraceSignalHandler.cxx
+        vtkPVEnableStackTraceSignalHandler.cxx
+        vtkPVExtractSelection.cxx
+        vtkPVExtractArraysOverTime.cxx
+        vtkPVGenericAttributeInformation.cxx
+        vtkPVInformation.cxx
+        vtkPVMemoryUseInformation.cxx
+        vtkPVMultiClientsInformation.cxx
+        vtkPVOptions.cxx
+        vtkPVOptionsXMLParser.cxx
+        vtkPVPlugin.cxx
+        vtkPVPluginLoader.cxx
+        vtkPVPluginsInformation.cxx
+        vtkPVPluginTracker.cxx
+        vtkPVProgressHandler.cxx
+        vtkPVPythonInformation.cxx
+        vtkPVPythonModule.cxx
+        vtkPVPythonOptions.cxx
+        vtkPVPythonPluginInterface.cxx
+        vtkPVServerInformation.cxx
+        vtkPVServerManagerPluginInterface.cxx
+        vtkPVServerOptions.cxx
+        vtkPVSession.cxx
+        vtkPVSILInformation.cxx
+        vtkPVSystemConfigInformation.cxx
+        vtkPVSystemInformation.cxx
+        vtkPVTemporalDataInformation.cxx
+        vtkPVTimerInformation.cxx
+        vtkSession.cxx
+        vtkSessionIterator.cxx
+        vtkTCPNetworkAccessManager.cxx
+        vtkEnvironmentAnnotationFilter.cxx
+        )
 
-  qt5_wrap_cpp(QVTKLibMocSrcs ${QVTKMocHeaders})
-
-  set(QT_LIBRARIES ${Qt5Widgets_LIBRARIES})
-
-  # When this module is loaded by an app, load Qt too.
-  vtk_module_export_code_find_package(Qt5Widgets)
-else()
-  # import Qt4 build settings
-  set(QT_USE_QTNETWORK 1)
-  find_package(Qt4 REQUIRED QUIET)
-  mark_as_advanced(QT_QMAKE_EXECUTABLE)
-  include(${QT_USE_FILE})
-
-  qt4_wrap_cpp(QVTKLibMocSrcs ${QVTKMocHeaders})
-endif()
-
-foreach(opt
-    QT_RCC_EXECUTABLE
-    QT_MOC_EXECUTABLE
-    QT_UIC_EXECUTABLE
-    QT_QMAKE_EXECUTABLE
-    )
-  set(VTK_${opt} "${${opt}}")
-  list(APPEND vtkGUISupportQt_EXPORT_OPTIONS VTK_${opt})
-endforeach()
-
-set(${vtk-module}_NO_HeaderTest 1)
-vtk_module_library(${vtk-module}
-  ${QVTKLibSrcs} ${QVTKLibMocSrcs}
-  ${QVTKNonMocHeaders} ${QVTKMocHeaders}
-  )
-
-vtk_module_link_libraries(${vtk-module} LINK_PUBLIC ${QT_LIBRARIES})
 
 if (PARAVIEW_ENABLE_PYTHON)
   list(APPEND Module_SRCS
-    vtkPythonExtractSelection.cxx
-    vtkPythonProgrammableFilter.cxx
-    vtkPythonAnnotationFilter.cxx
-    )
+          vtkPythonExtractSelection.cxx
+          vtkPythonProgrammableFilter.cxx
+          vtkPythonAnnotationFilter.cxx
+          )
 endif()
 
 set_source_files_properties(
-  vtkExtractsDeliveryHelper
-  vtkProcessModuleAutoMPI
-  vtkPVOptionsXMLParser
-  vtkPVPlugin
-  vtkPVPythonPluginInterface
-  vtkPVServerManagerPluginInterface
-  vtkPVServerOptions
+        vtkExtractsDeliveryHelper
+        vtkProcessModuleAutoMPI
+        vtkPVOptionsXMLParser
+        vtkPVPlugin
+        vtkPVPythonPluginInterface
+        vtkPVServerManagerPluginInterface
+        vtkPVServerOptions
 
-  WRAP_EXCLUDE
-  )
+        WRAP_EXCLUDE
+)
 
 set_source_files_properties(
-  vtkNetworkAccessManager
-  vtkPVDataInformationHelper
-  vtkPVInformation
-  vtkPVPlugin
-  vtkPVPluginTracker
-  vtkPVPythonPluginInterface
-  vtkPVServerManagerPluginInterface
-  vtkPVSession
-  vtkSession
-  ABSTRACT)
+        vtkNetworkAccessManager
+        vtkPVDataInformationHelper
+        vtkPVInformation
+        vtkPVPlugin
+        vtkPVPluginTracker
+        vtkPVPythonPluginInterface
+        vtkPVServerManagerPluginInterface
+        vtkPVSession
+        vtkSession
+        ABSTRACT)
 
 if(PARAVIEW_USE_MPI)
   include(vtkMPI)

@@ -72,7 +72,7 @@
   </action>
   <action name="actionFileLoadServerState">
    <property name="text">
-    <string>&amp;Загрузить Состояние...</string>
+    <string>&amp;Открыть проект...</string>
    </property>
    <property name="PV_MUST_BE_MASTER_TO_SHOW" stdset="0">
     <bool>true</bool>
@@ -80,12 +80,12 @@
   </action>
   <action name="actionFileSaveServerState">
    <property name="text">
-    <string>&amp;Сохранить Состояние...</string>
+    <string>&amp;Сохранить проект...</string>
    </property>
   </action>
   <action name="actionFileSaveGeometry">
    <property name="text">
-    <string>Сохранить &amp;Геометрию...</string>
+    <string>Сохранить модель...</string>
    </property>
    <property name="PV_MUST_BE_MASTER_TO_SHOW" stdset="0">
     <bool>true</bool>

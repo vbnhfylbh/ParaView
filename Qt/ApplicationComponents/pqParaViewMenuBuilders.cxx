@@ -235,7 +235,7 @@ void pqParaViewMenuBuilders::buildToolsMenu(QMenu& menu)
   menu.addSeparator();
   new pqTimerLogReaction(menu.addAction("Timer Log")
     << pqSetName("actionToolsTimerLog"));
-  QAction* action = menu.addAction("&Output Window")
+  QAction* action = menu.addAction(UNICODE_TEXT("\xD0\x9A\xD0\xBE\xD0\xBD\xD1\x81\xD0\xBE\xD0\xBB\xD1\x8C\x20\xD1\x81\xD0\xBE\xD0\xB1\xD1\x8B\xD1\x82\xD0\xB8\xD0\xB9"))
     << pqSetName("actionToolsOutputWindow");
   QObject::connect(action, SIGNAL(triggered()),
     pqApplicationCore::instance(),

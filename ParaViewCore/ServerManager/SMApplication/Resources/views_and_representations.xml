@@ -3673,7 +3673,7 @@
       <RepresentationType subproxy="VolumeRepresentation"
                           text="Объем" />
       <RepresentationType subproxy="SliceRepresentation"
-                          text="Slice" />
+                          text="Сечение" />
       <InputProperty command="SetInputConnection"
                      name="Input">
         <DataTypeDomain composite_data_supported="0"
