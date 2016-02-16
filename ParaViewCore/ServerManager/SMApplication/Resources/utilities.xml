@@ -417,7 +417,7 @@
   <!-- incremental point locators begin -->
   <ProxyGroup name="incremental_point_locators">
     <NullProxy name="None"></NullProxy>
-    <NullProxy name="Scalar"></NullProxy>
+    <NullProxy name="Scalar" label="Скаляр"></NullProxy>
     <Proxy class="vtkPointLocator"
            name="PointLocator">
       <Documentation>Point locator based on a search structure of uniform
@@ -562,8 +562,9 @@
   <!-- incremental point locators end -->
   <ProxyGroup name="implicit_functions">
     <NullProxy name="None"></NullProxy>
-    <NullProxy name="Scalar"></NullProxy>
+    <NullProxy name="Scalar" label="Скаляр"></NullProxy>
     <Proxy class="vtkPVPlane"
+           label="Плоскость"
            name="Plane">
       <InputProperty is_internal="1"
                      name="Input"></InputProperty>
@@ -635,6 +636,7 @@
       </ProxyProperty>
     </Proxy>
     <Proxy class="vtkPVBox"
+           label="Параллелепипед"
            name="Box">
       <DoubleVectorProperty command="SetBounds"
                             default_values="0 1 0 1 0 1"
@@ -682,6 +684,7 @@
       <!-- End of Box -->
     </Proxy>
     <Proxy class="vtkSphere"
+           label="Сфера"
            name="Sphere">
       <DoubleVectorProperty command="SetCenter"
                             default_values="none"
@@ -712,6 +715,7 @@
       </Hints>
     </Proxy>
     <Proxy class="vtkPVCylinder"
+           label="Цилиндр"
            name="Cylinder">
       <DoubleVectorProperty command="SetCenter"
                             default_values="none"
@@ -1834,7 +1838,7 @@
       <!-- End LineSource -->
     </SourceProxy>
     <SourceProxy class="vtkLineSource"
-                 label="High Resolution Line Source"
+                 label="Линии с высоким разрешением"
                  name="HighResLineSource">
       <DoubleVectorProperty animateable="1"
                             command="SetPoint1"
@@ -1892,7 +1896,7 @@
       <!-- End HighResLineSource -->
     </SourceProxy>
     <SourceProxy class="vtkPointSource"
-                 label="Point Source"
+                 label="Точки"
                  name="PointSource">
       <DoubleVectorProperty animateable="1"
                             command="SetCenter"

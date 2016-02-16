@@ -40,6 +40,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMProperty.h"
 #include "vtkSMProxyListDomain.h"
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 pqProxyPropertyWidget::pqProxyPropertyWidget(vtkSMProperty *smProperty,
                                              vtkSMProxy *smProxy,
                                              QWidget *parentObject)
@@ -86,7 +92,7 @@ pqProxyPropertyWidget::pqProxyPropertyWidget(vtkSMProperty *smProperty,
       {
       pqProxySelectionWidget *widget = new pqProxySelectionWidget(smProxy,
         smProxy->GetPropertyName(smProperty),
-        smProperty->GetXMLLabel(),
+        UNICODE_TEXT(smProperty->GetXMLLabel()),
         this);
       widget->setView(this->view());
       this->addPropertyLink(widget,

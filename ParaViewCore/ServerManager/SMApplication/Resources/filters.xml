@@ -5930,16 +5930,12 @@ array.
         </ProxyGroupDomain>
         <ProxyListDomain name="proxy_list">
           <Proxy group="implicit_functions"
-                 label="Плоскость"
                  name="Plane" />
           <Proxy group="implicit_functions"
-                 label="Параллелепипед"
                  name="Box" />
           <Proxy group="implicit_functions"
-                 label="Сфера"
                  name="Sphere" />
           <Proxy group="implicit_functions"
-                 label="Цилиндр"
                  name="Cylinder" />
         </ProxyListDomain>
         <Documentation>Определяет параметры функции сечения.</Documentation>
@@ -6189,15 +6185,15 @@ array.
         </ProxyGroupDomain>
         <ProxyListDomain name="proxy_list">
           <Proxy group="implicit_functions"
-                 name="Плоскость" />
+                 name="Plane" />
           <Proxy group="implicit_functions"
-                 name="Параллелепипед" />
+                 name="Box" />
           <Proxy group="implicit_functions"
-                 name="Сфера" />
+                 name="Sphere" />
           <Proxy group="implicit_functions"
-                 name="Цилиндр" />
+                 name="Cylinder" />
           <Proxy group="implicit_functions"
-                 name="Скаляр" />
+                 name="Scalar" />
         </ProxyListDomain>
         <Documentation>Определяет параметры функции среза (неявную плоскость),
         используемую для среза даннных.</Documentation>
@@ -8445,10 +8441,8 @@ source.</Documentation>
         </ProxyGroupDomain>
         <ProxyListDomain name="proxy_list">
           <Proxy group="extended_sources"
-                 label="Точки"
                  name="PointSource" />
           <Proxy group="extended_sources"
-                 label="Линии с высоким разрешением"
                  name="HighResLineSource" />
         </ProxyListDomain>
         <Documentation>Источники для генерации потоков.</Documentation>
