@@ -48,6 +48,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QMap>
 #include <QtDebug>
 
+#ifndef UNICODE_TEXT
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate("pqParaViewMenuBuilders", QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //-----------------------------------------------------------------------------
 class pqServerManagerObserverInternal
 {
@@ -154,7 +159,7 @@ void pqServerManagerObserver::proxyRegistered(vtkObject*, unsigned long, void*,
   else if (info->Type == vtkSMProxyManager::RegisteredProxyInformation::PROXY
     && info->Proxy)
     {
-    emit this->proxyRegistered(info->GroupName, info->ProxyName,
+    emit this->proxyRegistered(info->GroupName, UNICODE_TEXT(info->ProxyName),
       info->Proxy);
     }
 }

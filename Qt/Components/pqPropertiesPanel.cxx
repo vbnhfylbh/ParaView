@@ -534,7 +534,7 @@ void pqPropertiesPanel::updatePropertiesPanel(pqPipelineSource *source)
   // update widgets.
   if (source)
     {
-    this->Internals->Ui.PropertiesButton->setText(UNICODE_TEXT(QString("\xD0\xA1\xD0\xB2\xD0\xBE\xD0\xB9\xD1\x81\xD1\x82\xD0\xB2\xD0\xB0 (%1)").arg(source->getSMName())));
+    this->Internals->Ui.PropertiesButton->setText(UNICODE_TEXT(QString("\xD0\xA1\xD0\xB2\xD0\xBE\xD0\xB9\xD1\x81\xD1\x82\xD0\xB2\xD0\xB0 (%1)")).arg(source->getSMName()));
     this->Internals->SourceWidgets[source]->showWidgets(
       this->Internals->Ui.SearchBox->isAdvancedSearchActive(),
       this->Internals->Ui.SearchBox->text());
@@ -601,8 +601,8 @@ void pqPropertiesPanel::updateDisplayPanel(pqDataRepresentation* repr)
 
   if (repr)
     {
-    this->Internals->Ui.DisplayButton->setText(UNICODE_TEXT(
-      QString("\xD0\x9E\xD1\x82\xD0\xBE\xD0\xB1\xD1\x80\xD0\xB0\xD0\xB6\xD0\xB5\xD0\xBD\xD0\xB8\xD0\xB5 (%1)").arg(repr->getProxy()->GetXMLName())));
+    this->Internals->Ui.DisplayButton->setText(UNICODE_TEXT(QString("\xD0\x9E\xD1\x82\xD0\xBE\xD0\xB1\xD1\x80\xD0\xB0\xD0\xB6\xD0\xB5\xD0\xBD\xD0\xB8\xD0\xB5 (%1)"))
+                                                       .arg(repr->getProxy()->GetXMLName()));
     this->Internals->DisplayWidgets->showWidgets(
       this->Internals->Ui.SearchBox->isAdvancedSearchActive(),
       this->Internals->Ui.SearchBox->text());
@@ -654,8 +654,7 @@ void pqPropertiesPanel::updateViewPanel (pqView* argView)
     // update the label and show the widgets
     vtkSMViewProxy* proxy = _view->getViewProxy();
     const char* label = proxy->GetXMLLabel ();
-    this->Internals->Ui.ViewButton->setText(UNICODE_TEXT(
-      QString ("\xD0\xA1\xD1\x86\xD0\xB5\xD0\xBD\xD0\xB0 (%1)").arg (label != 0 ? label : _view->getViewType ())));
+    this->Internals->Ui.ViewButton->setText(UNICODE_TEXT("\xD0\xA1\xD1\x86\xD0\xB5\xD0\xBD\xD0\xB0 (%1)").arg(label != 0 ? label : _view->getViewType ()));
     this->Internals->ViewWidgets->showWidgets(
       this->Internals->Ui.SearchBox->isAdvancedSearchActive(),
       this->Internals->Ui.SearchBox->text());
