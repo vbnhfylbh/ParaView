@@ -159,7 +159,7 @@ void pqServerManagerObserver::proxyRegistered(vtkObject*, unsigned long, void*,
   else if (info->Type == vtkSMProxyManager::RegisteredProxyInformation::PROXY
     && info->Proxy)
     {
-    emit this->proxyRegistered(info->GroupName, UNICODE_TEXT(info->ProxyName),
+    emit this->proxyRegistered(info->GroupName, info->ProxyName,
       info->Proxy);
     }
 }

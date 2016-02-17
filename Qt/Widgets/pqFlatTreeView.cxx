@@ -54,6 +54,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QToolTip>
 #include <QHelpEvent>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 class pqFlatTreeViewColumn
 {
 public:
@@ -992,7 +998,7 @@ bool pqFlatTreeView::startEditing(const QModelIndex &index)
     QByteArray name = factory->valuePropertyName(value.type());
     if(!name.isEmpty())
       {
-      this->Internal->Editor->setProperty(name.data(), value);
+      this->Internal->Editor->setProperty(name.data(), QVariant(UNICODE_TEXT(value.toString())));
       }
 
     QLineEdit *line = qobject_cast<QLineEdit *>(this->Internal->Editor);
@@ -1034,7 +1040,7 @@ void pqFlatTreeView::finishEditing()
 
     // Commit the data to the model. The dataChanged signal handler
     // will update the item layout.
-    if(value.isValid())
+    if(value.isValid() && QString::compare(value.toString(), UNICODE_TEXT(this->Model->data(index).toString())) != 0)
       {
       this->Model->setData(index, value);
       }
@@ -3902,6 +3908,9 @@ void pqFlatTreeView::drawData(QPainter &painter, int px, int py,
   else
     {
     QString text = indexData.toString();
+    if(QString::compare(text, "builtin:") == 0) {
+      text = "\xD0\xBA\xD0\xBE\xD0\xBC\xD0\xBF\xD1\x8C\xD1\x8E\xD1\x82\xD0\xB5\xD1\x80\x3A";
+    }
     if(!text.isEmpty() && columnWidth > 0)
       {
       // Set the text color based on the highlighted state.
@@ -3948,7 +3957,7 @@ void pqFlatTreeView::drawData(QPainter &painter, int px, int py,
             columnWidth, options.textElideMode, text);
         }
 
-      painter.drawText(px, py + fontAscent, text);
+      painter.drawText(px, py + fontAscent, UNICODE_TEXT(text));
       painter.restore();
       }
     }
