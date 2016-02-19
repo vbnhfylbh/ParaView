@@ -5904,12 +5904,12 @@ array.
     <SourceProxy class="vtkPVMetaSliceDataSet"
                  label="Сечение"
                  name="Cut">
-      <Documentation long_help="This filter slices a data set with a plane. Slicing is similar to a contour. It creates surfaces from volumes and lines from surfaces."
-                     short_help="Сечение данных выбранной поверхностью.">This filter
-                     extracts the portion of the input dataset that lies along
-                     the specified plane. The Slice filter takes any type of
-                     dataset as input. The output of this filter is polygonal
-                     data.</Documentation>
+      <Documentation long_help="Фильтр создает сечение данных плоскостью. Сечение похоже на Профиль. Сечение объема это поверхность, сечение поверхности это линия."
+                     short_help="Сечение данных выбранной поверхностью.">Фильтр
+                     вычленяет часть входного набора данных, которая пересекает
+                     заданную плоскость. Принимает на вход любой тип данных.
+                     На выходе полигональные данные.
+                     </Documentation>
       <InputProperty command="SetInputConnection"
                      name="Input">
         <ProxyGroupDomain name="groups">
@@ -5968,7 +5968,7 @@ array.
       </IntVectorProperty>
       <DoubleVectorProperty animateable="1"
                             command="SetValue"
-                            label="Slice Offset Values"
+                            label="Смещенные сечения"
                             name="ContourValues"
                             number_of_elements_per_command="1"
                             repeat_command="1"
@@ -5982,10 +5982,10 @@ array.
                       name="Input" />
           </RequiredProperties>
         </BoundsDomain>
-        <Documentation>The values in this property specify a list of current
-        offset values. This can be used to create multiple slices with
-        different centers. Each entry represents a new slice with its center
-        shifted by the offset value.</Documentation>
+        <Documentation>Список текущих значений смещений. Может
+        использоваться для созания набора сечений с различными
+        центрами. Каждая запись определяет новое сечение с центром,
+        смещенным на указанное значение.</Documentation>
       </DoubleVectorProperty>
       <Hints>
         <Visibility replace_input="2" />
@@ -6156,12 +6156,12 @@ array.
     <SourceProxy class="vtkPVMetaClipDataSet"
                  label="Срез"
                  name="Clip">
-      <Documentation long_help="Clip with an implicit plane. Clipping does not reduce the dimensionality of the data set. The output data type of this filter is always an unstructured grid."
-                     short_help="Срез неявной плоскостью.">The Clip filter
-                     cuts away a portion of the input data set using an
-                     implicit plane. This filter operates on all types of data
-                     sets, and it returns unstructured grid data on
-                     output.</Documentation>
+      <Documentation long_help="Срез неявной плоскостью. Срез не уменьшает размерность набора данных. На выходе всегда неструктурированная сетка."
+                     short_help="Срез неявной плоскостью.">Срез всегда
+                     отрезает часть входных данных с помощью неявной
+                     плоскости. Принимает на вход любые данные и
+                     возвращает данные в виде неструктурированной сетки.
+                     </Documentation>
       <InputProperty command="SetInputConnection"
                      name="Input">
         <ProxyGroupDomain name="groups">
@@ -6226,9 +6226,9 @@ array.
                       name="Input" />
           </RequiredProperties>
         </FieldDataDomain>
-        <Documentation>If clipping with scalars, this property specifies the
-        name of the scalar array on which to perform the clip
-        operation.</Documentation>
+        <Documentation>При применении среза на скалярах данное свойство определяет
+        имя массива скаляров, на которых выполяется срез.
+        .</Documentation>
         <Hints>
           <PropertyWidgetDecorator type="GenericDecorator"
                                    mode="visibility"
@@ -6263,13 +6263,13 @@ array.
       </DoubleVectorProperty>
       <IntVectorProperty command="SetInsideOut"
                          default_values="0"
+                         label="Инвертировать"
                          name="InsideOut"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
-        <Documentation>If this property is set to 0, the clip filter will
-        return that portion of the dataset that lies within the clip function.
-        If set to 1, the portions of the dataset that lie outside the clip
-        function will be returned instead.</Documentation>
+        <Documentation>При снятом выделении фильтр вернет чсть данных, находящуюся
+        внутри функции среза. При активном выделении будет возвращена часть данных,
+        находящаяся снаружи.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty command="SetUseValueAsOffset"
                          default_values="0"
@@ -6283,13 +6283,13 @@ array.
       </IntVectorProperty>
       <IntVectorProperty command="PreserveInputCells"
                          default_values="0"
-                         label="Crinkle clip"
+                         label="Рельефный срез"
                          name="PreserveInputCells"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
-        <Documentation>This parameter controls whether to extract entire cells
-        in the given region or clip those cells so all of the output one stay
-        only inside that region.</Documentation>
+        <Documentation>Определяет вычленять ли объемные элементы полностью
+        в данной области или срезать эти элементы так, чтобы результат не
+        выходил за границы данной области.</Documentation>
         <Hints>
           <PropertyWidgetDecorator type="GenericDecorator"
                                    mode="visibility"
@@ -6417,6 +6417,7 @@ array.
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkThreshold"
+                 label="Порог"
                  name="Threshold">
       <Documentation long_help="This filter extracts cells that have point or cell scalars in the specified range."
                      short_help="Extract cells that satisfy a threshold criterion.">
@@ -6591,6 +6592,7 @@ array.
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkPVContourFilter"
+                 label="Профиль"
                  name="Contour">
       <Documentation long_help="Generate isolines or isosurfaces using point scalars."
                      short_help="Generate isolines or isosurfaces.">The Contour
@@ -6774,11 +6776,12 @@ points in the input. Defaults to ***Single***.
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkPVGlyphFilter"
+                 label="Глиф"
                  name="Glyph">
-      <Documentation long_help="This filter produces a glyph at each point of in input data set.  The glyphs can be oriented and scaled by point attributes of the input dataset."
-                     short_help="Generate a glyph at each point of the input data set.">
-The Glyph filter generates a glyph (i.e., an arrow, cone, cube,
-cylinder, line, sphere, or 2D glyph) at each point in the input
+      <Documentation long_help="Генерирует глиф в каждой точке входного набора данных. Глифы могут быть ориентированными и масштабированными с помощью атрибутов входных данных."
+                     short_help="Генерирует глиф в каждой точке входного набора данных.">
+Создает глиф (т.е. стрелку, конус, куб, цилиндр, линию,
+сферу или 2D-глиф) в каждой точке входного набора данных.
 dataset. The glyphs can be oriented and scaled by the input
 point-centered scalars and vectors. The Glyph filter operates on any
 type of data set. Its output is polygonal
@@ -8224,17 +8227,16 @@ source.</Documentation>
     <SourceProxy class="vtkStreamTracer"
                  label="Рисунок потоков"
                  name="StreamTracer">
-      <Documentation long_help="Integrate streamlines in a vector field."
-                     short_help="Integrate streamlines in a vector field.">The
-                     Stream Tracer filter generates streamlines in a vector
-                     field from a collection of seed points. Production of
-                     streamlines terminates if a streamline crosses the
-                     exterior boundary of the input dataset. Other reasons for
-                     termination are listed for the MaximumNumberOfSteps,
-                     TerminalSpeed, and MaximumPropagation properties. This
-                     filter operates on any type of dataset, provided it has
-                     point-centered vectors. The output is polygonal data
-                     containing polylines.</Documentation>
+      <Documentation long_help="Представить векторное поле в виде потоков."
+                     short_help="Представить векторное поле в виде потоков.">Фильтр
+                     Рисунок потоков создает линии потоков в векторном поле, используя
+                     набор источников. Генерация линии потока прекращается, если
+                     линия пересекает внешнюю границу входного набора данных. Другие
+                     критерии прекращения генерации представлены свойствами
+                     Максимальное число шагов, Граничная скорость и MaximumPropagation.
+                     Фильтр принимает на вход любой тип данных, включающий
+                     точко-центрированные векторы. На выходе полигональные данные,
+                     содержащие ломаные.</Documentation>
       <InputProperty clean_command="RemoveAllInputs"
                      command="AddInputConnection"
                      name="Input">
@@ -8347,32 +8349,31 @@ source.</Documentation>
                             number_of_elements="1"
                             panel_visibility="advanced" >
         <DoubleRangeDomain name="range" />
-        <Documentation>This property specifies the initial integration step
-        size. For non-adaptive integrators (Runge-Kutta 2 and Runge-Kutta 4),
-        it is fixed (always equal to this initial value) throughout the
-        integration. For an adaptive integrator (Runge-Kutta 4-5), the actual
-        step size varies such that the numerical error is less than a specified
-        threshold.</Documentation>
+        <Documentation>Определяет исходную величину шага интеграции. Для
+        неадапативных методов (Рунге—Кутты 2-го и 4-го порядков) шаг
+        постоянен (всегда равен заданной исходной величине) в ходе генерации.
+        Для адаптивного метода (Рунге—Кутты 4-5-го порядков) величина шага
+        варьируется таким образом, чтобы численная ошибка была меньше указанного порога.</Documentation>
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetMinimumIntegrationStep"
                             default_values="0.01"
-                            label="Minimum Step Length"
+                            label="Минимальная длина шага"
                             name="MinimumIntegrationStep"
                             number_of_elements="1"
                             panel_visibility="advanced" >
         <DoubleRangeDomain name="range" />
-        <Documentation>When using the Runge-Kutta 4-5 ingrator, this property
-        specifies the minimum integration step size.</Documentation>
+        <Documentation>При выборе метода Рунге—Кутты 4-5-го порядков
+        определяет минимальную величину шага интеграции.</Documentation>
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetMaximumIntegrationStep"
                             default_values="0.5"
-                            label="Maximum Step Length"
+                            label="Максимальная длина шага"
                             name="MaximumIntegrationStep"
                             number_of_elements="1"
                             panel_visibility="advanced">
         <DoubleRangeDomain name="range" />
-        <Documentation>When using the Runge-Kutta 4-5 ingrator, this property
-        specifies the maximum integration step size.</Documentation>
+        <Documentation>При выборе метода Рунге—Кутты 4-5-го порядков
+        определяет максимальную величину шага интеграции.</Documentation>
       </DoubleVectorProperty>
       <IntVectorProperty command="SetMaximumNumberOfSteps"
                          default_values="2000"
@@ -8403,33 +8404,35 @@ source.</Documentation>
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetTerminalSpeed"
                             default_values="0.000000000001"
-                            label="Terminal Speed"
+                            label="Граничная скорость"
                             name="TerminalSpeed"
                             number_of_elements="1"
                             panel_visibility="advanced" >
         <DoubleRangeDomain name="range" />
-        <Documentation>This property specifies the terminal speed, below which
-        particle advection/integration is terminated.</Documentation>
+        <Documentation>Определяет граничную скорость, ниже которой
+        интеграция частицы в поток прекращается.</Documentation>
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetMaximumError"
                             default_values="0.000001"
                             name="MaximumError"
+                            label="Порог ошибки"
                             number_of_elements="1"
                             panel_visibility="advanced" >
         <DoubleRangeDomain name="range" />
-        <Documentation>This property specifies the maximum error (for
-        Runge-Kutta 4-5) tolerated throughout streamline integration. The
-        Runge-Kutta 4-5 integrator tries to adjust the step size such that the
-        estimated error is less than this threshold.</Documentation>
+        <Documentation>Определяет максимальное значение ошибки (для
+        метода Рунге—Кутты 4-5-го порядков), допустимое в процессе интеграции потока.
+        Метод Рунге—Кутты 4-5-го порядков предпринимает попытки подстроить величину шага
+        таким образом, чтобы ограничить фактическую ошибку данным порогом ошибки.</Documentation>
       </DoubleVectorProperty>
       <IntVectorProperty command="SetComputeVorticity"
                          default_values="1"
+                         label="Моделировать турбулентность"
                          name="ComputeVorticity"
                          number_of_elements="1"
                          panel_visibility="advanced" >
         <BooleanDomain name="bool" />
-        <Documentation>Specify whether or not to compute
-        vorticity.</Documentation>
+        <Documentation>Определяет пренебрегать ли
+        турбулентностью.</Documentation>
       </IntVectorProperty>
 
       <InputProperty command="SetSourceConnection"

@@ -34,6 +34,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqApplicationCore.h"
 #include "pqUndoStack.h"
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //-----------------------------------------------------------------------------
 pqUndoRedoReaction::pqUndoRedoReaction(QAction* parentObject, bool _undo)
   : Superclass(parentObject)
@@ -119,21 +125,20 @@ void pqUndoRedoReaction::setLabel(const QString& label)
 {
   if (this->Undo)
     {
-    this->parentAction()->setText(
-      label.isEmpty() ? tr("Can't Undo") : QString(tr("&Undo %1")).arg(label));
-    this->parentAction()->setStatusTip(
-      label.isEmpty() ? tr("Can't Undo") : QString(tr("Undo %1")).arg(label));
+    this->parentAction()->setText(UNICODE_TEXT(
+      label.isEmpty() ? QString("\xD0\x9D\xD0\xB5\xD0\xBB\xD1\x8C\xD0\xB7\xD1\x8F\x20\xD0\xBE\xD1\x82\xD0\xBC\xD0\xB5\xD0\xBD\xD0\xB8\xD1\x82\xD1\x8C")
+                      : QString("&\xD0\x9E\xD1\x82\xD0\xBC\xD0\xB5\xD0\xBD\xD0\xB8\xD1\x82\xD1\x8C %1").arg(label)));
+    this->parentAction()->setStatusTip(UNICODE_TEXT(
+      label.isEmpty() ? QString("\xD0\x9D\xD0\xB5\xD0\xBB\xD1\x8C\xD0\xB7\xD1\x8F\x20\xD0\xBE\xD1\x82\xD0\xBC\xD0\xB5\xD0\xBD\xD0\xB8\xD1\x82\xD1\x8C")
+                      : QString("\xD0\x9E\xD1\x82\xD0\xBC\xD0\xB5\xD0\xBD\xD0\xB8\xD1\x82\xD1\x8C %1").arg(label)));
     }
   else
     {
-    this->parentAction()->setText(
-      label.isEmpty() ? tr("Can't Redo") : QString(tr("&Redo %1")).arg(label));
-    this->parentAction()->setStatusTip(
-      label.isEmpty() ? tr("Can't Redo") : QString(tr("Redo %1")).arg(label));
+    this->parentAction()->setText(UNICODE_TEXT(
+      label.isEmpty() ? QString("\xD0\x9D\xD0\xB5\xD0\xBB\xD1\x8C\xD0\xB7\xD1\x8F\x20\xD0\xBF\xD0\xBE\xD0\xB2\xD1\x82\xD0\xBE\xD1\x80\xD0\xB8\xD1\x82\xD1\x8C")
+                      : QString("&\xD0\x9F\xD0\xBE\xD0\xB2\xD1\x82\xD0\xBE\xD1\x80\xD0\xB8\xD1\x82\xD1\x8C %1").arg(label)));
+    this->parentAction()->setStatusTip(UNICODE_TEXT(
+      label.isEmpty() ? QString("\xD0\x9D\xD0\xB5\xD0\xBB\xD1\x8C\xD0\xB7\xD1\x8F\x20\xD0\xBF\xD0\xBE\xD0\xB2\xD1\x82\xD0\xBE\xD1\x80\xD0\xB8\xD1\x82\xD1\x8C")
+                      : QString("\xD0\x9F\xD0\xBE\xD0\xB2\xD1\x82\xD0\xBE\xD1\x80\xD0\xB8\xD1\x82\xD1\x8C %1").arg(label)));
     }
 }
-
-
-
-
-

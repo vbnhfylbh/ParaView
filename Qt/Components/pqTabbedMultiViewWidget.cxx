@@ -54,6 +54,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QVBoxLayout>
 #include <QtDebug>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //-----------------------------------------------------------------------------
 // **************** pqTabbedMultiViewWidget::pqTabWidget **********************
 //-----------------------------------------------------------------------------
@@ -92,7 +98,7 @@ void pqTabbedMultiViewWidget::pqTabWidget::setTabButton(
 int pqTabbedMultiViewWidget::pqTabWidget::addAsTab(pqMultiViewWidget* wdg, pqTabbedMultiViewWidget* self)
 {
   int tab_count = this->count();
-  int tab_index = this->insertTab(tab_count-1, wdg, QString("Layout #%1").arg(tab_count));
+  int tab_index = this->insertTab(tab_count-1, wdg, UNICODE_TEXT("\xD0\x92\xD0\xBA\xD0\xBB\xD0\xB0\xD0\xB4\xD0\xBA\xD0\xB0 #%1").arg(tab_count));
 
   QLabel* label = new QLabel(this);
   label->setObjectName("popout");
@@ -105,8 +111,8 @@ int pqTabbedMultiViewWidget::pqTabWidget::addAsTab(pqMultiViewWidget* wdg, pqTab
 
   label = new QLabel(this);
   label->setObjectName("close");
-  label->setToolTip("Close layout");
-  label->setStatusTip("Close layout");
+  label->setToolTip(UNICODE_TEXT("\xD0\x97\xD0\xB0\xD0\xBA\xD1\x80\xD1\x8B\xD1\x82\xD1\x8C\x20\xD0\xB2\xD0\xBA\xD0\xBB\xD0\xB0\xD0\xB4\xD0\xBA\xD1\x83"));
+  label->setStatusTip(UNICODE_TEXT("\xD0\x97\xD0\xB0\xD0\xBA\xD1\x80\xD1\x8B\xD1\x82\xD1\x8C\x20\xD0\xB2\xD0\xBA\xD0\xBB\xD0\xB0\xD0\xB4\xD0\xBA\xD1\x83"));
   label->setPixmap(
     this->style()->standardPixmap(QStyle::SP_TitleBarCloseButton));
   this->setTabButton(tab_index, QTabBar::RightSide, label);

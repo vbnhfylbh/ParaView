@@ -57,6 +57,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QIcon>
 #include <QtDebug>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 
 //=============================================================================
 /// This class makes it possible to add custom logic when updating the
@@ -431,7 +437,7 @@ void pqDisplayColorWidget::refreshColorArrayNames()
   this->Internals->OutOfDomainEntryIndex = -1;
 
   // add solid color.
-  this->Variables->addItem(*this->SolidColorIcon, "Solid Color", QVariant());
+  this->Variables->addItem(*this->SolidColorIcon, UNICODE_TEXT("\xD0\xA1\xD0\xBF\xD0\xBB\xD0\xBE\xD1\x88\xD0\xBD\xD0\xBE\xD0\xB9\x20\xD1\x86\xD0\xB2\xD0\xB5\xD1\x82"), QVariant());
 
   vtkSMArrayListDomain* domain = this->Internals->Domain;
   Q_ASSERT (domain);

@@ -90,6 +90,7 @@
       </DoubleVectorProperty>
       <IntVectorProperty command="SetParallelProjection"
                          default_values="0"
+                         label="Параллельная проекция"
                          ignore_synchronization="1"
                          name="CameraParallelProjection"
                          number_of_elements="1">

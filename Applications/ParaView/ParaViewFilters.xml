@@ -1,5 +1,5 @@
 ﻿<ParaViewFilters>
-  <Category name="Common" menu_label="&amp;Common" preserve_order="1"
+  <Category name="Common" menu_label="&amp;Стандартные" preserve_order="1"
     show_in_toolbar="1">
     <Proxy group="filters" name="Calculator" icon=":/pqWidgets/Icons/pqCalculator24.png"/>
     <Proxy group="filters" name="Contour" icon=":/pqWidgets/Icons/pqIsosurface24.png"/>
@@ -22,7 +22,7 @@
     <Proxy group="filters" name="PMergeConnected" />
   </Category>
 
-  <Category name="DataAnalysis" menu_label="Анализ данных" show_in_toolbar="1" hide_for_tests="1">
+  <Category name="DataAnalysis" menu_label="&amp;Анализ данных" show_in_toolbar="1" hide_for_tests="1">
     <Proxy group="filters" name="Calculator"
             icon=":/pqWidgets/Icons/pqCalculator24.png" omit_from_toolbar="1"/>
     <Proxy group="filters" name="ExtractSelection"
@@ -51,7 +51,7 @@
     <Proxy group="filters" name="ExtractLocation" omit_from_toolbar="1" />
   </Category>
 
-  <Category name="Statistics" menu_label="Статистика">
+  <Category name="Statistics" menu_label="&amp;Статистика">
     <Proxy group="filters" name="ContingencyStatistics"/>
     <Proxy group="filters" name="DescriptiveStatistics"/>
     <Proxy group="filters" name="KMeans"/>
@@ -59,7 +59,7 @@
     <Proxy group="filters" name="PCAStatistics"/>
   </Category>
 
-  <Category name="Temporal" menu_label="&amp;Temporal">
+  <Category name="Temporal" menu_label="&amp;Временные">
     <Proxy group="filters" name="ParticleTracer" />
     <Proxy group="filters" name="ParticlePath" />
     <Proxy group="filters" name="StreakLine" />
@@ -71,7 +71,7 @@
     <Proxy group="filters" name="TimeToTextConvertor" />
   </Category>
 
-  <Category name="Material Analysis" menu_label="&amp;Material Analysis">
+  <Category name="Material Analysis" menu_label="&amp;Анализ материалов">
     <Proxy group="filters" name="MaterialInterfaceFilter" />
     <Proxy group="filters" name="IntersectFragments" />
   </Category>
@@ -102,14 +102,14 @@
     <Proxy group="filters" name="ExtractHierarchicalDataSets" />
   </Category>
 
-  <Category name="Quadrature Points" menu_label="&amp;Quadrature Points">
+  <Category name="Quadrature Points" menu_label="&amp;Точки квадратуры">
     <Proxy group="filters" name="QuadraturePointInterpolator" />
     <Proxy group="filters" name="QuadraturePointsGenerator" />
     <Proxy group="filters" name="QuadraturePointStatistics" />
     <Proxy group="filters" name="QuadratureSchemeDictionaryGenerator" />
   </Category>
 
-  <Category name="Annotation" menu_label="Annotation">
+  <Category name="Annotation" menu_label="Аннотирование">
     <Proxy group="filters" name="AnnotateGlobalData" />
     <Proxy group="filters" name="AnnotateAttributeData" />
     <Proxy group="filters" name="PythonAnnotation" />
