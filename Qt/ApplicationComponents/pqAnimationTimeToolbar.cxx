@@ -36,10 +36,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqAnimationTimeWidget.h"
 #include "pqPVApplicationCore.h"
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //-----------------------------------------------------------------------------
 void pqAnimationTimeToolbar::constructor()
 {
-  this->setWindowTitle("Current Time Controls");
+  this->setWindowTitle(UNICODE_TEXT("\xD0\x9A\xD0\xBE\xD0\xBD\xD1\x82\xD1\x80\xD0\xBE\xD0\xBB\xD1\x8C\x20\xD0\xB2\xD1\x80\xD0\xB5\xD0\xBC\xD0\xB5\xD0\xBD\xD0\xB8"));
   this->AnimationTimeWidget = new pqAnimationTimeWidget(this);
   this->AnimationTimeWidget->setPlayModeReadOnly(true);
   this->addWidget(this->AnimationTimeWidget);

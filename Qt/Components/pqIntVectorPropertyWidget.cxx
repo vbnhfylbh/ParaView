@@ -108,9 +108,9 @@ pqIntVectorPropertyWidget::pqIntVectorPropertyWidget(vtkSMProperty *smproperty,
     layoutLocal->addWidget(checkBox);
 
       if (useDocumentationForLabels) {
-        pqLabel * label = new pqLabel(QString("<p><b>%1</b>: %2</p>")
+        pqLabel * label = new pqLabel(UNICODE_TEXT(QString("<p><b>%1</b>: %2</p>")
                                                            .arg(smproperty->GetXMLLabel())
-                                                           .arg(pqProxyWidget::documentationText(smproperty)));
+                                                           .arg(pqProxyWidget::documentationText(smproperty))));
         label->setObjectName("CheckBoxLabel");
         label->setWordWrap(true);
         label->setAlignment(Qt::AlignLeft | Qt::AlignTop);

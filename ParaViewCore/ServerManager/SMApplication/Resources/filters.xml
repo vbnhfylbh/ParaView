@@ -6419,7 +6419,7 @@ array.
     <SourceProxy class="vtkThreshold"
                  label="Порог"
                  name="Threshold">
-      <Documentation long_help="This filter extracts cells that have point or cell scalars in the specified range."
+      <Documentation long_help="Вычленяет элементы, This filter extracts cells that have point or cell scalars in the specified range."
                      short_help="Extract cells that satisfy a threshold criterion.">
                      The Threshold filter extracts the portions of the input
                      dataset whose scalars lie within the specified range. This

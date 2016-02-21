@@ -69,6 +69,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // ParaView components includes
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
 
 class pqProxyInformationWidget::pqUi 
   : public QObject, public Ui::pqProxyInformationWidget
@@ -307,22 +312,22 @@ void pqProxyInformationWidget::fillDataInformation(
       this->Ui->DataSet);
     }
   
-  QString memory = QString("%1 MB").arg(dataInformation->GetMemorySize()/1000.0,
+  QString memory = QString("%1 \xD0\x9C\xD0\xB1\xD0\xB0\xD0\xB9\xD1\x82").arg(dataInformation->GetMemorySize()/1000.0,
                                      0, 'g', 2);
-  this->Ui->memory->setText(memory);
+  this->Ui->memory->setText(UNICODE_TEXT(memory));
 
   if (dataInformation->GetHasTime())
     {
     this->Ui->dataTimeLabel->setVisible(true);
     const char* timeLabel = dataInformation->GetTimeLabel();
-    this->Ui->dataTimeLabel->setText(
-          QString("Current data %2: %1")
-          .arg(dataInformation->GetTime()).arg(timeLabel ? timeLabel : "time"));
+    this->Ui->dataTimeLabel->setText(UNICODE_TEXT(
+          QString("\xD0\xA2\xD0\xB5\xD0\xBA\xD1\x83\xD1\x89\xD0\xB5\xD0\xB5 %2: %1")
+          .arg(dataInformation->GetTime()).arg(timeLabel ? timeLabel : "\xD0\xB2\xD1\x80\xD0\xB5\xD0\xBC\xD1\x8F")));
     this->Ui->groupDataTime->setTitle(timeLabel);
     }
   else
     {
-    this->Ui->groupDataTime->setTitle("Time");
+    this->Ui->groupDataTime->setTitle(UNICODE_TEXT("\xD0\x92\xD1\x80\xD0\xB5\xD0\xBC\xD1\x8F"));
     }
 
   vtkPVDataSetAttributesInformation* info[6];
@@ -355,12 +360,12 @@ void pqProxyInformationWidget::fillDataInformation(
       dims[1] = ext[3]-ext[2]+1;
       dims[2] = ext[5]-ext[4]+1;
 
-      this->Ui->xExtent->setText(QString(
-          "%1 to %2 (dimension: %3)").arg(ext[0]).arg(ext[1]).arg(dims[0]));
-      this->Ui->yExtent->setText(QString(
-          "%1 to %2 (dimension: %3)").arg(ext[2]).arg(ext[3]).arg(dims[1]));
-      this->Ui->zExtent->setText(QString(
-          "%1 to %2 (dimension: %3)").arg(ext[4]).arg(ext[5]).arg(dims[2]));
+      this->Ui->xExtent->setText(UNICODE_TEXT(
+        "\xD0\xBE\xD1\x82 %1 \xD0\xB4\xD0\xBE %2 (\xD1\x80\xD0\xB0\xD0\xB7\xD0\xBC\xD0\xB5\xD1\x80\xD0\xBD\xD0\xBE\xD1\x81\xD1\x82\xD1\x8C: %3)").arg(ext[0]).arg(ext[1]).arg(dims[0]));
+      this->Ui->yExtent->setText(UNICODE_TEXT(
+        "\xD0\xBE\xD1\x82 %1 \xD0\xB4\xD0\xBE %2 (\xD1\x80\xD0\xB0\xD0\xB7\xD0\xBC\xD0\xB5\xD1\x80\xD0\xBD\xD0\xBE\xD1\x81\xD1\x82\xD1\x8C: %3)").arg(ext[2]).arg(ext[3]).arg(dims[1]));
+      this->Ui->zExtent->setText(UNICODE_TEXT(
+        "\xD0\xBE\xD1\x82 %1 \xD0\xB4\xD0\xBE %2 (\xD1\x80\xD0\xB0\xD0\xB7\xD0\xBC\xD0\xB5\xD1\x80\xD0\xBD\xD0\xBE\xD1\x81\xD1\x82\xD1\x8C: %3)").arg(ext[4]).arg(ext[5]).arg(dims[2]));
       }
     else
       {
@@ -424,44 +429,44 @@ void pqProxyInformationWidget::fillDataInformation(
   QString xrange;
   if (bounds[0] == VTK_DOUBLE_MAX && bounds[1] == -VTK_DOUBLE_MAX)
     {
-    xrange = "Not available";
+    xrange = "\xD0\x9D\xD0\xB5\xD0\xB4\xD0\xBE\xD1\x81\xD1\x82\xD1\x83\xD0\xBF\xD0\xBD\xD0\xBE";
     }
   else
     {
-    xrange = QString("%1 to %2 (delta: %3)");
+    xrange = QString("\xD0\xBE\xD1\x82 %1 \xD0\xB4\xD0\xBE %2 (\xD1\x88\xD0\xB0\xD0\xB3: %3)");
     xrange = xrange.arg(bounds[0], -1, 'g', 3);
     xrange = xrange.arg(bounds[1], -1, 'g', 3);
     xrange = xrange.arg(bounds[1] - bounds[0], -1, 'g', 3);
     }
-  this->Ui->xRange->setText(xrange);
+  this->Ui->xRange->setText(UNICODE_TEXT(xrange));
 
   QString yrange;
   if (bounds[2] == VTK_DOUBLE_MAX && bounds[3] == -VTK_DOUBLE_MAX)
     {
-    yrange = "Not available";
+    yrange = "\xD0\x9D\xD0\xB5\xD0\xB4\xD0\xBE\xD1\x81\xD1\x82\xD1\x83\xD0\xBF\xD0\xBD\xD0\xBE";
     }
   else
     {
-    yrange = QString("%1 to %2 (delta: %3)");
+    yrange = QString("\xD0\xBE\xD1\x82 %1 \xD0\xB4\xD0\xBE %2 (\xD1\x88\xD0\xB0\xD0\xB3: %3)");
     yrange = yrange.arg(bounds[2], -1, 'g', 3);
     yrange = yrange.arg(bounds[3], -1, 'g', 3);
     yrange = yrange.arg(bounds[3] - bounds[2], -1, 'g', 3);
     }
-  this->Ui->yRange->setText(yrange);
+  this->Ui->yRange->setText(UNICODE_TEXT(yrange));
 
   QString zrange;
   if (bounds[4] == VTK_DOUBLE_MAX && bounds[5] == -VTK_DOUBLE_MAX)
     {
-    zrange = "Not available";
+    zrange = "\xD0\x9D\xD0\xB5\xD0\xB4\xD0\xBE\xD1\x81\xD1\x82\xD1\x83\xD0\xBF\xD0\xBD\xD0\xBE";
     }
   else
     {
-    zrange = QString("%1 to %2 (delta: %3)");
+    zrange = QString("\xD0\xBE\xD1\x82 %1 \xD0\xB4\xD0\xBE %2 (\xD1\x88\xD0\xB0\xD0\xB3: %3)");
     zrange = zrange.arg(bounds[4], -1, 'g', 3);
     zrange = zrange.arg(bounds[5], -1, 'g', 3);
     zrange = zrange.arg(bounds[5] - bounds[4], -1, 'g', 3);
     }
-  this->Ui->zRange->setText(zrange);
+  this->Ui->zRange->setText(UNICODE_TEXT(zrange));
 }
 
 //-----------------------------------------------------------------------------
@@ -524,11 +529,11 @@ QTreeWidgetItem* pqProxyInformationWidget::fillCompositeInformation(
       }
     else if (isAMR)
       {
-      childItem->setText(0, QString("Level %1").arg(cc));
+      childItem->setText(0, UNICODE_TEXT("\xD0\xA3\xD1\x80\xD0\xBE\xD0\xB2\xD0\xB5\xD0\xBD\xD1\x8C %1").arg(cc));
       }
     else if (childInfo && childInfo->GetCompositeDataClassName())
       {
-      childItem->setText(0, QString("Block %1").arg(cc));
+      childItem->setText(0, UNICODE_TEXT("\xD0\x91\xD0\xBB\xD0\xBE\xD0\xBA %1").arg(cc));
       }
     else
       {

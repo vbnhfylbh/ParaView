@@ -46,7 +46,7 @@
    </widget>
    <widget class="QMenu" name="menuSources">
     <property name="title">
-     <string>&amp;Объекты</string>
+     <string>&amp;Источники</string>
     </property>
    </widget>
    <widget class="QMenu" name="menuFilters">

@@ -119,7 +119,7 @@ QString pqPropertyWidget::getTooltip(vtkSMProperty* smproperty)
       smproperty->GetDocumentation()->GetDescription()).c_str();
     doc = doc.trimmed();
     doc = doc.replace(QRegExp("\\s+")," ");
-    return QString("<html><head/><body><p align=\"justify\">%1</p></body></html>").arg(doc);
+    return UNICODE_TEXT(QString("<html><head/><body><p align=\"justify\">%1</p></body></html>").arg(doc));
     }
   return QString();
 }
@@ -128,7 +128,7 @@ QString pqPropertyWidget::getTooltip(vtkSMProperty* smproperty)
 void pqPropertyWidget::setProperty(vtkSMProperty *smproperty)
 {
   this->Property = smproperty;
-  this->setToolTip(UNICODE_TEXT(pqPropertyWidget::getTooltip(smproperty)));
+  this->setToolTip(pqPropertyWidget::getTooltip(smproperty));
   if ((smproperty->GetHints() &&
        smproperty->GetHints()->FindNestedElementByName("RestartRequired")))
     {

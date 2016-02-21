@@ -57,6 +57,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QStyle>
 #include <QMenu>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 pqDoubleVectorPropertyWidget::pqDoubleVectorPropertyWidget(vtkSMProperty *smProperty,
                                                            vtkSMProxy *smProxy,
                                                            QWidget *parentObject)
@@ -208,7 +214,7 @@ pqDoubleVectorPropertyWidget::pqDoubleVectorPropertyWidget(vtkSMProperty *smProp
     PV_DEBUG_PANELS() << "Adding \"Scale\" button since the domain is dynamically";
     QPushButton* scaleButton = new QPushButton("X", this);
     scaleButton->setObjectName("ScaleBy");
-    scaleButton->setToolTip("Scale by ...");
+    scaleButton->setToolTip("\xD0\x9C\xD0\xB0\xD1\x81\xD1\x88\xD1\x82\xD0\xB0\xD0\xB1\xD0\xB8\xD1\x80\xD0\xBE\xD0\xB2\xD0\xB0\xD1\x82\xD1\x8C\x20\xD0\xB2\x2E\x2E\x2E");
     scaleButton->setFixedWidth(32);
     QMenu* menu = new QMenu(scaleButton);
     menu->setObjectName("ScaleMenu");

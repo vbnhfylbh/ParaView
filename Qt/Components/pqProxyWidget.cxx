@@ -1086,10 +1086,10 @@ void pqProxyWidget::createPropertyWidgets(const QStringList &properties)
       }
     propertyWidget->setObjectName(propertyKeyName);
 
-    QString itemLabel = this->UseDocumentationForLabels?
+    QString itemLabel = UNICODE_TEXT(this->UseDocumentationForLabels?
       QString("<p><b>%1</b>: %2</p>")
       .arg(xmlLabel).arg(xmlDocumentation) :
-      QString(UNICODE_TEXT(xmlLabel));
+      QString(xmlLabel));
     pqProxyWidgetItem *item = property_group_tag == -1?
       pqProxyWidgetItem::newItem(propertyWidget, QString(itemLabel), this) :
       pqProxyWidgetItem::newMultiItemGroupItem(
@@ -1097,7 +1097,7 @@ void pqProxyWidget::createPropertyWidgets(const QStringList &properties)
         propertyWidget, QString(itemLabel), this);
 
     // save record of the property widget and containing widget
-    item->SearchTags << xmlLabel << xmlDocumentation << propertyIter->GetKey();
+    item->SearchTags << xmlLabel << UNICODE_TEXT(xmlDocumentation) << propertyIter->GetKey();
     item->Advanced = QString(smProperty->GetPanelVisibility()) == "advanced";
 
     if (smProperty->GetPanelVisibilityDefaultForRepresentation())
@@ -1254,7 +1254,7 @@ bool pqProxyWidget::filterWidgets(bool show_advanced, const QString& filterText)
   if (dtype != NONE)
     {
     QString doc = this->documentationText(smProxy, dtype);
-    this->Internals->ProxyDocumentationLabel->setText("<p>" + doc + "</p>");
+    this->Internals->ProxyDocumentationLabel->setText(UNICODE_TEXT("<p>" + doc + "</p>"));
     this->Internals->ProxyDocumentationLabel->setVisible(!doc.isEmpty());
     gridLayout->addWidget(this->Internals->ProxyDocumentationLabel, row_index, 0, 1, 2);
     row_index++;
