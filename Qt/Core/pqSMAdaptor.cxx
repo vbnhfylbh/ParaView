@@ -82,6 +82,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QStringList>
 #include <set>
 
+#ifndef UNICODE_TEXT
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate("pqSMAdaptor", QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 static const int metaId = qRegisterMetaType<QList<QList<QVariant> > >();
 
 namespace
@@ -1026,7 +1031,8 @@ void pqSMAdaptor::setEnumerationProperty(vtkSMProperty* Property,
     unsigned int numEntries = EnumerationDomain->GetNumberOfEntries();
     for(unsigned int i=0; i<numEntries; i++)
       {
-      if(str == EnumerationDomain->GetEntryText(i))
+      if(strcmp(str.toStdString().c_str(), EnumerationDomain->GetEntryText(i)) == 0
+        || strcmp(str.toStdString().c_str(), UNICODE_TEXT(EnumerationDomain->GetEntryText(i)).toStdString().c_str()) == 0)
         {
         if(Type == CHECKED)
           {

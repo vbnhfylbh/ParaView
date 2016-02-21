@@ -1717,6 +1717,7 @@
       <!-- Center and Orientation Axes -->
       <IntVectorProperty command="SetCenterAxesVisibility"
                          default_values="0"
+                         label="Показывать центральные оси"
                          name="CenterAxesVisibility"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
@@ -1725,6 +1726,7 @@
       </IntVectorProperty>
       <IntVectorProperty command="SetOrientationAxesVisibility"
                          default_values="1"
+                         label="Показывать оси"
                          name="OrientationAxesVisibility"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
@@ -1734,6 +1736,7 @@
       <IntVectorProperty command="SetOrientationAxesInteractivity"
                          default_values="0"
                          panel_visibility="advanced"
+                         label="Перетаскивание осей"
                          name="OrientationAxesInteractivity"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
@@ -1742,6 +1745,7 @@
       </IntVectorProperty>
       <DoubleVectorProperty command="SetOrientationAxesLabelColor"
                             default_values="1 1 1"
+                            label="Цвет подписей"
                             name="OrientationAxesLabelColor"
                             panel_widget="color_selector_with_palette"
                             panel_visibility="advanced"
@@ -1752,6 +1756,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetOrientationAxesOutlineColor"
                             default_values="1 1 1"
+                            label="Цвет контура"
                             name="OrientationAxesOutlineColor"
                             panel_widget="color_selector_with_palette"
                             panel_visibility="advanced"
@@ -2262,13 +2267,13 @@
           <Group name="textures" />
         </ProxyGroupDomain>
       </ProxyProperty>
-      <PropertyGroup label="Orientation Axes">
+      <PropertyGroup label="Ориентационные оси">
         <Property name="OrientationAxesVisibility"/>
         <Property name="OrientationAxesInteractivity"/>
         <Property name="OrientationAxesLabelColor"/>
         <Property name="OrientationAxesOutlineColor"/>
       </PropertyGroup>
-      <PropertyGroup label="Lights" panel_widget="LightsEditor"
+      <PropertyGroup label="Освещение" panel_widget="LightsEditor"
                      panel_visibility="advanced">
         <!-- Light Kit -->
         <Property name="UseLight"/>
@@ -2300,7 +2305,7 @@
         <Property name="LightIntensity"/>
         <Property name="LightType"/>
       </PropertyGroup>
-      <PropertyGroup label="Background" panel_widget="BackgroundEditor">
+      <PropertyGroup label="Фон" panel_widget="BackgroundEditor">
         <Property name="Background"/>
         <Property name="Background2"/>
         <Property name="UseGradientBackground"/>
@@ -3120,10 +3125,11 @@
       <IntVectorProperty command="SetCubeAxesVisibility"
                          default_values="0"
                          name="CubeAxesVisibility"
+                         label="Кубические оси"
                          number_of_elements="1"
                          panel_visibility="advanced">
         <BooleanDomain name="bool" />
-        <Documentation>Set the visibility for the cube axes.</Documentation>
+        <Documentation>Отображать ли кубические оси.</Documentation>
       </IntVectorProperty>
       <RepresentationType subproxy="OutlineRepresentation"
                           text="Границы параллелепипеда" />
@@ -3198,21 +3204,21 @@
         <ExposedProperties>
           <PropertyGroup panel_visibility="default"
                          panel_widget="ColorEditor"
-                         label="Coloring" >
+                         label="Цвет" >
             <Property name="AmbientColor" />
             <Property name="ColorArrayName" />
             <Property name="DiffuseColor" />
             <Property name="LookupTable" />
           </PropertyGroup>
 
-          <PropertyGroup label="Scalar Coloring">
+          <PropertyGroup label="Цвет скаляров">
             <Property name="MapScalars"
                       panel_visibility="advanced" />
             <Property name="InterpolateScalarsBeforeMapping"
                       panel_visibility="advanced" />
           </PropertyGroup>
 
-          <PropertyGroup label="Styling">
+          <PropertyGroup label="Стили">
             <Property name="Opacity"
                       panel_visibility="default" />
             <Property name="PointSize"
@@ -3223,7 +3229,7 @@
                       panel_visibility_default_for_representation="wireframe" />
           </PropertyGroup>
 
-          <PropertyGroup label="Lighting">
+          <PropertyGroup label="Блики">
             <Property name="Interpolation"
                       panel_visibility="advanced" />
             <Property name="Specular"
@@ -3237,14 +3243,14 @@
             <Property name="Diffuse" panel_visibility="advanced"/>
           </PropertyGroup>
 
-          <PropertyGroup label="Edge Styling">
+          <PropertyGroup label="Стили ребер">
             <Property name="EdgeColor"
                       panel_widget="color_selector_with_palette"
                       panel_visibility="advanced"
                       panel_visibility_default_for_representation="Surface With Edges" />
           </PropertyGroup>
 
-          <PropertyGroup label="Backface Styling">
+          <PropertyGroup label="Стили внутренних граней">
             <Property name="BackfaceRepresentation"
                       panel_visibility="advanced" />
             <Property name="BackfaceAmbientColor"
@@ -3257,7 +3263,7 @@
                       panel_visibility="advanced" />
           </PropertyGroup>
 
-          <PropertyGroup label="Transforming">
+          <PropertyGroup label="Преобразование">
             <Property name="Position"
                       panel_visibility="advanced" />
             <Property name="Scale"
@@ -3268,7 +3274,7 @@
                       panel_visibility="advanced" />
           </PropertyGroup>
 
-          <PropertyGroup label="Miscellaneous">
+          <PropertyGroup label="Разное">
             <Property name="Pickable"
                       panel_visibility="advanced" />
             <Property name="StaticMode"
@@ -3341,7 +3347,7 @@
                proxygroup="representations"
                proxyname="CubeAxesRepresentation"></Proxy>
         <ExposedProperties>
-          <PropertyGroup label="Cube Axes"
+          <PropertyGroup label="Кубические оси"
                          panel_visibility="advanced"
                          panel_widget="CubeAxes">
             <Property exposed_name="CubeAxesColor"
@@ -3955,6 +3961,7 @@
       </ProxyProperty>
       <DoubleVectorProperty command="SetAmbient"
                             default_values="0.0"
+                            label="Фон"
                             name="Ambient"
                             number_of_elements="1">
         <DoubleRangeDomain max="1"
@@ -3963,6 +3970,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetDiffuse"
                             default_values="1.0"
+                            label="Рассеивание"
                             name="Diffuse"
                             number_of_elements="1">
         <DoubleRangeDomain max="1"
@@ -3971,6 +3979,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetSpecular"
                             default_values="0.0"
+                            label="Глянец"
                             name="Specular"
                             number_of_elements="1">
         <DoubleRangeDomain max="1"
@@ -4249,29 +4258,31 @@
       </InputProperty>
       <IntVectorProperty command="SetBackfaceRepresentation"
                          default_values="400"
+                         label="Вид"
                          name="BackfaceRepresentation"
                          number_of_elements="1">
-        <Documentation>Choose the representation type for the
-        backface.</Documentation>
+        <Documentation>Выберите вид внутренних
+        граней.</Documentation>
         <EnumerationDomain name="enum">
-          <Entry text="Follow Frontface"
+          <Entry text="Как у внешних граней"
                  value="400" />
-          <Entry text="Cull Backface"
+          <Entry text="Без внутренних граней"
                  value="401" />
-          <Entry text="Cull Frontface"
+          <Entry text="Без внешних граней"
                  value="402" />
           <Entry text="Точки"
                  value="0" />
-          <Entry text="Wireframe"
+          <Entry text="Каркас"
                  value="1" />
-          <Entry text="Surface"
+          <Entry text="Поверхность"
                  value="2" />
-          <Entry text="Surface With Edges"
+          <Entry text="Поверхность с ребрами"
                  value="3" />
         </EnumerationDomain>
       </IntVectorProperty>
       <DoubleVectorProperty command="SetBackfaceOpacity"
                             default_values="1.0"
+                            label="Прозрачность"
                             name="BackfaceOpacity"
                             number_of_elements="1">
         <DoubleRangeDomain max="1"
@@ -4280,6 +4291,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetBackfaceAmbientColor"
                             default_values="1.0 1.0 1.0"
+                            label="Цвет фона"
                             name="BackfaceAmbientColor"
                             number_of_elements="3">
         <DoubleRangeDomain max="1 1 1"
@@ -4288,6 +4300,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetBackfaceDiffuseColor"
                             default_values="1.0 1.0 1.0"
+                            label="Цвет рассеивания"
                             name="BackfaceDiffuseColor"
                             number_of_elements="3">
         <DoubleRangeDomain max="1 1 1"
@@ -4314,7 +4327,7 @@
         <Documentation>Set the input to the representation.</Documentation>
       </InputProperty>
       <InputProperty command="SetInputConnection"
-                     label="Glyph Type"
+                     label="Вид глифа"
                      name="Source"
                      panel_visibility="advanced"
                      port_index="1">
@@ -5075,6 +5088,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetLineWidth"
                             default_values="2.0"
+                            label="Ширина линий"
                             name="LineWidth"
                             number_of_elements="1">
         <DoubleRangeDomain min="0"
@@ -5090,6 +5104,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetPointSize"
                             default_values="5.0"
+                            label="Размер точек"
                             name="PointSize"
                             number_of_elements="1">
         <DoubleRangeDomain min="0"
@@ -5798,7 +5813,7 @@
         <Property name="SeriesVisibility" function="SeriesVisibility" />
       </PropertyGroup>
 
-      <PropertyGroup label="Styling">
+      <PropertyGroup label="Стили">
         <Property name="Color" />
         <Property name="Opacity" />
         <Property name="LineThickness" />
@@ -6204,7 +6219,7 @@
         </RepresentationProxy>
       </SubProxy>
 
-      <PropertyGroup label="Styling">
+      <PropertyGroup label="Стили">
         <Property name="ScatterPlotsColor" />
         <Property name="HistogramColor" />
         <Property name="ScatterPlotMarkerStyle" />
@@ -6556,6 +6571,7 @@
       </DoubleVectorProperty>
       <IntVectorProperty command="SetPointSize"
                             default_values="1"
+                            label="Размер точек"
                             name="PointSize"
                             number_of_elements="1"
                             panel_visibility="advanced">
@@ -7100,6 +7116,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetLineWidth"
                             default_values="3.0"
+                            label="Ширина линий"
                             name="LineWidth"
                             number_of_elements="1">
         <DoubleRangeDomain min="0"
@@ -7303,7 +7320,7 @@
             <Property name="OrientationAxesOutlineColor"
                       panel_visibility="advanced"/>
           </PropertyGroup>
-          <PropertyGroup label="Lights" panel_widget="LightsEditor"
+          <PropertyGroup label="Освещение" panel_widget="LightsEditor"
                          panel_visibility="advanced">
             <!-- Light Kit -->
             <Property name="UseLight"/>
@@ -7933,6 +7950,7 @@
       </ProxyProperty>
       <DoubleVectorProperty command="SetAmbient"
                             default_values="0.0"
+                            label="Фон"
                             name="Ambient"
                             number_of_elements="1">
         <DoubleRangeDomain max="1"
@@ -7941,6 +7959,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetDiffuse"
                             default_values="1.0"
+                            label="Рассеивание"
                             name="Diffuse"
                             number_of_elements="1">
         <DoubleRangeDomain max="1"
@@ -7949,6 +7968,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetSpecular"
                             default_values="0.0"
+                            label="Глянец"
                             name="Specular"
                             number_of_elements="1">
         <DoubleRangeDomain max="1"
@@ -8118,6 +8138,7 @@
       </StringVectorProperty>
       <DoubleVectorProperty command="SetAmbient"
                             default_values="0.0"
+                            label="Фон"
                             name="Ambient"
                             number_of_elements="1">
         <DoubleRangeDomain max="1"
@@ -8126,6 +8147,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetDiffuse"
                             default_values="1.0"
+                            label="Рассеивание"
                             name="Diffuse"
                             number_of_elements="1">
         <DoubleRangeDomain max="1"
@@ -8134,6 +8156,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetSpecular"
                             default_values="0.0"
+                            label="Глянец"
                             name="Specular"
                             number_of_elements="1">
         <DoubleRangeDomain max="1"
@@ -8171,6 +8194,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetSpecularColor"
                             default_values="1.0 1.0 1.0"
+                            label="Цвет бликов"
                             name="SpecularColor"
                             number_of_elements="3">
         <DoubleRangeDomain max="1 1 1"
@@ -8179,6 +8203,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetLineWidth"
                             default_values="1.0"
+                            label="Ширина линий"
                             name="LineWidth"
                             number_of_elements="1">
         <DoubleRangeDomain min="0"
@@ -8186,6 +8211,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetPointSize"
                             default_values="2.0"
+                            label="Размер точек"
                             name="PointSize"
                             number_of_elements="1">
         <DoubleRangeDomain min="0"
@@ -8193,6 +8219,7 @@
       </DoubleVectorProperty>
       <IntVectorProperty command="SetInterpolation"
                          default_values="1"
+                         label="Интерполяция"
                          name="Interpolation"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
@@ -8222,6 +8249,7 @@
       </IntVectorProperty>
       <DoubleVectorProperty command="SetOpacity"
                             default_values="1.0"
+                            label="Прозрачность"
                             name="Opacity"
                             number_of_elements="1">
         <DoubleRangeDomain max="1"
@@ -8230,6 +8258,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetSpecularPower"
                             default_values="100.0"
+                            label="Скорость бликов"
                             name="SpecularPower"
                             number_of_elements="1">
         <DoubleRangeDomain max="100"
@@ -8238,6 +8267,7 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetEdgeColor"
                             default_values="0 0 0.5"
+                            label="Цвет ребра"
                             name="EdgeColor"
                             number_of_elements="3">
         <Documentation>Set the edge color. This color is used to draw the edge
@@ -8251,25 +8281,28 @@
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetPosition"
                             default_values="0 0 0"
-                            label="Translation"
+                            label="Сдвиг"
                             name="Position"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetScale"
                             default_values="1 1 1"
+                            label="Масштаб"
                             name="Scale"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetOrientation"
                             default_values="0 0 0"
+                            label="Вращение"
                             name="Orientation"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetOrigin"
                             default_values="0 0 0"
+                            label="Начало координат"
                             name="Origin"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />
