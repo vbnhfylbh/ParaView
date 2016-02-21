@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf8"?>
 <!-- Used to convert XML DOM generated from smxml_to_xml.xsl to HTML -->
 <xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-<xsl:output method="html"/>
+<xsl:output method="html" encoding="UTF-8"/>
 <xsl:template match="/xml">
   <xsl:apply-templates select="proxy" />
   <xsl:apply-templates select="categoryindex" />
@@ -58,6 +58,10 @@
     <head>
       <title><xsl:value-of select="label" /> Index</title>
       <xsl:element name="meta">
+         <xsl:attribute name="http-equiv">Content-Type</xsl:attribute>
+         <xsl:attribute name="content">text/html;charset=UTF-8</xsl:attribute>
+      </xsl:element>
+      <xsl:element name="meta">
         <xsl:attribute name="name">filename</xsl:attribute>
         <xsl:attribute name="contents"><xsl:value-of select="label"/>.html</xsl:attribute></xsl:element>
     </head>
@@ -65,9 +69,9 @@
       <h2><xsl:value-of select="label" /></h2>
       <hr/>
       <table class="index_table">
-         <tr><th>Name</th><th>Description</th>
+         <tr><th>Имя</th><th>Описание</th>
          <xsl:if test="label = 'Readers' or label = 'Writers'">
-           <th>Extension</th>
+           <th>Расширение</th>
          </xsl:if>
          </tr>
          <xsl:call-template name="all_proxies_index">
@@ -88,6 +92,10 @@
     <head>
       <title><xsl:value-of select="label" /></title>
       <xsl:element name="meta">
+         <xsl:attribute name="http-equiv">Content-Type</xsl:attribute>
+         <xsl:attribute name="content">text/html;charset=UTF-8</xsl:attribute>
+      </xsl:element>
+      <xsl:element name="meta">
         <xsl:attribute name="name">proxy_name</xsl:attribute>
         <xsl:attribute name="contents"><xsl:value-of select="group"/>.<xsl:value-of select="name" /></xsl:attribute>
       </xsl:element>
@@ -101,10 +109,10 @@
       <div class="description"><xsl:value-of select="documentation/long" /></div>
       <table width="97%" border="2px">
         <tr bgcolor="#9acd32">
-          <th>Property</th>
-          <th width="60%">Description</th>
-          <th width="5%">Default(s)</th>
-          <th width="20%">Restrictions</th>
+          <th>Свойство</th>
+          <th width="60%">Описание</th>
+          <th width="5%">Значение(я)</th>
+          <th width="20%">Ограничения</th>
         </tr>
 
         <xsl:for-each select="property">
