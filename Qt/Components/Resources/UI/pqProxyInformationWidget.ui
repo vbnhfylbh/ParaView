@@ -30,7 +30,7 @@
     <widget class="pqTreeWidget" name="compositeTree">
      <column>
       <property name="text">
-       <string>Иерархия данных</string>
+       <string>Компоненты</string>
       </property>
      </column>
     </widget>
@@ -38,7 +38,7 @@
    <item>
     <widget class="QGroupBox" name="properties">
      <property name="title">
-      <string>Свойства</string>
+      <string>Параметры</string>
      </property>
      <layout class="QGridLayout">
       <property name="margin">

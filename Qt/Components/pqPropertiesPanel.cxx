@@ -534,7 +534,7 @@ void pqPropertiesPanel::updatePropertiesPanel(pqPipelineSource *source)
   // update widgets.
   if (source)
     {
-    this->Internals->Ui.PropertiesButton->setText(UNICODE_TEXT(QString("\xD0\xA1\xD0\xB2\xD0\xBE\xD0\xB9\xD1\x81\xD1\x82\xD0\xB2\xD0\xB0 (%1)").arg(source->getSMName())));
+    this->Internals->Ui.PropertiesButton->setText(UNICODE_TEXT(QString("\xD0\x9F\xD0\xB0\xD1\x80\xD0\xB0\xD0\xBC\xD0\xB5\xD1\x82\xD1\x80\xD1\x8B (%1)").arg(source->getSMName())));
     this->Internals->SourceWidgets[source]->showWidgets(
       this->Internals->Ui.SearchBox->isAdvancedSearchActive(),
       this->Internals->Ui.SearchBox->text());
@@ -546,7 +546,7 @@ void pqPropertiesPanel::updatePropertiesPanel(pqPipelineSource *source)
     }
   else
     {
-    this->Internals->Ui.PropertiesButton->setText(UNICODE_TEXT("\xD0\xA1\xD0\xB2\xD0\xBE\xD0\xB9\xD1\x81\xD1\x82\xD0\xB2\xD0\xB0"));
+    this->Internals->Ui.PropertiesButton->setText(UNICODE_TEXT("\xD0\x9F\xD0\xB0\xD1\x80\xD0\xB0\xD0\xBC\xD0\xB5\xD1\x82\xD1\x80\xD1\x8B"));
     }
   this->updateButtonEnableState();
 }

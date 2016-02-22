@@ -2013,7 +2013,7 @@
       <DoubleVectorProperty command="SetAbsolutePosition"
                             default_values="0.0 0.0 0.0"
                             information_property="PositionInfo"
-                            label="Translate"
+                            label="Сдвиг"
                             name="Position"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />
@@ -2028,7 +2028,7 @@
       <DoubleVectorProperty command="SetAbsoluteRotation"
                             default_values="0.0 0.0 0.0"
                             information_property="RotationInfo"
-                            label="Rotate"
+                            label="Вращение"
                             name="Rotation"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />
@@ -2043,7 +2043,7 @@
       <DoubleVectorProperty command="SetAbsoluteScale"
                             default_values="1.0 1.0 1.0"
                             information_property="ScaleInfo"
-                            label="Scale"
+                            label="Масштаб"
                             name="Scale"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />
@@ -2060,7 +2060,7 @@
       <DoubleVectorProperty command="SetAbsolutePosition"
                             default_values="0.0 0.0 0.0"
                             information_property="PositionInfo"
-                            label="Translate"
+                            label="Сдвиг"
                             name="Position"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />
@@ -2073,7 +2073,7 @@
       <DoubleVectorProperty command="SetAbsoluteRotation"
                             default_values="0.0 0.0 0.0"
                             information_property="RotationInfo"
-                            label="Rotate"
+                            label="Вращение"
                             name="Rotation"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />
@@ -2086,7 +2086,7 @@
       <DoubleVectorProperty command="SetAbsoluteScale"
                             default_values="1.0 1.0 1.0"
                             information_property="ScaleInfo"
-                            label="Scale"
+                            label="Масштаб"
                             name="Scale"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />

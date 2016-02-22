@@ -6782,19 +6782,21 @@ points in the input. Defaults to ***Single***.
                      short_help="Генерирует глиф в каждой точке входного набора данных.">
 Создает глиф (т.е. стрелку, конус, куб, цилиндр, линию,
 сферу или 2D-глиф) в каждой точке входного набора данных.
-dataset. The glyphs can be oriented and scaled by the input
-point-centered scalars and vectors. The Glyph filter operates on any
-type of data set. Its output is polygonal
+Глифы могут быыть ориентированными и масштабированными в соответствии
+с точко-центрированными скалярами и векторами на входе фильтра. Глиф
+принимает на вход любой типп данных. На выходе полигональные данные
 
-To use this filter, you first select the arrays to use for as the
-**Scalars** and **Vectors**, if any.  To orient the glyphs using the
-selected **Vectors**, use **Orient** property.  To scale the glyphs using
-the selected **Scalars** or **Vectors**, use the **Scale Mode** property.
+Для использования фильтра следует сперва выбрать необходимые массивы
+данных в выпадающих списках **Скаляры** и **Векторы**, если такие
+данные присутствуют. Для ориентирования Глифа по выбранному **Вектору**
+следует использовать свойство **Ориентировать**. Для масштабирования
+следует использовать выбранные **Скаляры** или **Векторы** и свойство
+**Режим масштабирования**.
 
-The **Glyph Mode** property controls which points in the input dataset
-are selected for glyphing (since in most cases, glyping all points in
-the input dataset can be both performance impeding as well as visually
-cluttred.
+Свойство **Режим Глифа** управляет тем, какие точки входного набора
+данных выбираются для построения глифов (т.к. в большинстве случаев
+построение глифов для всех точек во входном наборе может сказаться
+как на производительности, так и на визуальной читаемости результата.
       </Documentation>
       <InputProperty command="SetInputConnection"
                      name="Input">
@@ -6819,7 +6821,7 @@ dataset from which the points are selecetd to be glyphed.
         </Documentation>
       </InputProperty>
       <InputProperty command="SetSourceConnection"
-                     label="Glyph Type"
+                     label="Тип Глифа"
                      name="Source">
         <ProxyGroupDomain name="groups">
           <Group name="sources" />
@@ -6841,11 +6843,12 @@ dataset from which the points are selecetd to be glyphed.
           <ProxyPropertyWidget selected_proxy_panel_visibility="advanced" />
           <!-- show the selected proxy's panel, only in advanced mode. -->
         </Hints>
-        <Documentation>This property determines which type of glyph will be
-        placed at the points in the input dataset.</Documentation>
+        <Documentation>Определяет тип глифа, используемого для точек во
+        входном наборе данных.</Documentation>
       </InputProperty>
       <StringVectorProperty command="SetInputArrayToProcess"
                             element_types="0 0 0 0 2"
+                            label="Скаляры"
                             name="Scalars"
                             number_of_elements="5">
         <ArrayListDomain attribute_type="Scalars"
@@ -6857,14 +6860,15 @@ dataset from which the points are selecetd to be glyphed.
           </RequiredProperties>
         </ArrayListDomain>
         <Documentation>
-Select the input array to be treated as the active **Scalars**.  You
-can scale the glyphs using the selected scalars by setting the **Scale
-Mode** property to **scalar**.
+Выберите входной массив в качестве текущего **Скаляра**. Масштабирование
+по выбранным скалярам возможно выставлением свойству **Режим масштабирования**
+значения **скаляр**.
         </Documentation>
       </StringVectorProperty>
       <StringVectorProperty command="SetInputArrayToProcess"
                             default_values="1"
                             element_types="0 0 0 0 2"
+                            label="Векторы"
                             name="Vectors"
                             number_of_elements="5">
         <!-- default value=1 so normals go to the right place -->
@@ -6877,47 +6881,51 @@ Mode** property to **scalar**.
           </RequiredProperties>
         </ArrayListDomain>
         <Documentation>
-Select the input array to be treated as the active **Vectors**.  You can
-scale the glyphs using the selected vectors by setting the **Scale
-Mode** property to **vector** or **vector_components**. You can orient the
-glyphs using the selected vectors by checking the **Orient** property.
+Выберите входной массив в качестве текущего **Вектора**. Масштабирование
+по выбранным векторам возможно выствалением свойству **Режим масштабирования**
+значений **вектор** или **компоненты вектора**. Ориентирование Глифа по выбранному
+вектору возможно путем выставления свойства **Ориентировать**.
         </Documentation>
       </StringVectorProperty>
       <IntVectorProperty command="SetOrient"
                          default_values="1"
+                         label="Ориентировать"
                          name="Orient"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
         <Documentation>
-If this property is set to 1, the glyphs will be oriented based on the
-vectors selected using the **Vectors** property.
+Выделите для ориентирования глифов на основе
+вектора, выбранного в свойстве **Векторы**.
         </Documentation>
       </IntVectorProperty>
       <IntVectorProperty command="SetScaleMode"
                          default_values="3"
+                         label="Режим масштабирования"
                          name="ScaleMode"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
-          <Entry text="scalar"
+          <Entry text="скаляр"
                  value="0" />
-          <Entry text="vector"
+          <Entry text="вектор"
                  value="1" />
-          <Entry text="vector_components"
+          <Entry text="компоненты вектора"
                  value="2" />
-          <Entry text="off"
+          <Entry text="нет"
                  value="3" />
         </EnumerationDomain>
         <Documentation>
-Select how to scale the glyphs. Set to **off** to disable scaling
-entirely. Set to **scalar** to scale the glyphs using the array selected
-using the **Scalars** property. Set to **vector** to scale the glyphs
-using the magnitude of the array selected using the **Vectors**
-property.  Set to **vector_components** to scale using the **Vectors**,
-scaling each component individually.
+Выберите режим масштабирования глифов. Выбор значения **нет** отключает
+масштабирование полностью. Значение **скаляр** масштабирует глифы с
+помощью массива, выбранного в свойстве **Скаляры**. Значение **вектор**
+масштабирует глифы с помощью величины массива, выбранного в свойстве
+**Векторы**. Значение **компоненты вектора** позволяет выполнить
+масштабирование с помощью свойства **Векторы**, но масштабируя
+независимо каждый компоненты.
         </Documentation>
       </IntVectorProperty>
       <DoubleVectorProperty command="SetScaleFactor"
                             default_values="1.0"
+                            label="Коэффициент масштабирования"
                             name="ScaleFactor"
                             number_of_elements="1"
                             panel_widget="glyph_scale_factor">
@@ -6938,32 +6946,33 @@ scaling each component individually.
             <Property function="ArraySelection" name="Vectors" />
           </RequiredProperties>
         </ArrayRangeDomain>
-        <Documentation>Specify the constant multiplier to use to scale the glyphs.
+        <Documentation>Определяет константный множитель для масштабирования глифов.
         </Documentation>
       </DoubleVectorProperty>
       <IntVectorProperty command="SetGlyphMode"
                          default_values="2"
+                         label="Режим Глифа"
                          name="GlyphMode"
                          number_of_elements="1"
                          panel_visibility="default">
         <EnumerationDomain name="enum">
-          <Entry text="All Points" value="0"/>
-          <Entry text="Every Nth Point" value="1"/>
-          <Entry text="Uniform Spatial Distribution" value="2"/>
+          <Entry text="Все точки" value="0"/>
+          <Entry text="Каждая N-ая точка" value="1"/>
+          <Entry text="Равномерное распределение" value="2"/>
         </EnumerationDomain>
         <Documentation>
-          This property indicates the mode that will be used to generate
-          glyphs from the dataset.
+          Определяет режим, используемый для генерации
+          глифов из входных данных.
         </Documentation>
       </IntVectorProperty>
       <IntVectorProperty command="SetMaximumNumberOfSamplePoints"
                         number_of_elements="1"
                         default_values="5000"
+                        label="Максимальное число точек выборки"
                         name="MaximumNumberOfSamplePoints">
         <IntRangeDomain min="1" name="range" />
         <Documentation>
-This property specifies the maximum number of sample points to use
-when sampling the space when Uniform Spatial Distribution is used.
+Определяет максимальное число точек, используемое при равномерно-распределенной выборке данных.
         </Documentation>
         <Hints>
           <PropertyWidgetDecorator type="GenericDecorator"
@@ -6976,12 +6985,11 @@ when sampling the space when Uniform Spatial Distribution is used.
       <IntVectorProperty command="SetSeed"
                         number_of_elements="1"
                         default_values="10339"
+                        label="Источник"
                         name="Seed">
         <IntRangeDomain min="1" name="range"/>
         <Documentation>
-This property specifies the seed that will be used for generating a
-uniform distribution of glyph points when a Uniform Spatial
-Distribution is used.
+Определяет источник, используемый для генерации равномерно распределенных глифов при равномерно-распределенной выборке данных.
         </Documentation>
         <Hints>
           <PropertyWidgetDecorator type="GenericDecorator"
@@ -6994,11 +7002,11 @@ Distribution is used.
       <IntVectorProperty command="SetStride"
                          number_of_elements="1"
                          default_values="1"
+                         label="N"
                          name="Stride">
         <IntRangeDomain min="1" name="range"/>
         <Documentation>
-This property specifies the stride that will be used when glyphing by
-Every Nth Point.
+Определяет шаг, используемый при генерации глифов из каждой N-ой точки.
         </Documentation>
         <Hints>
           <PropertyWidgetDecorator type="GenericDecorator"
@@ -7010,6 +7018,7 @@ Every Nth Point.
      </IntVectorProperty>
 
      <ProxyProperty command="SetSourceTransform"
+                     label="Преобразование"
                      name="GlyphTransform"
                      panel_visibility="advanced">
         <ProxyListDomain name="proxy_list">
@@ -7022,24 +7031,24 @@ The values in this property allow you to specify the transform
 source.</Documentation>
       </ProxyProperty>
 
-      <PropertyGroup label="Glyph Source">
+      <PropertyGroup label="Глиф">
         <Property name="Source" />
       </PropertyGroup>
-      <PropertyGroup label="Active Attributes">
+      <PropertyGroup label="Атрибуты">
         <Property name="Scalars" />
         <Property name="Vectors" />
       </PropertyGroup>
-      <PropertyGroup label="Glyph Transform">
+      <PropertyGroup label="Преобразование">
         <Property name="GlyphTransform" />
       </PropertyGroup>
-      <PropertyGroup label="Orientation">
+      <PropertyGroup label="Ориентация">
         <Property name="Orient" />
       </PropertyGroup>
-      <PropertyGroup label="Scaling">
+      <PropertyGroup label="Масштабирование">
         <Property name="ScaleMode"/>
         <Property name="ScaleFactor"/>
       </PropertyGroup>
-      <PropertyGroup label="Masking">
+      <PropertyGroup label="Фильтрация">
         <Property name="GlyphMode" />
         <Property name="MaximumNumberOfSamplePoints" />
         <Property name="Seed" />
@@ -8312,7 +8321,7 @@ source.</Documentation>
       <IntVectorProperty command="SetIntegratorType"
                          default_values="2"
                          name="IntegratorType"
-                         label="Метод дискретизации"
+                         label="Метод интегрирования"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
           <Entry text="Рунге—Кутты 2-го порядка"
@@ -8880,6 +8889,7 @@ source.</Documentation>
       <DoubleVectorProperty command="SetScale"
                             default_values="1.0"
                             name="Scale"
+                            label="Масштаб"
                             number_of_elements="1"
                             panel_visibility="default">
         <DoubleRangeDomain name="range" />
@@ -11544,6 +11554,7 @@ source.</Documentation>
       <DoubleVectorProperty command="SetScale"
                             default_values="1.0"
                             name="Scale"
+                            label="Масштаб"
                             number_of_elements="1">
         <DoubleRangeDomain name="range" />
         <Documentation>The factor by which the input time is

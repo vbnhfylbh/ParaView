@@ -237,20 +237,19 @@ void pqOutputWindowModel::ShowMessages(bool* show)
       }
     }
   this->Rows.reserve(_rowCount);
-  this->beginInsertRows(QModelIndex(), 0, _rowCount - 1);
-  for (int i = 0; i < this->Messages.size(); ++i)
-    {
-    for (int j = 0; j < pqOutputWindow::MESSAGE_TYPE_COUNT; ++j)
-      {
-      if (show[j] && this->Messages[i].Type == j)
-        {
-        this->Rows.push_back(i);
-        break;
+  if(_rowCount > 0) {
+    this->beginInsertRows(QModelIndex(), 0, _rowCount - 1);
+    for (int i = 0; i < this->Messages.size(); ++i) {
+      for (int j = 0; j < pqOutputWindow::MESSAGE_TYPE_COUNT; ++j) {
+        if (show[j] && this->Messages[i].Type == j) {
+          this->Rows.push_back(i);
+          break;
         }
       }
     }
-  this->endInsertRows();
-  this->View->resizeRowsToContents();
+    this->endInsertRows();
+    this->View->resizeRowsToContents();
+  }
 }
 
 void pqOutputWindowModel::setView(QTableView* view)

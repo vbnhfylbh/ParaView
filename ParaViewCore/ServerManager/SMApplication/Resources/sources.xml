@@ -115,7 +115,7 @@
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkGlyphSource2D"
-                 label="2D Glyph"
+                 label="2D Глиф"
                  name="GlyphSource2D">
       <Documentation long_help="Create a 2D glyph (e.g., arrow, cross, dash, etc.)"
                      short_help="Create a 2D glyph">The 2D Glyph source is used
@@ -124,32 +124,33 @@
                      polygonal data.</Documentation>
       <IntVectorProperty command="SetGlyphType"
                          default_values="9"
+                         label="Тип глифа"
                          name="GlyphType"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
-          <Entry text="Vertex"
+          <Entry text="Вершина"
                  value="1" />
-          <Entry text="Dash"
+          <Entry text="Пунктир"
                  value="2" />
-          <Entry text="Cross"
+          <Entry text="Крест"
                  value="3" />
-          <Entry text="ThickCross"
+          <Entry text="Толстый крест"
                  value="4" />
-          <Entry text="Triangle"
+          <Entry text="Треугольник"
                  value="5" />
-          <Entry text="Square"
+          <Entry text="Квадрат"
                  value="6" />
-          <Entry text="Circle"
+          <Entry text="Круг"
                  value="7" />
-          <Entry text="Diamond"
+          <Entry text="Ромб"
                  value="8" />
-          <Entry text="Arrow"
+          <Entry text="Стрела"
                  value="9" />
-          <Entry text="ThickArrow"
+          <Entry text="Толстая стрела"
                  value="10" />
-          <Entry text="HookedArrow"
+          <Entry text="Односторонняя стрела"
                  value="11" />
-          <Entry text="EdgeArrow"
+          <Entry text="Стрела без древка"
                  value="12" />
         </EnumerationDomain>
         <Documentation>This property specifies the type of the 2D
@@ -158,6 +159,7 @@
       <IntVectorProperty command="SetFilled"
                          default_values="0"
                          name="Filled"
+                         label="Полигон"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
         <Documentation>If the value of this property is 1, the 2D glyph will be
@@ -168,6 +170,7 @@
       <DoubleVectorProperty command="SetCenter"
                             default_values="0.0 0.0 0.0"
                             name="Center"
+                            label="Центр"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />
         <Documentation>Set the x, y, z coordinates of the origin of the 2D
@@ -196,7 +199,7 @@
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkPVArrowSource"
-                 label="Arrow"
+                 label="Стрела"
                  name="ArrowSource">
       <Documentation long_help="3D arrow with a long cylindrical shaft and a cone for the tip"
                      short_help="Create a 3D arrow">The Arrow source appends a
@@ -211,6 +214,7 @@
       <IntVectorProperty command="SetTipResolution"
                          default_values="6"
                          name="TipResolution"
+                         label="Детальность наконечника"
                          number_of_elements="1"
                          panel_visibility="advanced">
         <IntRangeDomain max="128"
@@ -224,6 +228,7 @@
       <DoubleVectorProperty command="SetTipRadius"
                             default_values="0.1"
                             name="TipRadius"
+                            label="Радиус наконечника"
                             number_of_elements="1"
                             panel_visibility="default">
         <DoubleRangeDomain max="10"
@@ -235,6 +240,7 @@
       <DoubleVectorProperty command="SetTipLength"
                             default_values="0.35"
                             name="TipLength"
+                            label="Длина наконечника"
                             number_of_elements="1"
                             panel_visibility="default">
         <DoubleRangeDomain max="1"
@@ -246,6 +252,7 @@
       <IntVectorProperty command="SetShaftResolution"
                          default_values="6"
                          name="ShaftResolution"
+                         label="Детальность древка"
                          number_of_elements="1"
                          panel_visibility="advanced">
         <IntRangeDomain max="128"
@@ -258,6 +265,7 @@
       <DoubleVectorProperty command="SetShaftRadius"
                             default_values="0.03"
                             name="ShaftRadius"
+                            label="Радиус древка"
                             number_of_elements="1"
                             panel_visibility="default">
         <DoubleRangeDomain max="5"
@@ -269,6 +277,7 @@
       <IntVectorProperty command="SetInvert"
                          default_values="0"
                          name="Invert"
+                         label="Обратить"
                          number_of_elements="1"
                          panel_visibility="default">
         <BooleanDomain name="bool" />
@@ -347,7 +356,7 @@
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkCubeSource"
-                 label="Box"
+                 label="Параллелепипед"
                  name="CubeSource">
       <Documentation long_help="Create a box with specified X, Y, and Z lengths."
                      short_help="3D box with specified X, Y, and Z lengths">The
@@ -357,6 +366,7 @@
       <DoubleVectorProperty animateable="1"
                             command="SetXLength"
                             default_values="1.0"
+                            label="Длина по X"
                             name="XLength"
                             number_of_elements="1"
                             panel_visibility="default">
@@ -368,6 +378,7 @@
       <DoubleVectorProperty animateable="1"
                             command="SetYLength"
                             default_values="1.0"
+                            label="Длина по Y"
                             name="YLength"
                             number_of_elements="1"
                             panel_visibility="default">
@@ -379,6 +390,7 @@
       <DoubleVectorProperty animateable="1"
                             command="SetZLength"
                             default_values="1.0"
+                            label="Длина по Z"
                             name="ZLength"
                             number_of_elements="1"
                             panel_visibility="default">
@@ -390,6 +402,7 @@
       <DoubleVectorProperty animateable="1"
                             command="SetCenter"
                             default_values="0.0 0.0 0.0"
+                            label="Центр"
                             name="Center"
                             number_of_elements="3"
                             panel_visibility="default">
@@ -401,7 +414,7 @@
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkConeSource"
-                 label="Cone"
+                 label="Конус"
                  name="ConeSource">
       <Documentation long_help="Create a 3D cone of a given radius and height."
                      short_help="3D cone of a given radius and height">The Cone
@@ -412,6 +425,7 @@
                          command="SetResolution"
                          default_values="6"
                          name="Resolution"
+                         label="Разрешение"
                          number_of_elements="1"
                          panel_visibility="default">
         <IntRangeDomain max="512"
@@ -425,6 +439,7 @@
       <DoubleVectorProperty animateable="1"
                             command="SetRadius"
                             default_values="0.5"
+                            label="Радиус"
                             name="Radius"
                             number_of_elements="1"
                             panel_visibility="default">
@@ -436,6 +451,7 @@
       <DoubleVectorProperty animateable="1"
                             command="SetHeight"
                             default_values="1.0"
+                            label="Высота"
                             name="Height"
                             number_of_elements="1"
                             panel_visibility="default">
@@ -447,6 +463,7 @@
       <DoubleVectorProperty animateable="1"
                             command="SetCenter"
                             default_values="0.0 0.0 0.0"
+                            label="Центр"
                             name="Center"
                             number_of_elements="3"
                             panel_visibility="default">
@@ -457,6 +474,7 @@
       <DoubleVectorProperty animateable="1"
                             command="SetDirection"
                             default_values="1.0 0.0 0.0"
+                            label="Направление"
                             name="Direction"
                             number_of_elements="3"
                             panel_visibility="default">
@@ -468,6 +486,7 @@
       <IntVectorProperty animateable="1"
                          command="SetCapping"
                          default_values="1"
+                         label="Основание"
                          name="Capping"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
@@ -670,6 +689,7 @@
                             command="SetHeight"
                             default_values="1.0"
                             name="Height"
+                            label="Высота"
                             number_of_elements="1"
                             panel_visibility="default">
         <DoubleRangeDomain min="0"
@@ -680,6 +700,7 @@
       <DoubleVectorProperty command="SetRadius"
                             default_values="0.5"
                             name="Radius"
+                            label="Радиус"
                             number_of_elements="1"
                             panel_visibility="default">
         <DoubleRangeDomain min="0"
@@ -691,6 +712,7 @@
                             command="SetCenter"
                             default_values="0.0 0.0 0.0"
                             name="Center"
+                            label="Центр"
                             number_of_elements="3"
                             panel_visibility="default">
         <DoubleRangeDomain name="range" />
@@ -700,6 +722,7 @@
       <IntVectorProperty command="SetCapping"
                          default_values="1"
                          name="Capping"
+                         label="Основание"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
         <Documentation>If this property is set to 1, the ends of the cylinder
@@ -710,7 +733,7 @@
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkLineSource"
-                 label="Line"
+                 label="Линия"
                  name="LineSource">
       <Documentation long_help="This source creates a line between two points. The resolution indicates how many segments are in the line."
                      short_help="Create a line between two points">The Line
@@ -741,6 +764,7 @@
       <IntVectorProperty command="SetResolution"
                          default_values="6"
                          name="Resolution"
+                         label="Разрешение"
                          number_of_elements="1"
                          panel_visibility="never">
         <IntRangeDomain min="1"
@@ -1147,7 +1171,7 @@
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkSphereSource"
-                 label="Sphere"
+                 label="Сфера"
                  name="SphereSource">
       <Documentation long_help="Create a 3D sphere given a center and radius."
                      short_help="Create a 3D sphere">The Sphere source can be
@@ -1158,6 +1182,7 @@
                             command="SetCenter"
                             default_values="0.0 0.0 0.0"
                             name="Center"
+                            label="Центр"
                             number_of_elements="3"
                             panel_visibility="default">
         <DoubleRangeDomain name="range" />
@@ -1168,6 +1193,7 @@
                             command="SetRadius"
                             default_values="0.5"
                             name="Radius"
+                            label="Радиус"
                             number_of_elements="1"
                             panel_visibility="default">
         <DoubleRangeDomain min="0"
@@ -1178,6 +1204,7 @@
       <IntVectorProperty command="SetThetaResolution"
                          default_values="8"
                          name="ThetaResolution"
+                         label="ϴ-разрешение"
                          number_of_elements="1"
                          panel_visibility="default">
         <IntRangeDomain min="3"
@@ -1193,6 +1220,7 @@
                             command="SetStartTheta"
                             default_values="0"
                             name="StartTheta"
+                            label="Начальная ϴ"
                             number_of_elements="1"
                             panel_visibility="advanced">
         <DoubleRangeDomain max="360"
@@ -1207,6 +1235,7 @@
                             command="SetEndTheta"
                             default_values="360"
                             name="EndTheta"
+                            label="Конечная ϴ"
                             number_of_elements="1"
                             panel_visibility="advanced">
         <DoubleRangeDomain max="360"
@@ -1219,6 +1248,7 @@
       <IntVectorProperty command="SetPhiResolution"
                          default_values="8"
                          name="PhiResolution"
+                         label="φ-разрешение"
                          number_of_elements="1"
                          panel_visibility="default">
         <IntRangeDomain min="3"
@@ -1232,6 +1262,7 @@
                             command="SetStartPhi"
                             default_values="0"
                             name="StartPhi"
+                            label="Начальная φ"
                             number_of_elements="1"
                             panel_visibility="advanced">
         <DoubleRangeDomain max="180"
@@ -1247,6 +1278,7 @@
                             command="SetEndPhi"
                             default_values="180"
                             name="EndPhi"
+                            label="Конечная φ"
                             number_of_elements="1"
                             panel_visibility="advanced">
         <DoubleRangeDomain max="180"

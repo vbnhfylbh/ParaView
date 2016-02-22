@@ -38,6 +38,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqUndoStack.h"
 #include "pqAnimationManager.h"
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 class pqVCRToolbar::pqInternals : public Ui::pqVCRToolbar
 {
 };
@@ -102,9 +108,9 @@ pqVCRToolbar::~pqVCRToolbar()
 void pqVCRToolbar::setTimeRanges(double start, double end)
 {
   this->UI->actionVCRFirstFrame->setToolTip(
-    QString("First Frame (%1)").arg(start, 0, 'g'));
+    UNICODE_TEXT("\xD0\x9F\xD0\xB5\xD1\x80\xD0\xB2\xD1\x8B\xD0\xB9\x20\xD0\xBA\xD0\xB0\xD0\xB4\xD1\x80 (%1)").arg(start, 0, 'g'));
   this->UI->actionVCRLastFrame->setToolTip(
-    QString("Last Frame (%1)").arg(end, 0, 'g'));
+    UNICODE_TEXT("\xD0\x9F\xD0\xBE\xD1\x81\xD0\xBB\xD0\xB5\xD0\xB4\xD0\xBD\xD0\xB8\xD0\xB9\x20\xD0\xBA\xD0\xB0\xD0\xB4\xD1\x80 (%1)").arg(end, 0, 'g'));
 }
 
 //-----------------------------------------------------------------------------
@@ -128,7 +134,7 @@ void pqVCRToolbar::onPlaying(bool playing)
       this->Controller, SLOT(onPause()));
     this->UI->actionVCRPlay->setIcon(
       QIcon(":/pqWidgets/Icons/pqVcrPlay24.png"));
-    this->UI->actionVCRPlay->setText("&Play");
+    this->UI->actionVCRPlay->setText(UNICODE_TEXT("\xD0\x9F\xD1\x80\xD0\xBE\xD0\xB8\xD0\xB3\xD1\x80\xD0\xB0\xD1\x82\xD1\x8C"));
     }
 
   // this becomes a behavior.

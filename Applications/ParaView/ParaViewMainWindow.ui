@@ -161,7 +161,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Данные</string>
+    <string>Метаданные</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -217,7 +217,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Свойства</string>
+    <string>Параметры</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -291,7 +291,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Вид</string>
+    <string>Сцена</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>

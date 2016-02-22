@@ -5,15 +5,16 @@
       processes="client|dataserver|renderserver"
       class="vtkPVGeneralSettings">
       <Documentation>
-        Collection of general setting for ParaView.
+        Набор общих настроек для ParaView.
       </Documentation>
 
       <IntVectorProperty name="ShowSplashScreen"
         number_of_elements="1"
         default_values="1"
+        label="Показывать лого"
         panel_visibility="advanced">
         <Documentation>
-          Show splash screen at startup.
+          Показывать лого при запуске.
         </Documentation>
         <BooleanDomain name="bool" />
         <Hints>
@@ -77,7 +78,7 @@
       <IntVectorProperty name="PropertiesPanelMode"
         command="SetPropertiesPanelMode"
         number_of_elements="1"
-        default_values="0"
+        default_values="3"
         panel_visibility="advanced">
         <Documentation>
           You can choose to show source, display and view properties in a single
@@ -284,16 +285,16 @@
       </IntVectorProperty>
 
 
-      <PropertyGroup label="General Options">
+      <PropertyGroup label="Общие">
         <Property name="ShowSplashScreen" />
         <Property name="CrashRecovery" />
       </PropertyGroup>
 
-      <PropertyGroup label="Default View">
+      <PropertyGroup label="Представление по-умолчанию">
         <Property name="DefaultViewType" />
       </PropertyGroup>
 
-      <PropertyGroup label="Properties Panel Options">
+      <PropertyGroup label="Панель свойств">
         <Property name="AutoApply" />
         <Property name="AutoApplyActiveOnly" />
       </PropertyGroup>

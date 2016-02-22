@@ -127,7 +127,7 @@
           <item>
            <widget class="pqExpanderButton" name="PropertiesButton">
             <property name="text" stdset="0">
-             <string>Свойства</string>
+             <string>Параметры</string>
             </property>
             <property name="checked" stdset="0">
              <bool>true</bool>

@@ -36,6 +36,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QProgressBar>
 #include <QString>
 
+#ifndef UNICODE_TEXT
+#include <typeinfo>
+#include <QApplication>
+#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
+#endif
+
 //-----------------------------------------------------------------------------
 pqProgressBar::pqProgressBar(QWidget* _p) : QWidget(_p), PreviousMessage("")
 {
@@ -75,7 +81,7 @@ pqProgressBar::~pqProgressBar()
 void pqProgressBar::setProgress(const QString& message, int value)
 {
   this->ProgressBar->setValue(value);
-  QString msg = QString("%1: %2").arg(message, QString::number(value));
+  QString msg = UNICODE_TEXT(QString("%1: %2").arg(message, QString::number(value)));
   if ( msg.length() > this->PreviousMessage.length() )
     {
     //we need to get the label to be resized correctly so it fits
