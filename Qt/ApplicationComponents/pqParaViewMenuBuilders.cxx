@@ -99,10 +99,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QMainWindow>
 #include <QMenu>
 
-#ifndef UNICODE_TEXT
-#include <QApplication>
-#define UNICODE_TEXT(text) QApplication::translate("pqParaViewMenuBuilders", QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
-#endif
+#include "../../unicode_text.h"
 
 //-----------------------------------------------------------------------------
 void pqParaViewMenuBuilders::buildFileMenu(QMenu& menu)

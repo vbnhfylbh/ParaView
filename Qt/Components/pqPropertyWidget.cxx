@@ -42,10 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMDomain.h"
 #include "vtkSMProperty.h"
 
-#ifndef UNICODE_TEXT
-#include <QApplication>
-#define UNICODE_TEXT(text) QApplication::translate("pqPropertyWidget", QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
-#endif
+#include "../../unicode_text.h"
 
 //-----------------------------------------------------------------------------
 pqPropertyWidget::pqPropertyWidget(vtkSMProxy *smProxy, QWidget *parentObject)

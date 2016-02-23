@@ -40,11 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QPushButton>
 #include <QtDebug>
 
-#ifndef UNICODE_TEXT
-#include <typeinfo>
-#include <QApplication>
-#define UNICODE_TEXT(text) QApplication::translate(typeid(*this).name(), QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
-#endif
+#include "../../unicode_text.h"
 
 class pqIntMaskPropertyWidget::pqInternals
 {

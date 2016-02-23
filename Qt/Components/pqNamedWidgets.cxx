@@ -99,10 +99,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqTreeWidgetSelectionHelper.h"
 #include "pqWidgetRangeDomain.h"
 
-#ifndef UNICODE_TEXT
-#include <QApplication>
-#define UNICODE_TEXT(text) QApplication::translate("pqNamedWidgets", QString(text).toStdString().c_str(), 0, QApplication::UnicodeUTF8)
-#endif
+#include "../../unicode_text.h"
 
 //-----------------------------------------------------------------------------
 void pqNamedWidgets::link(QWidget* parent, pqSMProxy proxy, 
