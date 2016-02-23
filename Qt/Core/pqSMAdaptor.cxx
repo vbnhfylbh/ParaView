@@ -1028,8 +1028,8 @@ void pqSMAdaptor::setEnumerationProperty(vtkSMProperty* Property,
     unsigned int numEntries = EnumerationDomain->GetNumberOfEntries();
     for(unsigned int i=0; i<numEntries; i++)
       {
-      if(strcmp(str.toStdString().c_str(), EnumerationDomain->GetEntryText(i)) == 0
-        || strcmp(str.toStdString().c_str(), UNICODE_TEXT(EnumerationDomain->GetEntryText(i)).toStdString().c_str()) == 0)
+      if(str == EnumerationDomain->GetEntryText(i)
+        || str == UNICODE_TEXT(EnumerationDomain->GetEntryText(i)))
         {
         if(Type == CHECKED)
           {

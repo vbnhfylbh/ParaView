@@ -5763,7 +5763,7 @@
                          label="Тип проекта"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
-          <Entry text="Части"
+          <Entry text="Компоненты"
                  value="0" />
           <Entry text="Сборка"
                  value="1" />

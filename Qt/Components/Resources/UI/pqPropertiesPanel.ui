@@ -243,7 +243,7 @@
           <item>
            <widget class="pqExpanderButton" name="DisplayButton">
             <property name="text" stdset="0">
-             <string>Отображение</string>
+             <string>Представление</string>
             </property>
             <property name="checked" stdset="0">
              <bool>true</bool>

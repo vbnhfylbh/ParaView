@@ -40,6 +40,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QTextEdit>
 #include <QSpinBox>
 
+#include "../../unicode_text.h"
+
 //----------------------------------------------------------------------------
 pqSignalAdaptorComboBox::pqSignalAdaptorComboBox(QComboBox* p)
   : QObject(p)
@@ -62,6 +64,9 @@ void pqSignalAdaptorComboBox::setCurrentText(const QString& text)
 {
   QComboBox* combo = static_cast<QComboBox*>(this->parent());
   int idx = combo->findText(text);
+  if(idx == -1) {
+    idx = combo->findText(UNICODE_TEXT(text));
+  }
   combo->setCurrentIndex(idx);
   if(idx == -1 && combo->count() > 0)
     {

@@ -1,7 +1,7 @@
 <ServerManagerConfiguration>
   <ProxyGroup name="settings">
     <!-- ================================================================== -->
-    <SettingsProxy name="GeneralSettings" label="General"
+    <SettingsProxy name="GeneralSettings" label="Общие"
       processes="client|dataserver|renderserver"
       class="vtkPVGeneralSettings">
       <Documentation>
@@ -51,9 +51,10 @@
         number_of_elements="1"
         default_values="0"
         command="SetAutoApply"
+        label="Автоприменение изменений"
         information_property="AutoApplyInfo">
         <Documentation>
-          Automatically apply changes in the 'Properties' panel.
+          Автоматически применять изменения в обозревателе свойств объекта.
         </Documentation>
         <BooleanDomain name="bool" />
       </IntVectorProperty>
@@ -78,17 +79,18 @@
       <IntVectorProperty name="PropertiesPanelMode"
         command="SetPropertiesPanelMode"
         number_of_elements="1"
+        label="Режим панели свойств"
         default_values="3"
         panel_visibility="advanced">
         <Documentation>
-          You can choose to show source, display and view properties in a single
-          'Properties' panel, or place them in separate dock panels.
+          Выберите расположить ли панели метаднных, сцены, представления и параметров
+          на общей панели либо в отдельных вкладках.
         </Documentation>
         <EnumerationDomain name="enum">
-          <Entry text="Combined Properties panel" value="0" />
-          <Entry text="Display Properties in a separate panel" value="1" />
-          <Entry text="View Properties in a separate panel" value="2" />
-          <Entry text="Separate panels for each type of properties" value="3" />
+          <Entry text="Совмещенная панель" value="0" />
+          <Entry text="Представление на отдельной панели" value="1" />
+          <Entry text="Сцена на отдельной панели" value="2" />
+          <Entry text="Отдельные панели для каждого вида свойств" value="3" />
         </EnumerationDomain>
         <Hints>
           <RestartRequired />
@@ -619,7 +621,7 @@
     </SettingsProxy>
 
     <!-- ================================================================== -->
-    <SettingsProxy name="RenderViewInteractionSettings" label="Camera"
+    <SettingsProxy name="RenderViewInteractionSettings" label="Камера"
       processes="client|dataserver|renderserver">
       <IntVectorProperty name="Camera3DManipulators"
         number_of_elements="9"
