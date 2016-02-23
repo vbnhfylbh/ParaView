@@ -71,7 +71,7 @@
 
 <xsl:template match="StringListDomain">
   <domain>
-    <text>The value(s) can be one of the following:</text>
+    <text>Только из следующего списка:</text>
     <list>
       <xsl:for-each select="String">
         <item><xsl:value-of select="@value"/></item>
@@ -82,7 +82,7 @@
 
 <xsl:template match="ProxyListDomain">
   <domain>
-    <text>The value can be one of the following:</text>
+    <text>Только из следующего списка:</text>
     <list>
       <xsl:for-each select="Proxy">
         <item>
@@ -99,32 +99,32 @@
 
 <xsl:template match="ExtentDomain">
   <domain>
-    <text>The value(s) must lie within the structured-extents of the input dataset.</text>
+    <text>Значения должны лежать внутри структуры входного набора данных.</text>
   </domain>
 </xsl:template>
 
 <xsl:template match="FieldDataDomain">
   <domain>
-    <text>The value must be field array name.</text>
+    <text>Имя массива поля.</text>
   </domain>
 </xsl:template>
 
 <xsl:template match="FileListDomain">
   <domain>
-    <text> The value(s) must be a filename (or filenames).</text>
+    <text>Имя файла или файлов.</text>
   </domain>
 </xsl:template>
 
 <xsl:template match="FixedTypeDomain">
   <domain>
-    <text>Once set, the input dataset cannot be changed.</text>
+    <text>Входной набора данных неизменен.</text>
   </domain>
 </xsl:template>
 
 <xsl:template match="InputArrayDomain">
   <domain>
     <text>
-      The dataset must contain a field array (<xsl:value-of select="@attribute_type"/>)
+      Набора данных должен содержать массив поля (<xsl:value-of select="@attribute_type"/>)
       <xsl:if test="@number_of_components">
         with <xsl:value-of select="@number_of_components"/> component(s).
       </xsl:if>
@@ -134,7 +134,7 @@
 
 <xsl:template match="EnumerationDomain">
   <domain>
-    <text>The value(s) is an enumeration of the following:</text>
+    <text>Перечисление:</text>
     <list>
       <xsl:for-each select="Entry">
         <item><xsl:value-of select="@text"/> (<xsl:value-of select="@value"/>)</item>
@@ -146,42 +146,42 @@
 
 <xsl:template match="ArrayListDomain[@attribute_type='Scalars']">
   <!-- Handle ArrayListDomain -->
-  <domain><text>An array of scalars is required.</text></domain>
+  <domain><text>Массив скаляров.</text></domain>
 </xsl:template>
 
 <xsl:template match="ArrayListDomain[@attribute_type='Vectors']">
   <!-- Handle ArrayListDomain -->
-  <domain><text>An array of vectors is required.</text></domain>
+  <domain><text>Массив векторов.</text></domain>
 </xsl:template>
 
 <xsl:template match="ArrayRangeDomain">
-  <domain><text>The value must lie within the range of the selected data array.</text></domain>
+  <domain><text>Значения должны быть в диапазоне выбранного массива данных.</text></domain>
 </xsl:template>
 
 <xsl:template match="ArraySelectionDomain">
-  <domain><text>The list of array names is provided by the reader.</text></domain>
+  <domain><text>Список имен массивов предосталвяется модулем загрузки из файла.</text></domain>
 </xsl:template>
 
 <xsl:template match="BoundsDomain[@mode='normal']">
   <domain><text>
-      The value must lie within the bounding box of the dataset.
+      Значение должны лежать в границах параллелепипеда набора данных.
       <xsl:if test="@default_mode">
-        It will default to the <xsl:value-of select="@default_mode" /> in each dimension.
+        Значение по-умолчанию это <xsl:value-of select="@default_mode" /> для каждой оси.
       </xsl:if>
   </text></domain>
 </xsl:template>
 
 <xsl:template match="BoundsDomain[@mode='magnitude']">
   <domain><text>
-  Determine the length of the dataset's diagonal.
-  The value must lie within -diagonal length to +diagonal length.
+  Определяет длину диагонали набора данных.
+  Значение должно быть в пределах -длина диагонали до +длина диагонали.
   </text></domain>
 </xsl:template>
 
 <xsl:template match="BoundsDomain[@mode='scaled_extent']">
   <domain><text>
-  The value must be less than the largest dimension of the
-  dataset multiplied by a scale factor of
+  Значение должно быть меньше чем наибольшее измерение
+  набора данных, умноженное на коэффициент масштабирования
   <xsl:value-of select="@scale_factor" />.
   </text></domain>
 </xsl:template>
@@ -195,14 +195,14 @@
 </xsl:template>
 
 <xsl:template name="RangeDomain">
-  Value(s) must be in the range (
+  Значения должны быть в диапазоне (
     <xsl:value-of select="@min"/>,
     <xsl:value-of select="@max"/>).
 </xsl:template>
 
 <xsl:template match="DataTypeDomain">
   <domain>
-    <text>Accepts input of following types:</text>
+    <text>Принимает на вход типы:</text>
     <list>
       <xsl:for-each select="DataType">
         <item><xsl:value-of select="@value" /> </item>
@@ -212,7 +212,7 @@
 </xsl:template>
 
 <xsl:template match="BooleanDomain">
-  <domain><text>Accepts boolean values (0 or 1).</text></domain>
+  <domain><text>Принимает будевы значения (0 или 1).</text></domain>
 </xsl:template>
 
 <!-- Documentation Handler -->
@@ -236,14 +236,14 @@
 
 <xsl:template match="ParaViewSources">
   <categoryindex>
-    <label>Sources</label>
+    <label>Источники</label>
     <xsl:call-template name="GenerateCategoryIndex" />
   </categoryindex>
 </xsl:template>
 
 <xsl:template match="ParaViewFilters">
   <categoryindex>
-    <label>Filters</label>
+    <label>Фильтры</label>
     <xsl:call-template name="GenerateCategoryIndex" />
   </categoryindex>
 </xsl:template>

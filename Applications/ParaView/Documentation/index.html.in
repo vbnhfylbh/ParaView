@@ -15,7 +15,7 @@ Released   : 20111010
 <meta name="keywords" content="" />
 <meta name="description" content="" />
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<title>ParaView Users Manual</title>
+<title>Руководство пользователя ParaView</title>
 <link href="style.css" rel="stylesheet" type="text/css" media="screen" />
 </head>
 <body>
@@ -34,23 +34,23 @@ Released   : 20111010
 			<div class="post">
         <div class="entry">
           <p>
-            ParaView is an open-source, multi-platform data analysis and
-            visualization application. ParaView users can quickly build
-            visualizations to analyze their data using qualitative and
-            quantitative techniques. The data exploration can be done
-            interactively in 3D or programmatically using ParaView's batch
-            processing capabilities.
+            ParaView это кроссплатформенное приложение для анализа и
+            визуализации данных с открытым исходным кодом. Пользователи
+            ParaView могут быстро строить визуализации для анализа их
+            данных с помощью качественных и количественных методов.
+            Экстраполяция данных может быть выполнена интерактивно в 3D
+            или через интерфейс программирования ParaView.
           </p>
           <p>
-            ParaView was developed to analyze extremely large datasets using
-            distributed memory computing resources. It can be run on
-            supercomputers to analyze datasets of terascale as well as on laptops
-            for smaller data.
+            Приложение ParaView разрабатывалось для анализа больших объемов данных,
+            испольуя вычислительные ресурсы с распределенной памятью. Оно может быть
+            запущено на как суперкомпьютерах для обработки данных в масштабе терабайт,
+            так и на ноутбуках для меньших объемов входных данных.
           </p>
         </div>
         <div>
-          For the user's manual, refer to the ParaView User's Manual, a pdf for which is
-          included in your binary distribution or can be obtained from
+          Экземпляр Руководства пользователя в формате pdf включено в поставку программы
+          либо может быть загружено из
           <a href="http://www.paraview.org/download/">http://www.paraview.org/download/</a>.
         </div>
       </div>

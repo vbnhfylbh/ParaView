@@ -22,12 +22,12 @@
       <td>
          <xsl:value-of select="/xml/proxy[group=$proxy_group and name=$proxy_name]/documentation/brief" />
       </td>
-      <xsl:if test="$proxy_label = 'Writers'">
+      <xsl:if test="$proxy_label = 'Модули записи в файл'">
         <td>
           <xsl:value-of select="/xml/proxy[group=$proxy_group and name=$proxy_name]/WriterFactory/@extensions" />
         </td>
       </xsl:if>
-      <xsl:if test="$proxy_label = 'Readers'">
+      <xsl:if test="$proxy_label = 'Модули чтения файлов'">
         <td>
           <xsl:value-of select="/xml/proxy[group=$proxy_group and name=$proxy_name]/ReaderFactory/@extensions" />
         </td>
@@ -70,7 +70,7 @@
       <hr/>
       <table class="index_table">
          <tr><th>Имя</th><th>Описание</th>
-         <xsl:if test="label = 'Readers' or label = 'Writers'">
+         <xsl:if test="label = 'Модули чтения файлов' or label = 'Модули записи в файл'">
            <th>Расширение</th>
          </xsl:if>
          </tr>
