@@ -1061,7 +1061,7 @@ bool pqFileDialog::acceptInternal(const QStringList& selected_files,
           if(QMessageBox::No == QMessageBox::warning(
             this,
             this->windowTitle(),
-            QString(tr("%1 already exists.\nDo you want to replace it?")).arg(file),
+            UNICODE_TEXT("%1 \xD1\x83\xD0\xB6\xD0\xB5\x20\xD1\x81\xD1\x83\xD1\x89\xD0\xB5\xD1\x81\xD1\x82\xD0\xB2\xD1\x83\xD0\xB5\xD1\x82.\n\xD0\x97\xD0\xB0\xD0\xBC\xD0\xB5\xD0\xBD\xD0\xB8\xD1\x82\xD1\x8C?").arg(file),
             QMessageBox::Yes,
             QMessageBox::No))
             {

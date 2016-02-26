@@ -48,6 +48,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QMessageBox>
 #include <QScopedPointer>
 #include <QtDebug>
+
+#include "../../unicode_text.h"
+
 //-----------------------------------------------------------------------------
 pqServerConnectReaction::pqServerConnectReaction(QAction* parentObject)
   : Superclass(parentObject)

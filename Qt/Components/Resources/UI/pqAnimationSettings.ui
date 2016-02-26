@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Настройки анимации</string>
+   <string>Настройки видео</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -99,7 +99,7 @@
      <item row="0" column="0">
       <widget class="QLabel" name="labelAnimationDuration">
        <property name="text">
-        <string>Продолжительность анимации (сек)</string>
+        <string>Продолжительность видео (сек)</string>
        </property>
       </widget>
      </item>
@@ -216,16 +216,16 @@ p, li { white-space: pre-wrap; }
       <bool>true</bool>
      </property>
      <property name="toolTip">
-      <string>&lt;html&gt;Отключаться от сервера перед сохранением анимации. Сервер выполнит сохранение и завершит работу.&lt;/html&gt;</string>
+      <string>&lt;html&gt;Отключаться от сервера перед сохранением видео. Сервер выполнит сохранение и завершит работу.&lt;/html&gt;</string>
      </property>
      <property name="statusTip">
-      <string>&lt;html&gt;Отключаться от сервера перед сохранением анимации. Сервер выполнит сохранение и завершит работу.&lt;/html&gt;</string>
+      <string>&lt;html&gt;Отключаться от сервера перед сохранением видео. Сервер выполнит сохранение и завершит работу.&lt;/html&gt;</string>
      </property>
      <property name="whatsThis">
-      <string>&lt;html&gt;Отключаться от сервера перед сохранением анимации. Сервер выполнит сохранение и завершит работу.&lt;/html&gt;</string>
+      <string>&lt;html&gt;Отключаться от сервера перед сохранением видео. Сервер выполнит сохранение и завершит работу.&lt;/html&gt;</string>
      </property>
      <property name="text">
-      <string>Отключаться от сервера перед сохранением анимации</string>
+      <string>Отключаться от сервера перед сохранением видео</string>
      </property>
     </widget>
    </item>
@@ -247,10 +247,10 @@ p, li { white-space: pre-wrap; }
      <item>
       <widget class="QPushButton" name="okButton">
        <property name="toolTip">
-        <string>Создать и сохранить анимацию</string>
+        <string>Создать и сохранить видео</string>
        </property>
        <property name="text">
-        <string>Сохранить анимацию</string>
+        <string>Экспорт видео</string>
        </property>
       </widget>
      </item>

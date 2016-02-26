@@ -603,7 +603,7 @@ void pqDisplayColorWidget::refreshComponents()
     if (cc==0 && max > 1)
       {
       // add magnitude for non-scalar values.
-      this->Components->addItem(UNICODE_TEXT("\xD0\x9C\xD0\xBE\xD0\xB4\xD1\x83\xD0\xBB\xD1\x8C"), -1);
+      this->Components->addItem(UNICODE_TEXT("\xD0\xBC\xD0\xBE\xD0\xB4\xD1\x83\xD0\xBB\xD1\x8C"), -1);
       }
     this->Components->addItem(arrayInfo->GetComponentName(cc), cc);
     }

@@ -53,6 +53,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QScopedPointer>
 #include <algorithm>
 
+#include "../../unicode_text.h"
+
 /////////////////////////////////////////////////////////////////////////////
 // pqRecentFilesMenu::pqImplementation
 

@@ -236,14 +236,14 @@
 
 <xsl:template match="ParaViewSources">
   <categoryindex>
-    <label>Источники</label>
+    <label>Sources</label>
     <xsl:call-template name="GenerateCategoryIndex" />
   </categoryindex>
 </xsl:template>
 
 <xsl:template match="ParaViewFilters">
   <categoryindex>
-    <label>Фильтры</label>
+    <label>Filters</label>
     <xsl:call-template name="GenerateCategoryIndex" />
   </categoryindex>
 </xsl:template>

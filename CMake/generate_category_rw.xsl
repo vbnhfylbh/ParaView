@@ -20,7 +20,7 @@
     <!-- TODO use a function for this -->
     <xsl:if test="count(proxy/ReaderFactory) > 0">
       <categoryindex>
-        <label>Модули чтения файлов</label>
+        <label>Readers</label>
         <xsl:for-each select="proxy[ReaderFactory and group='sources']">
           <xsl:element name="item">
             <xsl:attribute name="proxy_name">
@@ -35,7 +35,7 @@
 
     <xsl:if test="count(proxy/WriterFactory) > 0">
       <categoryindex>
-        <label>Модули записи в файл</label>
+        <label>Writers</label>
         <xsl:for-each select="proxy[WriterFactory]">
           <xsl:element name="item">
             <xsl:attribute name="proxy_name">
