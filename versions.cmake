@@ -145,7 +145,7 @@ if (ParaView_FROM_GIT)
   # Download PV from GIT
   add_customizable_revision(paraview
     GIT_REPOSITORY https://github.com/vbnhfylbh/ParaViewRus.git
-    GIT_TAG "v4.4.0")
+    GIT_TAG "SNAPSHOT")
 else()
   if (ParaView_FROM_SOURCE_DIR)
     add_customizable_revision(paraview
